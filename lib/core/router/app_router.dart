@@ -1,3 +1,4 @@
+import 'package:fotdelsi/features/machines/presentation/pages/home_page.dart';
 import 'package:fotdelsi/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:go_router/go_router.dart';
 
@@ -20,7 +21,11 @@ abstract final class AppRouter {
     routes: [
       GoRoute(
         path: AppRoutes.onboarding,
-        builder: (_, __) => const OnboardingPage(),
+        builder: (_, _) => const OnboardingPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.home,
+        builder: (_, _) => const HomePage(),
       ),
     ],
   );
