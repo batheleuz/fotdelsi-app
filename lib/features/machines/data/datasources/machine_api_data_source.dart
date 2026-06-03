@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'package:fotdelsi/core/network/api_endpoints.dart';
+import 'package:fotdelsi/core/network/api_response.dart';
 import 'package:fotdelsi/core/network/exceptions.dart';
 import '../models/machine_model.dart';
 
@@ -17,8 +18,9 @@ class MachineApiDataSource {
   Future<List<MachineModel>> fetchMachines() async {
     try {
       final response = await _dio.get<dynamic>(ApiEndpoints.machines);
-      final data = response.data as List<dynamic>;
-      return data
+      final jsonResponse = response.data as Map<String, dynamic>;
+      final responseData = ApiResponse<List<dynamic>>.fromJson(jsonResponse);
+      return responseData.data
           .map((e) => MachineModel.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
@@ -29,7 +31,9 @@ class MachineApiDataSource {
   Future<MachineModel> fetchMachine(String id) async {
     try {
       final response = await _dio.get<dynamic>(ApiEndpoints.machine(id));
-      return MachineModel.fromJson(response.data as Map<String, dynamic>);
+      final jsonResponse = response.data as Map<String, dynamic>;
+      final responseData = ApiResponse<List<dynamic>>.fromJson(jsonResponse);
+      return MachineModel.fromJson(responseData.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw AppException.fromDio(e);
     }

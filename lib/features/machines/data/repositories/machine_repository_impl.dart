@@ -2,10 +2,10 @@ import 'package:dartz/dartz.dart';
 
 import 'package:fotdelsi/core/network/error_mapper.dart';
 import 'package:fotdelsi/core/network/failures.dart';
+import 'package:fotdelsi/features/machines/data/datasources/machine_realtime_data_source.dart';
 import '../../domain/entities/machine.dart';
 import '../../domain/repositories/machine_repository.dart';
 import '../datasources/machine_api_data_source.dart';
-import '../datasources/machine_remote_data_source.dart';
 
 /// Implémentation du contrat domaine.
 ///
@@ -17,7 +17,7 @@ class MachineRepositoryImpl implements MachineRepository {
   const MachineRepositoryImpl(this._api, this._realtime);
 
   final MachineApiDataSource _api;
-  final MachineRemoteDataSource _realtime;
+  final MachineRealtimeDataSource _realtime;
 
   @override
   Future<Either<Failure, List<Machine>>> getMachines() async {

@@ -49,7 +49,7 @@ class _MachineGridState extends State<MachineGrid>
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        mainAxisExtent: 150,
+        mainAxisExtent: 160,
       ),
       itemCount: total,
       itemBuilder: (context, index) {

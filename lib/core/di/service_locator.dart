@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:fotdelsi/features/machines/data/datasources/machine_realtime_data_source.dart';
+import 'package:fotdelsi/features/machines/data/datasources/machine_socket_data_source.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../features/machines/data/datasources/machine_api_data_source.dart';
@@ -27,6 +29,9 @@ Future<void> setupLocator() async {
 
 void _registerMachines() {
   // Data
+  serviceLocator.registerLazySingleton<MachineRealtimeDataSource>(
+    () => MachineSocketDataSource(),
+  );
   serviceLocator.registerLazySingleton<MachineApiDataSource>(
     () => MachineApiDataSource(serviceLocator()),
   );
