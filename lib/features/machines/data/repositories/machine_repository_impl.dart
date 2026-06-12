@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import 'package:fotdelsi/core/network/error_mapper.dart';
 import 'package:fotdelsi/core/network/failures.dart';
+import 'package:fotdelsi/core/websocket/ws_connection_status.dart';
 import 'package:fotdelsi/features/machines/data/datasources/machine_realtime_data_source.dart';
 import '../../domain/entities/machine.dart';
 import '../../domain/repositories/machine_repository.dart';
@@ -40,5 +41,20 @@ class MachineRepositoryImpl implements MachineRepository {
   }
 
   @override
+  Future<Either<Failure, Machine>> getMachineByDeviceName(
+    String deviceName,
+  ) async {
+    try {
+      final model = await _api.fetchMachineByDeviceName(deviceName);
+      return Right(model.toEntity());
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
   Stream<List<Machine>> watchMachines() => _realtime.watchMachines();
+
+  @override
+  Stream<WsConnectionStatus> get connectionStatus => _realtime.connectionStatus;
 }

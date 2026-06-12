@@ -38,4 +38,17 @@ class MachineApiDataSource {
       throw AppException.fromDio(e);
     }
   }
+
+  Future<MachineModel> fetchMachineByDeviceName(String deviceName) async {
+    try {
+      final response = await _dio.get<dynamic>(
+        ApiEndpoints.machineByDeviceName(deviceName),
+      );
+      final jsonResponse = response.data as Map<String, dynamic>;
+      final responseData = ApiResponse<dynamic>.fromJson(jsonResponse);
+      return MachineModel.fromJson(responseData.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw AppException.fromDio(e);
+    }
+  }
 }

@@ -1,18 +1,16 @@
+import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:fotdelsi/features/machines/presentation/pages/home_page.dart';
 import 'package:fotdelsi/features/onboarding/presentation/pages/onboarding_page.dart';
+import 'package:fotdelsi/features/payment/presentation/pages/payment_page.dart';
+import 'package:fotdelsi/features/payment/presentation/pages/scan_page.dart';
 import 'package:go_router/go_router.dart';
 
 import 'app_routes.dart';
 
 /// Arguments typés passés via `extra` (records — pas de classe dédiée).
-typedef PaymentArgs = ({String machineName, String programLabel, int total});
-typedef ConfirmationArgs = ({String machineName, String programLabel});
+typedef PaymentArgs = ({Machine machine});
 
 /// Navigation centralisée de l'application.
-///
-/// Toutes les routes sont déclarées ici ; les écrans ne connaissent que les
-/// constantes [AppRoutes] et `context.go/push`. Modifier le flux (ex. retirer
-/// l'étape programme) se fait en un seul endroit.
 abstract final class AppRouter {
   const AppRouter._();
 
@@ -21,11 +19,22 @@ abstract final class AppRouter {
     routes: [
       GoRoute(
         path: AppRoutes.onboarding,
-        builder: (_, _) => const OnboardingPage(),
+        builder: (context, state) => const OnboardingPage(),
       ),
       GoRoute(
         path: AppRoutes.home,
-        builder: (_, _) => const HomePage(),
+        builder: (context, state) => const HomePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.scan,
+        builder: (context, state) => const ScanPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.payment,
+        builder: (context, state) {
+          final args = state.extra! as PaymentArgs;
+          return PaymentPage(machine: args.machine);
+        },
       ),
     ],
   );

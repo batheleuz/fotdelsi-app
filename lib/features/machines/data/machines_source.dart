@@ -15,6 +15,8 @@ class MachinesSource {
       name: 'Laveuse 01',
       type: MachineType.washer,
       status: MachineStatus.available,
+      price: 4800,
+      size: 12,
     ),
     Machine(
       id: '2',
@@ -23,6 +25,8 @@ class MachinesSource {
       type: MachineType.washer,
       status: MachineStatus.inUse,
       remainTime: 745,
+      price: 6000,
+      size: 15,
     ),
     Machine(
       id: '3',
@@ -30,6 +34,8 @@ class MachinesSource {
       name: 'Laveuse 03',
       type: MachineType.washer,
       status: MachineStatus.available,
+      price: 8000,
+      size: 20,
     ),
     Machine(
       id: '4',
@@ -37,6 +43,7 @@ class MachinesSource {
       name: 'Sécheuse 01',
       type: MachineType.dryer,
       status: MachineStatus.offline,
+      price: 3000,
     ),
   ];
 }

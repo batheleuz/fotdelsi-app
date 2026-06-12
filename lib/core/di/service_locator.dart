@@ -1,36 +1,57 @@
 import 'package:dio/dio.dart';
+import 'package:fotdelsi/core/websocket/realtime_socket.dart';
+import 'package:fotdelsi/core/websocket/ws_connection_cubit.dart';
 import 'package:fotdelsi/features/machines/data/datasources/machine_realtime_data_source.dart';
 import 'package:fotdelsi/features/machines/data/datasources/machine_socket_data_source.dart';
+import 'package:fotdelsi/features/payment/data/datasources/customer_profile_local_data_source.dart';
+import 'package:fotdelsi/features/payment/data/datasources/payment_api_data_source.dart';
+import 'package:fotdelsi/features/payment/data/repositories/customer_profile_repository_impl.dart';
+import 'package:fotdelsi/features/payment/data/repositories/payment_repository_impl.dart';
+import 'package:fotdelsi/features/payment/domain/repositories/customer_profile_repository.dart';
+import 'package:fotdelsi/features/payment/domain/repositories/payment_repository.dart';
+import 'package:fotdelsi/features/payment/presentation/bloc/payment_bloc.dart';
+import 'package:fotdelsi/features/payment/presentation/bloc/scan_bloc.dart';
+import 'package:fotdelsi/features/wash_session/data/datasources/wash_session_api_data_source.dart';
+import 'package:fotdelsi/features/wash_session/data/datasources/wash_session_local_data_source.dart';
+import 'package:fotdelsi/features/wash_session/data/datasources/wash_session_socket_data_source.dart';
+import 'package:fotdelsi/features/wash_session/data/repositories/wash_session_repository_impl.dart';
+import 'package:fotdelsi/features/wash_session/domain/repositories/wash_session_repository.dart';
+import 'package:fotdelsi/features/wash_session/presentation/cubit/wash_session_cubit.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/machines/data/datasources/machine_api_data_source.dart';
 import '../../features/machines/data/datasources/machine_remote_data_source.dart';
 import '../../features/machines/data/repositories/machine_repository_impl.dart';
 import '../../features/machines/domain/repositories/machine_repository.dart';
-import '../../features/machines/domain/usecases/get_machine.dart';
-import '../../features/machines/domain/usecases/get_machines.dart';
-import '../../features/machines/domain/usecases/watch_machines.dart';
 import '../../features/machines/presentation/bloc/machines_bloc.dart';
 import '../network/dio_client.dart';
 
 /// Conteneur d'injection de dépendances unique de l'application.
 final GetIt serviceLocator = GetIt.instance;
 
-/// Initialise toutes les dépendances. Appelé une fois depuis `main()` avant
-/// `runApp`. Les enregistrements sont groupés par feature pour rester lisibles
-/// et faciles à étendre.
 Future<void> setupLocator() async {
   // --- Core ---
   serviceLocator.registerLazySingleton<Dio>(() => DioClient.create());
+  serviceLocator.registerLazySingleton<WsConnectionCubit>(
+    () => WsConnectionCubit(),
+  );
+  // Connexion temps réel partagée — une seule socket pour toute l'app.
+  serviceLocator.registerLazySingleton<RealtimeSocket>(() => RealtimeSocket());
+
+  // SharedPreferences — instance partagée
+  final prefs = await SharedPreferences.getInstance();
+  serviceLocator.registerSingleton<SharedPreferences>(prefs);
 
   // --- Features ---
   _registerMachines();
+  _registerPayment();
+  _registerWashSession();
 }
 
 void _registerMachines() {
-  // Data
   serviceLocator.registerLazySingleton<MachineRealtimeDataSource>(
-    () => MachineSocketDataSource(),
+    () => MachineSocketDataSource(serviceLocator()),
   );
   serviceLocator.registerLazySingleton<MachineApiDataSource>(
     () => MachineApiDataSource(serviceLocator()),
@@ -42,19 +63,55 @@ void _registerMachines() {
     () => MachineRepositoryImpl(serviceLocator(), serviceLocator()),
   );
 
-  // Domain (use cases)
-  serviceLocator.registerFactory<GetMachines>(
-    () => GetMachines(serviceLocator()),
-  );
-  serviceLocator.registerFactory<GetMachine>(
-    () => GetMachine(serviceLocator()),
-  );
-  serviceLocator.registerFactory<WatchMachines>(
-    () => WatchMachines(serviceLocator()),
-  );
-
-  // Presentation (Bloc — une instance par écran)
   serviceLocator.registerFactory<MachinesBloc>(
     () => MachinesBloc(serviceLocator(), serviceLocator()),
+  );
+  serviceLocator.registerFactory<ScanBloc>(() => ScanBloc(serviceLocator()));
+}
+
+void _registerPayment() {
+  serviceLocator.registerLazySingleton<PaymentApiDataSource>(
+    () => PaymentApiDataSource(serviceLocator()),
+  );
+  serviceLocator.registerLazySingleton<PaymentRepository>(
+    () => PaymentRepositoryImpl(serviceLocator()),
+  );
+  serviceLocator.registerLazySingleton<CustomerProfileLocalDataSource>(
+    () => CustomerProfileLocalDataSource(serviceLocator()),
+  );
+  serviceLocator.registerLazySingleton<CustomerProfileRepository>(
+    () => CustomerProfileRepositoryImpl(serviceLocator()),
+  );
+  serviceLocator.registerFactory<PaymentBloc>(
+    () => PaymentBloc(
+      serviceLocator(), // PaymentRepository
+      serviceLocator(), // CustomerProfileRepository
+      serviceLocator(), // WashSessionCubit
+    ),
+  );
+}
+
+void _registerWashSession() {
+  // Data — local (SharedPreferences), distant (REST) et temps réel (WebSocket).
+  serviceLocator.registerLazySingleton<WashSessionLocalDataSource>(
+    () => WashSessionLocalDataSource(serviceLocator()),
+  );
+  serviceLocator.registerLazySingleton<WashSessionApiDataSource>(
+    () => WashSessionApiDataSource(serviceLocator()), // Dio
+  );
+  serviceLocator.registerLazySingleton<WashSessionSocketDataSource>(
+    () => WashSessionSocketDataSource(serviceLocator()), // RealtimeSocket
+  );
+  serviceLocator.registerLazySingleton<WashSessionRepository>(
+    () => WashSessionRepositoryImpl(
+      serviceLocator(), // WashSessionLocalDataSource
+      serviceLocator(), // WashSessionApiDataSource
+      serviceLocator(), // WashSessionSocketDataSource
+    ),
+  );
+
+  // Presentation — singleton global
+  serviceLocator.registerLazySingleton<WashSessionCubit>(
+    () => WashSessionCubit(serviceLocator()), // WashSessionRepository
   );
 }

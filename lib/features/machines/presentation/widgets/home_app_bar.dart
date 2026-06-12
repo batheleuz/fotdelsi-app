@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/constants/app_images.dart';
+import 'package:fotdelsi/core/theme/app_spacing.dart';
+import 'package:fotdelsi/core/websocket/ws_connection_cubit.dart';
+import 'package:fotdelsi/core/websocket/ws_connection_status.dart';
 import 'connection_status_chip.dart';
 
 /// En-tête de l'accueil : logo textuel FOT DELSI + état de connexion.
+///
+/// L'état WS est lu directement depuis le [WsConnectionCubit] global — aucun
+/// paramètre à passer depuis la page parente.
 class HomeAppBar extends StatelessWidget {
-  const HomeAppBar({super.key, required this.connected});
-
-  final bool connected;
+  const HomeAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +27,10 @@ class HomeAppBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const _Logo(),
-          ConnectionStatusChip(connected: connected),
+          BlocBuilder<WsConnectionCubit, WsConnectionStatus>(
+            builder: (context, status) =>
+                ConnectionStatusChip(status: status),
+          ),
         ],
       ),
     );

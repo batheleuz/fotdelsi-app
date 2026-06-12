@@ -8,5 +8,4 @@ abstract final class AppRoutes {
   static const home = '/';
   static const scan = '/scan';
   static const payment = '/payment';
-  static const confirmation = '/confirmation';
 }

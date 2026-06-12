@@ -14,12 +14,16 @@ class Machine {
     required this.name,
     required this.type,
     required this.status,
+    this.size,
+    required this.price,
     this.remainTime = 0,
   });
 
   final String id;
   final String code;
   final String name;
+  final int? size;
+  final double price;
   final MachineType type;
   final MachineStatus status;
 
@@ -34,6 +38,8 @@ class Machine {
     name: name,
     type: type,
     status: status ?? this.status,
+    size: size,
+    price: price,
     remainTime: remainTime ?? this.remainTime,
   );
 }

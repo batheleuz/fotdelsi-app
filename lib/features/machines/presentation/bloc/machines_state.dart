@@ -16,8 +16,6 @@ final class MachinesState extends Equatable {
   final List<Machine> machines;
   final String? error;
 
-  bool get isConnected => status == MachinesStatus.success;
-
   MachinesState copyWith({
     MachinesStatus? status,
     List<Machine>? machines,

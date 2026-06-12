@@ -1,24 +1,40 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 
+import 'package:fotdelsi/core/websocket/ws_connection_cubit.dart';
+import 'package:fotdelsi/core/websocket/ws_connection_status.dart';
 import '../../domain/entities/machine.dart';
-import '../../domain/usecases/get_machines.dart';
-import '../../domain/usecases/watch_machines.dart';
+import '../../domain/repositories/machine_repository.dart';
 import 'machines_event.dart';
 import 'machines_state.dart';
 
 /// Bloc — flux explicite événement → traitement → état.
 ///
-/// À l'abonnement : charge l'état courant via [GetMachines] (gestion d'erreur
-/// par Either → state failure), puis écoute le flux temps réel [WatchMachines]
-/// pour les mises à jour.
+/// À l'abonnement : charge l'état courant via [MachineRepository.getMachines],
+/// puis écoute le flux temps réel [MachineRepository.watchMachines] pour les
+/// mises à jour.
+///
+/// L'état de la connexion WebSocket est délégué au [WsConnectionCubit] global
+/// de sorte que n'importe quelle page peut l'observer sans dépendre de ce bloc.
+/// En cas de coupure, la dernière liste de machines est conservée (pas de
+/// basculement vers l'état failure).
 class MachinesBloc extends Bloc<MachinesEvent, MachinesState> {
-  MachinesBloc(this._getMachines, this._watchMachines)
+  MachinesBloc(this._repository, this._connectionCubit)
       : super(const MachinesState()) {
     on<MachinesSubscriptionRequested>(_onSubscriptionRequested);
   }
 
-  final GetMachines _getMachines;
-  final WatchMachines _watchMachines;
+  final MachineRepository _repository;
+  final WsConnectionCubit _connectionCubit;
+
+  StreamSubscription<WsConnectionStatus>? _connectionSub;
+
+  @override
+  Future<void> close() async {
+    await _connectionSub?.cancel();
+    return super.close();
+  }
 
   Future<void> _onSubscriptionRequested(
     MachinesSubscriptionRequested event,
@@ -26,9 +42,16 @@ class MachinesBloc extends Bloc<MachinesEvent, MachinesState> {
   ) async {
     emit(state.copyWith(status: MachinesStatus.loading));
 
-    final result = await _getMachines();
+    // Écoute le stream de connexion et met à jour le cubit global.
+    await _connectionSub?.cancel();
+    _connectionSub = _repository.connectionStatus.listen(
+      (status) => _connectionCubit.emit(status),
+    );
+
+    final result = await _repository.getMachines();
 
     await result.fold(
+      // Échec du chargement initial (HTTP) → état failure.
       (failure) async => emit(state.copyWith(
         status: MachinesStatus.failure,
         error: failure.message,
@@ -38,16 +61,19 @@ class MachinesBloc extends Bloc<MachinesEvent, MachinesState> {
           status: MachinesStatus.success,
           machines: machines,
         ));
-        // Mises à jour temps réel (WebSocket à terme).
+
+        // Mises à jour temps réel — en cas d'erreur on conserve
+        // les données existantes ; le cubit reflète la déconnexion.
         await emit.forEach<List<Machine>>(
-          _watchMachines(),
-          onData: (machines) => state.copyWith(
+          _repository.watchMachines(),
+          onData: (updated) => state.copyWith(
             status: MachinesStatus.success,
-            machines: machines,
+            machines: updated,
           ),
-          onError: (error, _) => state.copyWith(
-            status: MachinesStatus.failure,
-            error: 'Connexion temps réel perdue.',
+          // ignore: avoid_types_on_closure_parameters
+          onError: (Object e, StackTrace st) => state.copyWith(
+            // On garde le status success + les machines déjà chargées.
+            status: MachinesStatus.success,
           ),
         );
       },

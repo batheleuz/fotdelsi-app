@@ -8,6 +8,8 @@ class MachineModel {
     required this.name,
     required this.type,
     required this.status,
+    required this.price,
+    this.size,
     required this.remainTime,
   });
 
@@ -17,6 +19,8 @@ class MachineModel {
   final MachineType type;
   final MachineStatus status;
   final int remainTime;
+  final int price;
+  final int? size;
 
   factory MachineModel.fromJson(Map<String, dynamic> json) {
     return MachineModel(
@@ -26,6 +30,8 @@ class MachineModel {
       type: _type(json['type'] as String?),
       status: _status(json['status'] as String?),
       remainTime: (json['remain_time'] as num?)?.toInt() ?? 0,
+      price: json['price'] as int,
+      size: json['size'] as int?
     );
   }
 
@@ -36,6 +42,8 @@ class MachineModel {
         type: type,
         status: status,
         remainTime: remainTime,
+        price: price.toDouble(),
+        size: size,
       );
 
   static MachineType _type(String? value) =>

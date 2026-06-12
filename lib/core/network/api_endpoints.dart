@@ -19,10 +19,15 @@ abstract final class ApiEndpoints {
   // Machines
   static const String machines = '/machines';
   static String machine(String id) => '/machines/$id';
+  static String machineByDeviceName(String deviceName) =>
+      '/machines/device/$deviceName';
 
   // Paiement
   static const String paymentsInitiate = '/payments/initiate';
-  static String session(String token) => '/sessions/$token';
+
+  // Wash Session
+  static String sessionStatus(String token) => '/wash-sessions/$token/status';
+  static const String startMachine = '/wash-sessions/start';
 
   // Auth
   static const String login = '/auth/login';
