@@ -26,6 +26,7 @@ class PaymentApiDataSource {
           'provider': provider.apiValue,
           'customerFullName': customerFullName,
           'customerPhone': customerPhone,
+          'purpose': "SELF_SERVICE"
         },
       );
 

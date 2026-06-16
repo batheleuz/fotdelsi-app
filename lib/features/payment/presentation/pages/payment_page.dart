@@ -94,8 +94,10 @@ class _PaymentView extends StatelessWidget {
                         children: [
                           OrderRecapCard(machine: machine),
                           const SizedBox(height: AppSpacing.lg),
+
                           const _SectionLabel('Votre nom complet'),
                           const SizedBox(height: AppSpacing.sm + 2),
+                          
                           _NameField(
                             initialValue: state.customerFullName,
                             onChanged: (v) =>
@@ -103,6 +105,7 @@ class _PaymentView extends StatelessWidget {
                           ),
                           const SizedBox(height: AppSpacing.lg),
                           const _SectionLabel('Moyen de paiement'),
+                          
                           const SizedBox(height: AppSpacing.sm + 2),
                           for (final provider in PaymentProvider.values) ...[
                             PaymentProviderCard(
@@ -114,8 +117,10 @@ class _PaymentView extends StatelessWidget {
                             const SizedBox(height: AppSpacing.sm + 2),
                           ],
                           const SizedBox(height: AppSpacing.xs),
+                          
                           const _SectionLabel('Numéro mobile money'),
                           const SizedBox(height: AppSpacing.sm + 2),
+                          
                           PhoneNumberField(
                             initialValue: state.phone,
                             onChanged: (v) => bloc.add(PaymentPhoneChanged(v)),
