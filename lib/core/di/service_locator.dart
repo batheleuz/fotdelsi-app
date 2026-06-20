@@ -1,4 +1,12 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:fotdelsi/core/auth/auth_token_store.dart';
+import 'package:fotdelsi/core/network/api_endpoints.dart';
+import 'package:fotdelsi/core/network/auth_interceptor.dart';
+import 'package:fotdelsi/features/auth/data/datasources/auth_api_data_source.dart';
+import 'package:fotdelsi/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:fotdelsi/features/auth/domain/repositories/auth_repository.dart';
+import 'package:fotdelsi/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:fotdelsi/core/websocket/realtime_socket.dart';
 import 'package:fotdelsi/core/websocket/ws_connection_cubit.dart';
 import 'package:fotdelsi/features/machines/data/datasources/machine_realtime_data_source.dart';
@@ -32,7 +40,19 @@ final GetIt serviceLocator = GetIt.instance;
 
 Future<void> setupLocator() async {
   // --- Core ---
-  serviceLocator.registerLazySingleton<Dio>(() => DioClient.create());
+  serviceLocator.registerLazySingleton<FlutterSecureStorage>(
+    () => const FlutterSecureStorage(),
+  );
+  serviceLocator.registerLazySingleton<AuthTokenStore>(
+    () => AuthTokenStore(serviceLocator()),
+  );
+  serviceLocator.registerLazySingleton<Dio>(() {
+    final dio = DioClient.create();
+    dio.interceptors.add(
+      AuthInterceptor(serviceLocator<AuthTokenStore>(), ApiEndpoints.baseUrl),
+    );
+    return dio;
+  });
   serviceLocator.registerLazySingleton<WsConnectionCubit>(
     () => WsConnectionCubit(),
   );
@@ -44,9 +64,23 @@ Future<void> setupLocator() async {
   serviceLocator.registerSingleton<SharedPreferences>(prefs);
 
   // --- Features ---
+  _registerAuth();
   _registerMachines();
   _registerPayment();
   _registerWashSession();
+}
+
+void _registerAuth() {
+  serviceLocator.registerLazySingleton<AuthApiDataSource>(
+    () => AuthApiDataSource(serviceLocator()),
+  );
+  serviceLocator.registerLazySingleton<AuthRepository>(
+    () => AuthRepositoryImpl(serviceLocator(), serviceLocator()),
+  );
+  // Singleton global : pilote le routage par rôle pour toute l'app.
+  serviceLocator.registerLazySingleton<AuthCubit>(
+    () => AuthCubit(serviceLocator()),
+  );
 }
 
 void _registerMachines() {

@@ -31,4 +31,16 @@ abstract final class ApiEndpoints {
 
   // Auth
   static const String login = '/auth/login';
+  static const String authRefresh = '/auth/refresh';
+  static const String authLogout = '/auth/logout';
+
+  // Drop-offs (agent / admin)
+  static const String dropOffDraft = '/drop-offs/draft';
+  static const String dropOffQueue = '/drop-offs/queue';
+  static String dropOffByCode(String code) => '/drop-offs/by-code/$code';
+  static String dropOff(String id) => '/drop-offs/$id';
+  static String dropOffAssignMachine(String id) => '/drop-offs/$id/assign-machine';
+  static String dropOffMarkReady(String id) => '/drop-offs/$id/mark-ready';
+  static String dropOffMarkCollected(String id) => '/drop-offs/$id/mark-collected';
+  static String dropOffLaundry(String id) => '/drop-offs/$id/laundry';
 }

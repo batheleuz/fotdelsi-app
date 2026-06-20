@@ -8,4 +8,8 @@ abstract final class AppRoutes {
   static const home = '/';
   static const scan = '/scan';
   static const payment = '/payment';
+
+  // Personnel (agent / admin)
+  static const login = '/login';
+  static const agentQueue = '/agent/queue';
 }
