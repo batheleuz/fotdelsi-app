@@ -31,4 +31,24 @@ class PaymentRepositoryImpl implements PaymentRepository {
       return Left(mapExceptionToFailure(e));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> initiateDropOffPayment({
+    required int amount,
+    required PaymentProvider provider,
+    required String customerFullName,
+    required String customerPhone,
+  }) async {
+    try {
+      await _api.initiateDropOffPayment(
+        amount: amount,
+        provider: provider,
+        customerFullName: customerFullName,
+        customerPhone: customerPhone,
+      );
+      return const Right(null);
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
 }

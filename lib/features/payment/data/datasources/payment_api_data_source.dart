@@ -40,4 +40,28 @@ class PaymentApiDataSource {
       throw AppException.fromDio(e);
     }
   }
+
+  /// Initie un paiement de dépôt (`purpose: DROP_OFF`). Le prompt SOFTPAY est
+  /// poussé vers le téléphone du client — l'agent n'a besoin que du succès.
+  Future<void> initiateDropOffPayment({
+    required int amount,
+    required PaymentProvider provider,
+    required String customerFullName,
+    required String customerPhone,
+  }) async {
+    try {
+      await _dio.post<dynamic>(
+        ApiEndpoints.paymentsInitiate,
+        data: {
+          'purpose': 'DROP_OFF',
+          'amount': amount,
+          'provider': provider.apiValue,
+          'customerFullName': customerFullName,
+          'customerPhone': customerPhone,
+        },
+      );
+    } on DioException catch (e) {
+      throw AppException.fromDio(e);
+    }
+  }
 }

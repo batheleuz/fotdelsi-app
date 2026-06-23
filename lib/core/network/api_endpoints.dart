@@ -34,6 +34,12 @@ abstract final class ApiEndpoints {
   static const String authRefresh = '/auth/refresh';
   static const String authLogout = '/auth/logout';
 
+  // Identité client (OTP SMS)
+  static const String requestOtp = '/me/link-phone/request-otp';
+  static const String verifyOtp = '/me/link-phone/verify-otp';
+  static const String clientLogout = '/me/logout';
+  static const String myDropOffs = '/me/dropoffs';
+
   // Drop-offs (agent / admin)
   static const String dropOffDraft = '/drop-offs/draft';
   static const String dropOffQueue = '/drop-offs/queue';

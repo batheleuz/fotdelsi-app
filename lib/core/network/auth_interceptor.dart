@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../auth/auth_token_store.dart';
+import '../auth/client_session_store.dart';
 import 'api_endpoints.dart';
 
 /// Intercepteur d'authentification.
@@ -14,9 +15,10 @@ import 'api_endpoints.dart';
 /// [QueuedInterceptor] sérialise les requêtes : un seul refresh à la fois même
 /// si plusieurs appels échouent en 401 simultanément.
 class AuthInterceptor extends QueuedInterceptor {
-  AuthInterceptor(this._store, this._baseUrl);
+  AuthInterceptor(this._store, this._clientStore, this._baseUrl);
 
   final AuthTokenStore _store;
+  final ClientSessionStore _clientStore;
   final String _baseUrl;
 
   bool _isAuthPath(String path) => path.contains('/auth/');
@@ -27,7 +29,10 @@ class AuthInterceptor extends QueuedInterceptor {
     RequestInterceptorHandler handler,
   ) async {
     if (!_isAuthPath(options.path)) {
-      final token = await _store.accessToken();
+      // Personnel (JWT) prioritaire ; sinon jeton client (OTP). Les deux
+      // identités sont mutuellement exclusives sur un même appareil.
+      final token =
+          await _store.accessToken() ?? await _clientStore.token();
       if (token != null) {
         options.headers['Authorization'] = 'Bearer $token';
       }

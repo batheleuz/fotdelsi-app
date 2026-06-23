@@ -45,9 +45,17 @@ sealed class AppException implements Exception {
   }
 
   static String? _extractMessage(Object? data) {
-    if (data is Map && data['message'] is String) {
+    if (data is! Map) return null;
+    // Réponses succès / ApiResponse.error : { code, message, data }.
+    if (data['message'] is String) {
       return data['message'] as String;
     }
+    // ApplicationError / DomainError (globalErrorHandler) : { error: { message } }.
+    final error = data['error'];
+    if (error is Map && error['message'] is String) {
+      return error['message'] as String;
+    }
+    if (error is String) return error;
     return null;
   }
 }

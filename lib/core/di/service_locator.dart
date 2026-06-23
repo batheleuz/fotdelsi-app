@@ -1,12 +1,27 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fotdelsi/core/auth/auth_token_store.dart';
+import 'package:fotdelsi/core/auth/client_session_store.dart';
 import 'package:fotdelsi/core/network/api_endpoints.dart';
 import 'package:fotdelsi/core/network/auth_interceptor.dart';
 import 'package:fotdelsi/features/auth/data/datasources/auth_api_data_source.dart';
+import 'package:fotdelsi/features/client_auth/data/datasources/client_auth_api_data_source.dart';
+import 'package:fotdelsi/features/client_auth/data/repositories/client_auth_repository_impl.dart';
+import 'package:fotdelsi/features/client_auth/domain/repositories/client_auth_repository.dart';
+import 'package:fotdelsi/features/client_auth/presentation/cubit/client_session_cubit.dart';
+import 'package:fotdelsi/features/client_auth/presentation/cubit/link_phone_cubit.dart';
 import 'package:fotdelsi/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:fotdelsi/features/auth/domain/repositories/auth_repository.dart';
 import 'package:fotdelsi/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:fotdelsi/features/dropoffs/data/datasources/drop_off_api_data_source.dart';
+import 'package:fotdelsi/features/dropoffs/data/repositories/drop_off_repository_impl.dart';
+import 'package:fotdelsi/features/dropoffs/domain/repositories/drop_off_repository.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/agent_queue_cubit.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/assign_machine_cubit.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_detail_cubit.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_search_cubit.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/my_dropoffs_cubit.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/new_dropoff_cubit.dart';
 import 'package:fotdelsi/core/websocket/realtime_socket.dart';
 import 'package:fotdelsi/core/websocket/ws_connection_cubit.dart';
 import 'package:fotdelsi/features/machines/data/datasources/machine_realtime_data_source.dart';
@@ -46,10 +61,17 @@ Future<void> setupLocator() async {
   serviceLocator.registerLazySingleton<AuthTokenStore>(
     () => AuthTokenStore(serviceLocator()),
   );
+  serviceLocator.registerLazySingleton<ClientSessionStore>(
+    () => ClientSessionStore(serviceLocator()),
+  );
   serviceLocator.registerLazySingleton<Dio>(() {
     final dio = DioClient.create();
     dio.interceptors.add(
-      AuthInterceptor(serviceLocator<AuthTokenStore>(), ApiEndpoints.baseUrl),
+      AuthInterceptor(
+        serviceLocator<AuthTokenStore>(),
+        serviceLocator<ClientSessionStore>(),
+        ApiEndpoints.baseUrl,
+      ),
     );
     return dio;
   });
@@ -65,9 +87,61 @@ Future<void> setupLocator() async {
 
   // --- Features ---
   _registerAuth();
+  _registerClientAuth();
+  _registerDropOffs();
   _registerMachines();
   _registerPayment();
   _registerWashSession();
+}
+
+void _registerClientAuth() {
+  serviceLocator.registerLazySingleton<ClientAuthApiDataSource>(
+    () => ClientAuthApiDataSource(serviceLocator()),
+  );
+  serviceLocator.registerLazySingleton<ClientAuthRepository>(
+    () => ClientAuthRepositoryImpl(serviceLocator(), serviceLocator()),
+  );
+  // Singleton global : état « numéro lié » observé par l'accueil.
+  serviceLocator.registerLazySingleton<ClientSessionCubit>(
+    () => ClientSessionCubit(serviceLocator()),
+  );
+  // Factory : une instance par parcours de liaison.
+  serviceLocator.registerFactory<LinkPhoneCubit>(
+    () => LinkPhoneCubit(serviceLocator()),
+  );
+}
+
+void _registerDropOffs() {
+  serviceLocator.registerLazySingleton<DropOffApiDataSource>(
+    () => DropOffApiDataSource(serviceLocator()),
+  );
+  serviceLocator.registerLazySingleton<DropOffRepository>(
+    () => DropOffRepositoryImpl(serviceLocator()),
+  );
+  // Factory : un cubit par ouverture de l'écran file d'attente.
+  serviceLocator.registerFactory<AgentQueueCubit>(
+    () => AgentQueueCubit(serviceLocator()),
+  );
+  // Factory : un cubit par ouverture de l'assistant nouveau dépôt.
+  serviceLocator.registerFactory<NewDropOffCubit>(
+    () => NewDropOffCubit(
+      serviceLocator(), // DropOffRepository
+      serviceLocator(), // PaymentRepository
+      serviceLocator(), // MachineRepository
+    ),
+  );
+  serviceLocator.registerFactory<DropOffDetailCubit>(
+    () => DropOffDetailCubit(serviceLocator()),
+  );
+  serviceLocator.registerFactory<AssignMachineCubit>(
+    () => AssignMachineCubit(serviceLocator(), serviceLocator()),
+  );
+  serviceLocator.registerFactory<DropOffSearchCubit>(
+    () => DropOffSearchCubit(serviceLocator()),
+  );
+  serviceLocator.registerFactory<MyDropOffsCubit>(
+    () => MyDropOffsCubit(serviceLocator()),
+  );
 }
 
 void _registerAuth() {

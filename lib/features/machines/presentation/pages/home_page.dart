@@ -6,6 +6,8 @@ import 'package:fotdelsi/core/di/service_locator.dart';
 import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
+import 'package:fotdelsi/features/client_auth/presentation/cubit/client_session_cubit.dart';
+import 'package:fotdelsi/features/client_auth/presentation/widgets/link_phone_prompt.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:fotdelsi/features/wash_session/presentation/cubit/wash_session_cubit.dart';
 import 'package:fotdelsi/features/wash_session/presentation/widgets/wash_running_sheet.dart';
@@ -44,6 +46,17 @@ class _HomeViewState extends State<_HomeView> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _maybePromptLinkPhone();
+  }
+
+  /// Propose discrètement de lier son numéro, peu après l'arrivée sur l'accueil
+  /// (uniquement si aucun numéro n'est lié). Le throttling et le « ne plus
+  /// afficher » sont gérés par [LinkPhonePrompt].
+  Future<void> _maybePromptLinkPhone() async {
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+    if (context.read<ClientSessionCubit>().state.isLinked) return;
+    await LinkPhonePrompt.maybeShow(context);
   }
 
   @override

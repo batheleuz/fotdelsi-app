@@ -7,16 +7,17 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/websocket/ws_connection_cubit.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
+import 'features/client_auth/presentation/cubit/client_session_cubit.dart';
 import 'features/wash_session/presentation/cubit/wash_session_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupLocator();
 
-  // Détermine le profil (anonyme / agent / admin) avant le premier rendu,
-  // pour que le routeur aiguille directement vers le bon écran d'accueil.
+  // Le profil démarre en `unknown` : le SplashScreen reste affiché et
+  // déclenche `bootstrap()` (restauration de session), puis le routeur
+  // redirige vers la bonne destination.
   final authCubit = serviceLocator<AuthCubit>();
-  await authCubit.bootstrap();
 
   runApp(FotDelsiApp(router: AppRouter.create(authCubit)));
 }
@@ -31,6 +32,9 @@ class FotDelsiApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthCubit>.value(value: serviceLocator<AuthCubit>()),
+        BlocProvider<ClientSessionCubit>.value(
+          value: serviceLocator<ClientSessionCubit>(),
+        ),
         BlocProvider<WsConnectionCubit>(
           create: (_) => serviceLocator<WsConnectionCubit>(),
         ),
