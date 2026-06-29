@@ -8,6 +8,7 @@ import 'package:fotdelsi/core/di/service_locator.dart';
 import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
+import 'package:fotdelsi/features/notifications/presentation/push_notification_service.dart';
 import '../cubit/client_session_cubit.dart';
 import '../cubit/link_phone_cubit.dart';
 import '../widgets/otp_input.dart';
@@ -88,6 +89,10 @@ class _OtpVerifyViewState extends State<_OtpVerifyView> {
           listener: (context, state) {
             if (state.verifyStatus == LinkStatus.success) {
               context.read<ClientSessionCubit>().refresh();
+              // Enregistre le device FCM pour ce numéro fraîchement lié
+              // (no-op tant que Firebase n'est pas configuré).
+              serviceLocator<PushNotificationService>()
+                  .registerDeviceIfLinked();
               context.go(AppRoutes.home);
               ScaffoldMessenger.of(context)
                 ..hideCurrentSnackBar()

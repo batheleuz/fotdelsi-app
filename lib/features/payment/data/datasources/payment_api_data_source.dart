@@ -44,6 +44,7 @@ class PaymentApiDataSource {
   /// Initie un paiement de dépôt (`purpose: DROP_OFF`). Le prompt SOFTPAY est
   /// poussé vers le téléphone du client — l'agent n'a besoin que du succès.
   Future<void> initiateDropOffPayment({
+    required String draftId,
     required int amount,
     required PaymentProvider provider,
     required String customerFullName,
@@ -54,6 +55,7 @@ class PaymentApiDataSource {
         ApiEndpoints.paymentsInitiate,
         data: {
           'purpose': 'DROP_OFF',
+          'draftId': draftId,
           'amount': amount,
           'provider': provider.apiValue,
           'customerFullName': customerFullName,

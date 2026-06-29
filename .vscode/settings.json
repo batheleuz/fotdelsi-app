@@ -1,3 +1,5 @@
 {
-    "cmake.sourceDirectory": "/Users/marndiaye/workspace/client-projects/fotdelsy/app/linux"
+    "cmake.sourceDirectory": "/Users/marndiaye/workspace/client-projects/fotdelsy/app/linux",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic"
 }

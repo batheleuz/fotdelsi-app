@@ -39,6 +39,11 @@ abstract final class ApiEndpoints {
   static const String verifyOtp = '/me/link-phone/verify-otp';
   static const String clientLogout = '/me/logout';
   static const String myDropOffs = '/me/dropoffs';
+  static String myDropOff(String id) => '/me/dropoffs/$id';
+
+  // Notifications push
+  static const String devices = '/me/devices';
+  static String ackNotification(String id) => '/notifications/$id/ack';
 
   // Drop-offs (agent / admin)
   static const String dropOffDraft = '/drop-offs/draft';

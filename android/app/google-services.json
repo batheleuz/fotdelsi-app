@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "609995905434",
+    "project_id": "fotdelsi-ac08e",
+    "storage_bucket": "fotdelsi-ac08e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:609995905434:android:8fbf3f0bf3dfb26257c223",
+        "android_client_info": {
+          "package_name": "com.example.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDej2NIZ19accrRKFvSutfwuKZSHxZmz0Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:609995905434:android:02c21c2719b47ac157c223",
+        "android_client_info": {
+          "package_name": "sn.fotdelsi.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDej2NIZ19accrRKFvSutfwuKZSHxZmz0Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

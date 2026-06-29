@@ -129,7 +129,8 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
           error: failure.message,
         ),
       ),
-      (_) async {
+      (draftId) async {
+        emit(state.copyWith(draftId: draftId));
         final payment = await _initiate();
         payment.fold(
           (failure) => emit(
@@ -153,6 +154,7 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
 
   Future<Either<Failure, void>> _initiate() =>
       _paymentRepository.initiateDropOffPayment(
+        draftId: state.draftId!,
         amount: state.amount!,
         provider: state.provider!,
         customerFullName: state.customerName,

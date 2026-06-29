@@ -57,6 +57,10 @@ class DropOffRepositoryImpl implements DropOffRepository {
       _guard(() => _api.getMyDropOffs());
 
   @override
+  Future<Either<Failure, DropOff>> getMyDropOffById(String id) =>
+      _guard(() => _api.getMyDropOffById(id));
+
+  @override
   Future<Either<Failure, DropOff>> getById(String id) =>
       _guard(() => _api.getById(id));
 

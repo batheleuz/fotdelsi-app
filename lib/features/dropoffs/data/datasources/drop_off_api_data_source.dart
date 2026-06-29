@@ -67,6 +67,16 @@ class DropOffApiDataSource {
         .toList();
   }
 
+  /// `GET /me/dropoffs/:id` — détail d'un dépôt du client lié.
+  Future<DropOff> getMyDropOffById(String id) async {
+    final resp = await _dio.get<Map<String, dynamic>>(
+      ApiEndpoints.myDropOff(id),
+    );
+    return DropOffModel.fromJson(
+      (resp.data?['data'] as Map<String, dynamic>?) ?? const {},
+    );
+  }
+
   Future<DropOff> getById(String id) async {
     final resp = await _dio.get<Map<String, dynamic>>(ApiEndpoints.dropOff(id));
     return DropOffModel.fromJson(

@@ -7,6 +7,7 @@ import 'package:fotdelsi/features/agent/presentation/pages/drop_off_detail_page.
 import 'package:fotdelsi/features/agent/presentation/pages/drop_off_search_page.dart';
 import 'package:fotdelsi/features/agent/presentation/pages/new_dropoff_page.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/my_dropoffs_page.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/pages/my_dropoff_detail_page.dart';
 import 'package:fotdelsi/features/auth/domain/entities/auth_role.dart';
 import 'package:fotdelsi/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:fotdelsi/features/auth/presentation/pages/login_page.dart';
@@ -111,6 +112,11 @@ abstract final class AppRouter {
       GoRoute(
         path: AppRoutes.myDropOffs,
         builder: (context, state) => const MyDropOffsPage(),
+      ),
+      GoRoute(
+        path: '/my-dropoffs/:id',
+        builder: (context, state) =>
+            MyDropOffDetailPage(dropOffId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: AppRoutes.agentQueue,

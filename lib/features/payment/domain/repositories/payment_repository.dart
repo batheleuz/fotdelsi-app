@@ -22,6 +22,7 @@ abstract interface class PaymentRepository {
   /// Initie un paiement de dépôt (`purpose: DROP_OFF`) — montant choisi par
   /// l'agent. Le prompt de paiement est envoyé au téléphone du client.
   Future<Either<Failure, void>> initiateDropOffPayment({
+    required String draftId,
     required int amount,
     required PaymentProvider provider,
     required String customerFullName,

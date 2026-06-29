@@ -15,6 +15,7 @@ abstract final class AppRoutes {
   static const linkPhoneVerify = '/link-phone/verify';
   static const clientAccount = '/account';
   static const myDropOffs = '/my-dropoffs';
+  static String myDropOffDetail(String id) => '/my-dropoffs/$id';
 
   // Personnel (agent / admin)
   static const login = '/login';

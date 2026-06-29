@@ -24,6 +24,10 @@ abstract interface class DropOffRepository {
   /// `GET /me/dropoffs` — historique des dépôts du client lié.
   Future<Either<Failure, List<DropOff>>> getMyDropOffs();
 
+  /// `GET /me/dropoffs/:id` — détail d'un dépôt du client lié
+  /// ([NotFoundFailure] si introuvable ou n'appartenant pas au client).
+  Future<Either<Failure, DropOff>> getMyDropOffById(String id);
+
   /// `GET /drop-offs/:id`.
   Future<Either<Failure, DropOff>> getById(String id);
 

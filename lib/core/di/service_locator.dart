@@ -4,6 +4,12 @@ import 'package:fotdelsi/core/auth/auth_token_store.dart';
 import 'package:fotdelsi/core/auth/client_session_store.dart';
 import 'package:fotdelsi/core/network/api_endpoints.dart';
 import 'package:fotdelsi/core/network/auth_interceptor.dart';
+import 'package:fotdelsi/core/push/firebase_push_messaging.dart';
+import 'package:fotdelsi/core/push/push_messaging.dart';
+import 'package:fotdelsi/features/notifications/data/datasources/notification_api_data_source.dart';
+import 'package:fotdelsi/features/notifications/data/repositories/notification_repository_impl.dart';
+import 'package:fotdelsi/features/notifications/domain/repositories/notification_repository.dart';
+import 'package:fotdelsi/features/notifications/presentation/push_notification_service.dart';
 import 'package:fotdelsi/features/auth/data/datasources/auth_api_data_source.dart';
 import 'package:fotdelsi/features/client_auth/data/datasources/client_auth_api_data_source.dart';
 import 'package:fotdelsi/features/client_auth/data/repositories/client_auth_repository_impl.dart';
@@ -21,6 +27,7 @@ import 'package:fotdelsi/features/dropoffs/presentation/cubit/assign_machine_cub
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_detail_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_search_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/my_dropoffs_cubit.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/my_dropoff_detail_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/new_dropoff_cubit.dart';
 import 'package:fotdelsi/core/websocket/realtime_socket.dart';
 import 'package:fotdelsi/core/websocket/ws_connection_cubit.dart';
@@ -88,10 +95,31 @@ Future<void> setupLocator() async {
   // --- Features ---
   _registerAuth();
   _registerClientAuth();
+  _registerNotifications();
   _registerDropOffs();
   _registerMachines();
   _registerPayment();
   _registerWashSession();
+}
+
+void _registerNotifications() {
+  // FCM en production ; `NoopPushMessaging` reste disponible pour les tests.
+  serviceLocator.registerLazySingleton<PushMessaging>(
+    () => FirebasePushMessaging(),
+  );
+  serviceLocator.registerLazySingleton<NotificationApiDataSource>(
+    () => NotificationApiDataSource(serviceLocator()),
+  );
+  serviceLocator.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(serviceLocator()),
+  );
+  serviceLocator.registerLazySingleton<PushNotificationService>(
+    () => PushNotificationService(
+      serviceLocator(), // PushMessaging
+      serviceLocator(), // NotificationRepository
+      serviceLocator(), // ClientSessionStore
+    ),
+  );
 }
 
 void _registerClientAuth() {
@@ -141,6 +169,9 @@ void _registerDropOffs() {
   );
   serviceLocator.registerFactory<MyDropOffsCubit>(
     () => MyDropOffsCubit(serviceLocator()),
+  );
+  serviceLocator.registerFactory<MyDropOffDetailCubit>(
+    () => MyDropOffDetailCubit(serviceLocator()),
   );
 }
 

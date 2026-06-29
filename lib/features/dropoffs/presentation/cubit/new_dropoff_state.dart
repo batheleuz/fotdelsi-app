@@ -18,6 +18,7 @@ final class NewDropOffState extends Equatable {
     this.prestationsStatus = LoadStatus.initial,
     this.amount,
     this.provider,
+    this.draftId,
     this.submitStatus = SubmitStatus.idle,
     this.error,
   });
@@ -36,6 +37,9 @@ final class NewDropOffState extends Equatable {
 
   final int? amount;
   final PaymentProvider? provider;
+
+  /// Brouillon créé à la soumission (réutilisé par le renvoi de paiement).
+  final String? draftId;
 
   final SubmitStatus submitStatus;
   final String? error;
@@ -59,6 +63,7 @@ final class NewDropOffState extends Equatable {
     LoadStatus? prestationsStatus,
     int? amount,
     PaymentProvider? provider,
+    String? draftId,
     SubmitStatus? submitStatus,
     String? error,
     bool clearError = false,
@@ -74,6 +79,7 @@ final class NewDropOffState extends Equatable {
       prestationsStatus: prestationsStatus ?? this.prestationsStatus,
       amount: amount ?? this.amount,
       provider: provider ?? this.provider,
+      draftId: draftId ?? this.draftId,
       submitStatus: submitStatus ?? this.submitStatus,
       error: clearError ? null : (error ?? this.error),
     );
@@ -91,6 +97,7 @@ final class NewDropOffState extends Equatable {
     prestationsStatus,
     amount,
     provider,
+    draftId,
     submitStatus,
     error,
   ];

@@ -34,6 +34,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
 
   @override
   Future<Either<Failure, void>> initiateDropOffPayment({
+    required String draftId,
     required int amount,
     required PaymentProvider provider,
     required String customerFullName,
@@ -41,6 +42,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   }) async {
     try {
       await _api.initiateDropOffPayment(
+        draftId: draftId,
         amount: amount,
         provider: provider,
         customerFullName: customerFullName,
