@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fotdelsi/core/router/app_routes.dart';
 
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
+import 'package:go_router/go_router.dart';
 import '../cubit/auth_cubit.dart';
 
 /// Connexion du personnel (agent / admin).
@@ -55,10 +57,12 @@ class _LoginPageState extends State<LoginPage> {
                 state.error != null) {
               ScaffoldMessenger.of(context)
                 ..hideCurrentSnackBar()
-                ..showSnackBar(SnackBar(
-                  content: Text(state.error!),
-                  backgroundColor: AppColors.danger,
-                ));
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(state.error!),
+                    backgroundColor: AppColors.danger,
+                  ),
+                );
             }
           },
           builder: (context, state) {
@@ -99,9 +103,11 @@ class _LoginPageState extends State<LoginPage> {
                         'Mot de passe',
                         Icons.lock_outline,
                         suffix: IconButton(
-                          icon: Icon(_obscure
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined),
+                          icon: Icon(
+                            _obscure
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
                           onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                       ),
@@ -116,6 +122,14 @@ class _LoginPageState extends State<LoginPage> {
                       loading: state.isSubmitting,
                       backgroundColor: AppColors.primaryLight,
                       onPressed: _submit,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    TextButton(
+                      onPressed: () => context.pushReplacement(AppRoutes.home),
+                      child: Text(
+                        "Retour a l'accueil",
+                        style: TextStyle(fontSize: 14),
+                      ),
                     ),
                   ],
                 ),

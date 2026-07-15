@@ -19,6 +19,7 @@ import '../utils/payment_launcher.dart';
 import '../utils/payment_provider_presentation.dart';
 import '../widgets/order_recap_card.dart';
 import '../widgets/payment_provider_card.dart';
+import 'package:fotdelsi/features/service_status/presentation/widgets/service_status_banner.dart';
 import '../widgets/payment_redirect_hint.dart';
 import '../widgets/phone_number_field.dart';
 
@@ -46,6 +47,7 @@ class _PaymentView extends StatelessWidget {
     final bloc = context.read<PaymentBloc>();
 
     return Scaffold(
+      bottomNavigationBar: const ServiceStatusBanner(),
       body: SafeArea(
         child: BlocListener<PaymentBloc, PaymentState>(
           listenWhen: (prev, curr) => prev.status != curr.status,

@@ -99,8 +99,6 @@ class DropOffRepositoryImpl implements DropOffRepository {
   Future<Either<Failure, T>> _guard<T>(Future<T> Function() op) async {
     try {
       return Right(await op());
-    } on DioException catch (e) {
-      return Left(mapExceptionToFailure(AppException.fromDio(e)));
     } catch (e) {
       return Left(mapExceptionToFailure(e));
     }

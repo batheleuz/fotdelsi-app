@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:fotdelsi/core/constants/app_images.dart';
+import 'package:fotdelsi/core/connectivity/connectivity_cubit.dart';
+import 'package:fotdelsi/core/connectivity/connectivity_status.dart';
 import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/websocket/ws_connection_cubit.dart';
@@ -33,9 +35,21 @@ class HomeAppBar extends StatelessWidget {
           const _Logo(),
           Row(
             children: [
-              BlocBuilder<WsConnectionCubit, WsConnectionStatus>(
-                builder: (context, status) =>
-                    ConnectionStatusChip(status: status),
+              // Hors ligne → « Hors ligne » ; en ligne → vrai statut socket.
+              // (Sinon la pastille affiche « Reconnexion… » à l'infini quand il
+              // n'y a pas d'internet.)
+              BlocBuilder<ConnectivityCubit, ConnectivityStatus>(
+                builder: (context, conn) {
+                  if (conn == ConnectivityStatus.offline) {
+                    return const ConnectionStatusChip(
+                      status: WsConnectionStatus.disconnected,
+                    );
+                  }
+                  return BlocBuilder<WsConnectionCubit, WsConnectionStatus>(
+                    builder: (context, status) =>
+                        ConnectionStatusChip(status: status),
+                  );
+                },
               ),
               BlocBuilder<ClientSessionCubit, ClientSessionState>(
                 builder: (context, session) => AppPopupMenu(

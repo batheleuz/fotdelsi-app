@@ -10,9 +10,9 @@ import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
 import '../../cubit/new_dropoff_cubit.dart';
 
-/// Étape 4 — attente du paiement client. **Non bloquante** : l'agent peut
-/// revenir à la file et servir le client suivant ; le dépôt apparaîtra dans
-/// « À lancer » une fois le paiement confirmé.
+/// Étape 4 — confirmation d'envoi de la demande de paiement. **Non bloquante** :
+/// l'agent revient à la file et sert le client suivant ; le dépôt apparaîtra
+/// dans « À lancer » dès que le paiement est confirmé (mis à jour en temps réel).
 class NewDropOffAwaitingStep extends StatefulWidget {
   const NewDropOffAwaitingStep({super.key});
 
@@ -21,18 +21,25 @@ class NewDropOffAwaitingStep extends StatefulWidget {
 }
 
 class _NewDropOffAwaitingStepState extends State<NewDropOffAwaitingStep> {
-  static const _totalSeconds = 15 * 60;
-  int _remaining = _totalSeconds;
+  /// Court délai anti-spam avant de pouvoir renvoyer la notification.
+  static const _resendCooldown = 60;
+  int _cooldown = _resendCooldown;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
+    _startCooldown();
+  }
+
+  void _startCooldown() {
+    _timer?.cancel();
+    _cooldown = _resendCooldown;
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_remaining <= 0) {
+      if (_cooldown <= 0) {
         _timer?.cancel();
       } else if (mounted) {
-        setState(() => _remaining--);
+        setState(() => _cooldown--);
       }
     });
   }
@@ -43,65 +50,54 @@ class _NewDropOffAwaitingStepState extends State<NewDropOffAwaitingStep> {
     super.dispose();
   }
 
-  String get _formatted {
-    final m = (_remaining ~/ 60).toString().padLeft(2, '0');
-    final s = (_remaining % 60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
-
   Future<void> _resend() async {
     final ok = await context.read<NewDropOffCubit>().resend();
     if (!mounted) return;
+    if (ok) _startCooldown();
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(ok
-            ? 'Notification renvoyée au client.'
-            : 'Échec de l\'envoi, réessayez.'),
-      ));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            ok
+                ? 'Notification renvoyée au client.'
+                : 'Échec de l\'envoi, réessayez.',
+          ),
+        ),
+      );
   }
 
   @override
   Widget build(BuildContext context) {
     final phone = context.select((NewDropOffCubit c) => c.state.contactPhone);
-    final expired = _remaining <= 0;
-    final canResend = _remaining <= _totalSeconds - 60;
+    final canResend = _cooldown <= 0;
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         children: [
           const SizedBox(height: AppSpacing.lg),
-          _Ring(expired: expired),
+          const _Ring(),
           const SizedBox(height: AppSpacing.lg),
-          Text(expired ? 'Lien expiré' : 'Demande envoyée à',
-              style: const TextStyle(
-                  fontSize: 14, color: AppColors.textSecondary)),
-          if (!expired) ...[
-            const SizedBox(height: 2),
-            Text('+221 $phone',
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary)),
-            const SizedBox(height: AppSpacing.md),
-            Text(_formatted,
-                style: const TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary)),
-            const SizedBox(height: AppSpacing.sm),
-            const Text(
-              'Le client confirme le paiement sur son app Wave / Orange Money.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          const Text(
+            'Demande envoyée à',
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '+221 $phone',
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
-          ] else
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              child: Text('Le client n\'a pas payé à temps.',
-                  style: TextStyle(color: AppColors.textSecondary)),
-            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const Text(
+            'Le client confirme le paiement sur son app Wave / Orange Money.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
           const SizedBox(height: AppSpacing.md),
           Container(
             padding: const EdgeInsets.all(12),
@@ -131,10 +127,12 @@ class _NewDropOffAwaitingStepState extends State<NewDropOffAwaitingStep> {
           ),
           const SizedBox(height: AppSpacing.sm),
           TextButton(
-            onPressed: canResend && !expired ? _resend : null,
-            child: Text(canResend || expired
-                ? 'Renvoyer la notification'
-                : 'Renvoyer la notification · dans 1 min'),
+            onPressed: canResend ? _resend : null,
+            child: Text(
+              canResend
+                  ? 'Renvoyer la notification'
+                  : 'Renvoyer la notification · ${_cooldown}s',
+            ),
           ),
         ],
       ),
@@ -143,23 +141,22 @@ class _NewDropOffAwaitingStepState extends State<NewDropOffAwaitingStep> {
 }
 
 class _Ring extends StatelessWidget {
-  const _Ring({required this.expired});
-  final bool expired;
+  const _Ring();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 92,
       height: 92,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         shape: BoxShape.circle,
         color: AppColors.surfaceTint,
       ),
       alignment: Alignment.center,
-      child: Icon(
-        expired ? Icons.timer_off_outlined : Icons.schedule,
-        size: 40,
-        color: expired ? AppColors.textTertiary : AppColors.primaryLight,
+      child: const Icon(
+        Icons.send_rounded,
+        size: 38,
+        color: AppColors.primaryLight,
       ),
     );
   }

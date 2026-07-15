@@ -138,7 +138,7 @@ class _ScanViewState extends State<_ScanView> {
                     ),
                   ),
                   const Spacer(),
-                  ManualEntryButton(onTap: _showManualEntry),
+                  // ManualEntryButton(onTap: _showManualEntry),
                   const SizedBox(height: 30),
                 ],
               ),

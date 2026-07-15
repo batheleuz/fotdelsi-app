@@ -116,7 +116,6 @@ class PushNotificationService {
   }
 
   Future<void> _handleTap(NotificationPayload payload) async {
-    print("Payload: $payload");
     // Acquittement d'abord (annule le SMS de repli).
     if (payload.notificationId != null) {
       await _repository.ack(
@@ -138,12 +137,10 @@ class PushNotificationService {
 
   Future<void> _openPaymentUrl(NotificationPayload payload) async {
     final primary = payload.primaryUrl;
-      print("Payload: $payload");
     if (primary == null) return;
     try {
       await launchUrl(Uri.parse(primary), mode: LaunchMode.externalApplication);
     } catch (e) {
-      print("Exception: $e");
       final fallback = payload.fallbackUrl;
       try {
         if (fallback != null) {

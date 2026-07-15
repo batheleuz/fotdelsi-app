@@ -39,6 +39,7 @@ class _NewDropOffLaundryStepState extends State<NewDropOffLaundryStep> {
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       children: [
         const _Title('Combien de pièces ?'),
         const SizedBox(height: AppSpacing.sm),
@@ -52,9 +53,10 @@ class _NewDropOffLaundryStepState extends State<NewDropOffLaundryStep> {
                 '${state.pieces}',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    fontSize: 44,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary),
+                  fontSize: 44,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
             _RoundBtn(icon: Icons.add, onTap: cubit.incrementPieces),
@@ -97,8 +99,10 @@ class _NewDropOffLaundryStepState extends State<NewDropOffLaundryStep> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md),
-              borderSide:
-                  const BorderSide(color: AppColors.primaryLight, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.primaryLight,
+                width: 1.5,
+              ),
             ),
           ),
         ),
@@ -112,11 +116,14 @@ class _Title extends StatelessWidget {
   final String text;
 
   @override
-  Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary));
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      color: AppColors.textPrimary,
+    ),
+  );
 }
 
 class _RoundBtn extends StatelessWidget {
@@ -171,8 +178,7 @@ class _Chip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (selected) ...[
-              const Icon(Icons.check,
-                  size: 16, color: AppColors.primaryDark),
+              const Icon(Icons.check, size: 16, color: AppColors.primaryDark),
               const SizedBox(width: 5),
             ],
             Text(
@@ -180,8 +186,9 @@ class _Chip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                color:
-                    selected ? AppColors.primaryDark : AppColors.textSecondary,
+                color: selected
+                    ? AppColors.primaryDark
+                    : AppColors.textSecondary,
               ),
             ),
           ],

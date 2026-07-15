@@ -37,8 +37,9 @@ class _NewDropOffClientStepState extends State<NewDropOffClientStep> {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<NewDropOffCubit>();
-    final isPhoneValid =
-        context.select((NewDropOffCubit c) => c.state.isPhoneValid);
+    final isPhoneValid = context.select(
+      (NewDropOffCubit c) => c.state.isPhoneValid,
+    );
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -54,10 +55,13 @@ class _NewDropOffClientStepState extends State<NewDropOffClientStep> {
             hint: '77 123 45 67',
             prefix: const Padding(
               padding: EdgeInsets.only(right: 6),
-              child: Text('+221',
-                  style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600)),
+              child: Text(
+                '+221',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
             suffix: isPhoneValid
                 ? const Icon(Icons.check_circle, color: AppColors.success)
@@ -67,8 +71,10 @@ class _NewDropOffClientStepState extends State<NewDropOffClientStep> {
         ),
         const Padding(
           padding: EdgeInsets.only(top: 6, left: 2),
-          child: Text('Préfixes acceptés : 70 · 75 · 76 · 77 · 78',
-              style: TextStyle(fontSize: 11, color: AppColors.textTertiary)),
+          child: Text(
+            'Préfixes acceptés : 70 · 71 · 75 · 76 · 77 · 78',
+            style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         const _Label('Nom du client'),
@@ -112,18 +118,13 @@ class _NewDropOffClientStepState extends State<NewDropOffClientStep> {
       hintText: hint,
       prefixIcon: prefix == null
           ? null
-          : Padding(
-              padding: const EdgeInsets.only(left: 14),
-              child: prefix,
-            ),
-      prefixIconConstraints:
-          const BoxConstraints(minWidth: 0, minHeight: 0),
+          : Padding(padding: const EdgeInsets.only(left: 14), child: prefix),
+      prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
       suffixIcon: suffix,
       counterText: counter,
       filled: true,
       fillColor: AppColors.surface,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
         borderSide: const BorderSide(color: AppColors.border),
@@ -146,11 +147,14 @@ class _Label extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 6, left: 2),
-        child: Text(text,
-            style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary)),
-      );
+    padding: const EdgeInsets.only(bottom: 6, left: 2),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textSecondary,
+      ),
+    ),
+  );
 }

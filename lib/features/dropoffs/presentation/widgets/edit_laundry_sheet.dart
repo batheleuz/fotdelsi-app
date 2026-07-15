@@ -17,7 +17,7 @@ class EditLaundrySheet extends StatefulWidget {
 
   final Laundry initial;
   final void Function(int pieces, List<LaundryType> types, String? instructions)
-      onSave;
+  onSave;
 
   @override
   State<EditLaundrySheet> createState() => _EditLaundrySheetState();
@@ -26,8 +26,9 @@ class EditLaundrySheet extends StatefulWidget {
 class _EditLaundrySheetState extends State<EditLaundrySheet> {
   late int _pieces = widget.initial.pieces;
   late final Set<LaundryType> _types = {...widget.initial.types};
-  late final TextEditingController _instructions =
-      TextEditingController(text: widget.initial.instructions);
+  late final TextEditingController _instructions = TextEditingController(
+    text: widget.initial.instructions,
+  );
 
   @override
   void dispose() {
@@ -61,30 +62,41 @@ class _EditLaundrySheetState extends State<EditLaundrySheet> {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('Modifier le linge',
-              style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Modifier le linge',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              const Text('Pièces',
-                  style: TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500)),
+              const Text(
+                'Pièces',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
               const Spacer(),
-              _round(Icons.remove,
-                  () => setState(() => _pieces = _pieces > 1 ? _pieces - 1 : 1)),
+              _round(
+                Icons.remove,
+                () => setState(() => _pieces = _pieces > 1 ? _pieces - 1 : 1),
+              ),
               SizedBox(
                 width: 48,
-                child: Text('$_pieces',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.w700)),
+                child: Text(
+                  '$_pieces',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
               _round(Icons.add, () => setState(() => _pieces++)),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          const Text('Type de linge',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          const Text(
+            'Type de linge',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          ),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: 8,
@@ -92,25 +104,31 @@ class _EditLaundrySheetState extends State<EditLaundrySheet> {
             children: LaundryType.values.map((t) {
               final on = _types.contains(t);
               return GestureDetector(
-                onTap: () => setState(
-                    () => on ? _types.remove(t) : _types.add(t)),
+                onTap: () =>
+                    setState(() => on ? _types.remove(t) : _types.add(t)),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 9,
+                  ),
                   decoration: BoxDecoration(
                     color: on ? AppColors.surfaceTint : AppColors.surface,
                     borderRadius: BorderRadius.circular(AppRadius.pill),
                     border: Border.all(
-                        color: on ? AppColors.primaryLight : AppColors.border,
-                        width: on ? 1.5 : 1),
+                      color: on ? AppColors.primaryLight : AppColors.border,
+                      width: on ? 1.5 : 1,
+                    ),
                   ),
-                  child: Text(t.label,
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: on ? FontWeight.w600 : FontWeight.w500,
-                          color: on
-                              ? AppColors.primaryDark
-                              : AppColors.textSecondary)),
+                  child: Text(
+                    t.label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: on ? FontWeight.w600 : FontWeight.w500,
+                      color: on
+                          ? AppColors.primaryDark
+                          : AppColors.textSecondary,
+                    ),
+                  ),
                 ),
               );
             }).toList(),
@@ -141,7 +159,10 @@ class _EditLaundrySheetState extends State<EditLaundrySheet> {
             backgroundColor: AppColors.primaryLight,
             onPressed: () {
               widget.onSave(
-                  _pieces, _types.toList(), _instructions.text.trim());
+                _pieces,
+                _types.toList(),
+                _instructions.text.trim(),
+              );
               Navigator.of(context).pop();
             },
           ),
@@ -151,16 +172,16 @@ class _EditLaundrySheetState extends State<EditLaundrySheet> {
   }
 
   Widget _round(IconData icon, VoidCallback onTap) => InkResponse(
-        onTap: onTap,
-        radius: 26,
-        child: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.border, width: 1.5),
-          ),
-          child: Icon(icon, color: AppColors.primaryLight, size: 20),
-        ),
-      );
+    onTap: onTap,
+    radius: 26,
+    child: Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.border, width: 1.5),
+      ),
+      child: Icon(icon, color: AppColors.primaryLight, size: 20),
+    ),
+  );
 }

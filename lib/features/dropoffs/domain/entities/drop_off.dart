@@ -41,6 +41,26 @@ class DropOff extends Equatable {
   final DateTime? collectedAt;
   final String? terminalReason;
 
+  // Toutes les valeurs affichables entrent dans l'égalité : sinon une
+  // modification d'un champ absent (nom du client, linge, instructions…) rend
+  // le nouveau DropOff « égal » à l'ancien → Bloc supprime l'emit → l'UI reste
+  // figée alors que les données rechargées sont pourtant à jour.
   @override
-  List<Object?> get props => [id, status, machineId, readyAt, collectedAt];
+  List<Object?> get props => [
+        id,
+        code,
+        customerName,
+        contactPhone,
+        laundry,
+        status,
+        machineId,
+        washSessionId,
+        paymentId,
+        creationDay,
+        receivedAt,
+        startedAt,
+        readyAt,
+        collectedAt,
+        terminalReason,
+      ];
 }

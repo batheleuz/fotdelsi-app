@@ -4,12 +4,15 @@ import 'package:fotdelsi/core/auth/auth_token_store.dart';
 import 'package:fotdelsi/core/auth/client_session_store.dart';
 import 'package:fotdelsi/core/network/api_endpoints.dart';
 import 'package:fotdelsi/core/network/auth_interceptor.dart';
+import 'package:fotdelsi/core/onboarding/onboarding_store.dart';
 import 'package:fotdelsi/core/push/firebase_push_messaging.dart';
 import 'package:fotdelsi/core/push/push_messaging.dart';
 import 'package:fotdelsi/features/notifications/data/datasources/notification_api_data_source.dart';
 import 'package:fotdelsi/features/notifications/data/repositories/notification_repository_impl.dart';
 import 'package:fotdelsi/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:fotdelsi/features/notifications/presentation/push_notification_service.dart';
+import 'package:fotdelsi/features/service_status/data/service_status_api_data_source.dart';
+import 'package:fotdelsi/features/service_status/presentation/cubit/service_status_cubit.dart';
 import 'package:fotdelsi/features/auth/data/datasources/auth_api_data_source.dart';
 import 'package:fotdelsi/features/client_auth/data/datasources/client_auth_api_data_source.dart';
 import 'package:fotdelsi/features/client_auth/data/repositories/client_auth_repository_impl.dart';
@@ -19,10 +22,11 @@ import 'package:fotdelsi/features/client_auth/presentation/cubit/link_phone_cubi
 import 'package:fotdelsi/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:fotdelsi/features/auth/domain/repositories/auth_repository.dart';
 import 'package:fotdelsi/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:fotdelsi/features/dropoffs/data/datasources/agent_queue_realtime_data_source.dart';
 import 'package:fotdelsi/features/dropoffs/data/datasources/drop_off_api_data_source.dart';
 import 'package:fotdelsi/features/dropoffs/data/repositories/drop_off_repository_impl.dart';
 import 'package:fotdelsi/features/dropoffs/domain/repositories/drop_off_repository.dart';
-import 'package:fotdelsi/features/dropoffs/presentation/cubit/agent_queue_cubit.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_queue_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/assign_machine_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_detail_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_search_cubit.dart';
@@ -30,6 +34,8 @@ import 'package:fotdelsi/features/dropoffs/presentation/cubit/my_dropoffs_cubit.
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/my_dropoff_detail_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/new_dropoff_cubit.dart';
 import 'package:fotdelsi/core/websocket/realtime_socket.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:fotdelsi/core/connectivity/connectivity_cubit.dart';
 import 'package:fotdelsi/core/websocket/ws_connection_cubit.dart';
 import 'package:fotdelsi/features/machines/data/datasources/machine_realtime_data_source.dart';
 import 'package:fotdelsi/features/machines/data/datasources/machine_socket_data_source.dart';
@@ -85,6 +91,10 @@ Future<void> setupLocator() async {
   serviceLocator.registerLazySingleton<WsConnectionCubit>(
     () => WsConnectionCubit(),
   );
+  serviceLocator.registerLazySingleton<Connectivity>(() => Connectivity());
+  serviceLocator.registerLazySingleton<ConnectivityCubit>(
+    () => ConnectivityCubit(serviceLocator()),
+  );
   // Connexion temps réel partagée — une seule socket pour toute l'app.
   serviceLocator.registerLazySingleton<RealtimeSocket>(() => RealtimeSocket());
 
@@ -92,9 +102,23 @@ Future<void> setupLocator() async {
   final prefs = await SharedPreferences.getInstance();
   serviceLocator.registerSingleton<SharedPreferences>(prefs);
 
+  // Précharge les jetons en mémoire pendant que l'app est active (appareil
+  // déverrouillé) : ensuite le chemin critique de l'intercepteur Dio ne touche
+  // plus le Keychain (voir AuthTokenStore), ce qui évite le gel de TOUTES les
+  // requêtes au retour de veille iOS.
+  await Future.wait([
+    serviceLocator<AuthTokenStore>().preload(),
+    serviceLocator<ClientSessionStore>().preload(),
+  ]);
+
+  serviceLocator.registerLazySingleton<OnboardingStore>(
+    () => OnboardingStore(serviceLocator()),
+  );
+
   // --- Features ---
   _registerAuth();
   _registerClientAuth();
+  _registerServiceStatus();
   _registerNotifications();
   _registerDropOffs();
   _registerMachines();
@@ -122,6 +146,16 @@ void _registerNotifications() {
   );
 }
 
+void _registerServiceStatus() {
+  serviceLocator.registerLazySingleton<ServiceStatusApiDataSource>(
+    () => ServiceStatusApiDataSource(serviceLocator()),
+  );
+  // Singleton global : bannière de disponibilité observée par les écrans clés.
+  serviceLocator.registerLazySingleton<ServiceStatusCubit>(
+    () => ServiceStatusCubit(serviceLocator()),
+  );
+}
+
 void _registerClientAuth() {
   serviceLocator.registerLazySingleton<ClientAuthApiDataSource>(
     () => ClientAuthApiDataSource(serviceLocator()),
@@ -146,9 +180,13 @@ void _registerDropOffs() {
   serviceLocator.registerLazySingleton<DropOffRepository>(
     () => DropOffRepositoryImpl(serviceLocator()),
   );
+  // Source temps réel de la file (room `agents`) : RealtimeSocket + token agent.
+  serviceLocator.registerLazySingleton<AgentQueueRealtimeDataSource>(
+    () => AgentQueueRealtimeDataSource(serviceLocator(), serviceLocator()),
+  );
   // Factory : un cubit par ouverture de l'écran file d'attente.
-  serviceLocator.registerFactory<AgentQueueCubit>(
-    () => AgentQueueCubit(serviceLocator()),
+  serviceLocator.registerFactory<DropOffQueueCubit>(
+    () => DropOffQueueCubit(serviceLocator(), serviceLocator()),
   );
   // Factory : un cubit par ouverture de l'assistant nouveau dépôt.
   serviceLocator.registerFactory<NewDropOffCubit>(

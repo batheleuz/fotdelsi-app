@@ -6,6 +6,7 @@ import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
+import 'package:fotdelsi/core/widgets/app_confirmation_dialog.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
 import '../cubit/client_session_cubit.dart';
 
@@ -21,27 +22,16 @@ class _ClientAccountPageState extends State<ClientAccountPage> {
   bool _unlinking = false;
 
   Future<void> _confirmUnlink() async {
-    final ok = await showDialog<bool>(
+    final ok = await showAppConfirmationDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Déconnecter ce numéro ?'),
-        content: const Text(
-            'Vous ne recevrez plus de notifications sur ce téléphone. '
-            'Vous pourrez relier votre numéro à tout moment.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Déconnecter'),
-          ),
-        ],
-      ),
+      title: 'Déconnecter ce numéro ?',
+      message:
+          'Vous ne recevrez plus de notifications sur ce téléphone. '
+          'Vous pourrez relier votre numéro à tout moment.',
+      confirmLabel: 'Déconnecter',
+      destructive: true,
     );
-    if (ok != true || !mounted) return;
+    if (!ok || !mounted) return;
 
     setState(() => _unlinking = true);
     await context.read<ClientSessionCubit>().unlink();
@@ -67,6 +57,7 @@ class _ClientAccountPageState extends State<ClientAccountPage> {
             if (!session.isLinked) {
               return _notLinked(context);
             }
+
             return Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
@@ -89,23 +80,31 @@ class _ClientAccountPageState extends State<ClientAccountPage> {
                             color: AppColors.surfaceTint,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.person_outline,
-                              color: AppColors.primary),
+                          child: const Icon(
+                            Icons.person_outline,
+                            color: AppColors.primary,
+                          ),
                         ),
                         const SizedBox(width: AppSpacing.md),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Numéro lié',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary)),
+                            const Text(
+                              'Numéro lié',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
                             const SizedBox(height: 2),
-                            Text('+221 ${session.phone}',
-                                style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary)),
+                            Text(
+                              '+221 ${session.phone?.replaceAll("+221", "")}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -117,7 +116,9 @@ class _ClientAccountPageState extends State<ClientAccountPage> {
                     child: Text(
                       'Vous recevez vos notifications (demandes de paiement, linge prêt) sur ce numéro.',
                       style: TextStyle(
-                          fontSize: 12, color: AppColors.textTertiary),
+                        fontSize: 12,
+                        color: AppColors.textTertiary,
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -144,27 +145,32 @@ class _ClientAccountPageState extends State<ClientAccountPage> {
   }
 
   Widget _notLinked(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.sms_outlined,
-                  size: 44, color: AppColors.textTertiary),
-              const SizedBox(height: AppSpacing.md),
-              const Text('Aucun numéro lié',
-                  style: TextStyle(color: AppColors.textSecondary)),
-              const SizedBox(height: AppSpacing.md),
-              PrimaryButton(
-                label: 'Lier mon numéro',
-                expanded: false,
-                backgroundColor: AppColors.primaryLight,
-                onPressed: () => context.go(AppRoutes.linkPhone),
-              ),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.sms_outlined,
+            size: 44,
+            color: AppColors.textTertiary,
           ),
-        ),
-      );
+          const SizedBox(height: AppSpacing.md),
+          const Text(
+            'Aucun numéro lié',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          PrimaryButton(
+            label: 'Lier mon numéro',
+            expanded: false,
+            backgroundColor: AppColors.primaryLight,
+            onPressed: () => context.go(AppRoutes.linkPhone),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _AccountTile extends StatelessWidget {
@@ -197,11 +203,14 @@ class _AccountTile extends StatelessWidget {
               Icon(icon, size: 20, color: AppColors.primary),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(label,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary)),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
               ),
               const Icon(Icons.chevron_right, color: AppColors.textTertiary),
             ],

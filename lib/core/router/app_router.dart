@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:fotdelsi/features/agent/presentation/pages/agent_queue_page.dart';
-import 'package:fotdelsi/features/agent/presentation/pages/assign_machine_page.dart';
-import 'package:fotdelsi/features/agent/presentation/pages/drop_off_detail_page.dart';
-import 'package:fotdelsi/features/agent/presentation/pages/drop_off_search_page.dart';
-import 'package:fotdelsi/features/agent/presentation/pages/new_dropoff_page.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/pages/drop_off_queue_page.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/pages/assign_machine_page.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/pages/drop_off_detail_page.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/pages/drop_off_search_page.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/pages/new_dropoff_page.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/my_dropoffs_page.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/my_dropoff_detail_page.dart';
 import 'package:fotdelsi/features/auth/domain/entities/auth_role.dart';
@@ -21,6 +21,9 @@ import 'package:fotdelsi/features/payment/presentation/pages/payment_page.dart';
 import 'package:fotdelsi/features/payment/presentation/pages/scan_page.dart';
 import 'package:fotdelsi/features/splash/presentation/pages/splash_page.dart';
 import 'package:go_router/go_router.dart';
+
+import 'package:fotdelsi/core/di/service_locator.dart';
+import 'package:fotdelsi/core/onboarding/onboarding_store.dart';
 
 import 'app_routes.dart';
 
@@ -53,7 +56,11 @@ abstract final class AppRouter {
 
       // Profil connu → on quitte le splash vers la bonne destination.
       if (loccation == AppRoutes.splash) {
-        return isAgent ? AppRoutes.agentQueue : AppRoutes.onboarding;
+        if (isAgent) return AppRoutes.agentQueue;
+        // Onboarding uniquement à la première ouverture.
+        return serviceLocator<OnboardingStore>().hasSeen
+            ? AppRoutes.home
+            : AppRoutes.onboarding;
       }
 
       // Personnel authentifié (agent) → espace agent.
@@ -120,7 +127,7 @@ abstract final class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.agentQueue,
-        builder: (context, state) => const AgentQueuePage(),
+        builder: (context, state) => const DropOffQueuePage(),
       ),
       GoRoute(
         path: AppRoutes.agentNewDropOff,

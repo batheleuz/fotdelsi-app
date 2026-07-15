@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:fotdelsi/core/di/service_locator.dart';
+import 'package:fotdelsi/features/service_status/presentation/widgets/service_status_banner.dart';
 import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
@@ -90,6 +91,7 @@ class _HomeViewState extends State<_HomeView> with WidgetsBindingObserver {
       ),
       floatingActionButton: const _HomeFabs(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      bottomNavigationBar: const ServiceStatusBanner(),
     );
   }
 

@@ -8,13 +8,17 @@ abstract final class ApiEndpoints {
 
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.2.100:8080/api/v1',
+    defaultValue: 'https://fotdelsi.sonkobusinessfamily.sn/api/v1',
+    // defaultValue: 'http://192.168.2.100:8080/api/v1',
   );
 
   static const String webSocketUrl = String.fromEnvironment(
     'WEB_SOCKET_URL',
-    defaultValue: 'http://192.168.2.100:8080',
+    defaultValue: 'https://fotdelsi.sonkobusinessfamily.sn',
   );
+
+  // Disponibilité des services (bannière) — public
+  static const String status = '/status';
 
   // Machines
   static const String machines = '/machines';

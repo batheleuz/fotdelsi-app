@@ -15,12 +15,12 @@ class DropOffTimeline extends StatelessWidget {
   static const _future = Color(0xFFD7E0EE);
 
   int get _activeIndex => switch (dropOff.status) {
-        DropOffStatus.received => 0,
-        DropOffStatus.inProgress => 1,
-        DropOffStatus.ready => 2,
-        DropOffStatus.collected => 3,
-        _ => 3,
-      };
+    DropOffStatus.received => 0,
+    DropOffStatus.inProgress => 1,
+    DropOffStatus.ready => 2,
+    DropOffStatus.collected => 3,
+    _ => 3,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -103,9 +103,13 @@ class _Row extends StatelessWidget {
                   ),
                 ),
                 if (time != null)
-                  Text(_hhmm(time!),
-                      style: const TextStyle(
-                          fontSize: 11, color: AppColors.textTertiary)),
+                  Text(
+                    _hhmm(time!),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
               ],
             ),
           ),

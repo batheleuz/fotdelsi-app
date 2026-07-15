@@ -27,8 +27,11 @@ sealed class AppException implements Exception {
         final serverMessage = _extractMessage(e.response?.data);
         return switch (code) {
           401 || 403 => UnauthorizedException(message: serverMessage),
-          404        => NotFoundException(message: serverMessage),
-          _          => ServerException(message: serverMessage, statusCode: code),
+          404        => const NotFoundException(),
+          503        => ServiceUnavailableException(message: serverMessage),
+          final c? when c >= 400 && c < 500 =>
+              ServerException(message: serverMessage, statusCode: c),
+          _          => ServerException(statusCode: code),
         };
       
       case DioExceptionType.connectionError:
@@ -46,11 +49,10 @@ sealed class AppException implements Exception {
 
   static String? _extractMessage(Object? data) {
     if (data is! Map) return null;
-    // Réponses succès / ApiResponse.error : { code, message, data }.
     if (data['message'] is String) {
       return data['message'] as String;
     }
-    // ApplicationError / DomainError (globalErrorHandler) : { error: { message } }.
+
     final error = data['error'];
     if (error is Map && error['message'] is String) {
       return error['message'] as String;
@@ -81,6 +83,15 @@ final class UnauthorizedException extends AppException {
 final class NotFoundException extends AppException {
   const NotFoundException({String? message})
       : super(message ?? 'Ressource introuvable.', statusCode: 404);
+}
+
+final class ServiceUnavailableException extends AppException {
+  const ServiceUnavailableException({String? message})
+      : super(
+          message ??
+              'Service temporairement indisponible. Réessayez dans un instant.',
+          statusCode: 503,
+        );
 }
 
 final class UnknownException extends AppException {

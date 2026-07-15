@@ -71,10 +71,12 @@ class _LinkPhoneViewState extends State<_LinkPhoneView> {
                 state.error != null) {
               ScaffoldMessenger.of(context)
                 ..hideCurrentSnackBar()
-                ..showSnackBar(SnackBar(
-                  content: Text(state.error!),
-                  backgroundColor: AppColors.danger,
-                ));
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(state.error!),
+                    backgroundColor: AppColors.danger,
+                  ),
+                );
             }
           },
           builder: (context, state) {
@@ -84,8 +86,10 @@ class _LinkPhoneViewState extends State<_LinkPhoneView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: AppSpacing.md),
-                  Text('Recevez vos notifications',
-                      style: Theme.of(context).textTheme.headlineMedium),
+                  Text(
+                    'Recevez vos notifications',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Liez votre numéro pour suivre vos dépôts et être prévenu quand votre linge est prêt.',
@@ -106,14 +110,21 @@ class _LinkPhoneViewState extends State<_LinkPhoneView> {
                       counterText: '',
                       prefixIcon: const Padding(
                         padding: EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 14),
-                        child: Text('+221',
-                            style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w600)),
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
+                        child: Text(
+                          '+221',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                      prefixIconConstraints:
-                          const BoxConstraints(minWidth: 0, minHeight: 0),
+                      prefixIconConstraints: const BoxConstraints(
+                        minWidth: 0,
+                        minHeight: 0,
+                      ),
                       filled: true,
                       fillColor: AppColors.surface,
                       enabledBorder: OutlineInputBorder(
@@ -127,15 +138,21 @@ class _LinkPhoneViewState extends State<_LinkPhoneView> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppRadius.md),
                         borderSide: const BorderSide(
-                            color: AppColors.primaryLight, width: 1.5),
+                          color: AppColors.primaryLight,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                   ),
                   const Padding(
                     padding: EdgeInsets.only(top: 6, left: 2),
-                    child: Text('Préfixes acceptés : 70 · 75 · 76 · 77 · 78',
-                        style: TextStyle(
-                            fontSize: 11, color: AppColors.textTertiary)),
+                    child: Text(
+                      'Préfixes acceptés : 70 · 71 · 75 · 76 · 77 · 78',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   PrimaryButton(

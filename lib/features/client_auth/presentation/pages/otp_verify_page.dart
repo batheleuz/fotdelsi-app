@@ -93,25 +93,31 @@ class _OtpVerifyViewState extends State<_OtpVerifyView> {
               // (no-op tant que Firebase n'est pas configuré).
               serviceLocator<PushNotificationService>()
                   .registerDeviceIfLinked();
+
               context.go(AppRoutes.home);
+
               ScaffoldMessenger.of(context)
                 ..hideCurrentSnackBar()
                 ..showSnackBar(
-                    const SnackBar(content: Text('Numéro lié avec succès')));
+                  const SnackBar(content: Text('Numéro lié avec succès')),
+                );
             } else if (state.verifyStatus == LinkStatus.failure &&
                 state.error != null) {
               ScaffoldMessenger.of(context)
                 ..hideCurrentSnackBar()
-                ..showSnackBar(SnackBar(
-                  content: Text(state.error!),
-                  backgroundColor: AppColors.danger,
-                ));
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(state.error!),
+                    backgroundColor: AppColors.danger,
+                  ),
+                );
               setState(() => _otpAttempt++); // réinitialise les cases
             } else if (state.requestStatus == LinkStatus.success) {
               ScaffoldMessenger.of(context)
                 ..hideCurrentSnackBar()
                 ..showSnackBar(
-                    const SnackBar(content: Text('Nouveau code envoyé')));
+                  const SnackBar(content: Text('Nouveau code envoyé')),
+                );
             }
           },
           builder: (context, state) {
@@ -121,8 +127,10 @@ class _OtpVerifyViewState extends State<_OtpVerifyView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: AppSpacing.md),
-                  Text('Entrez le code',
-                      style: Theme.of(context).textTheme.headlineMedium),
+                  Text(
+                    'Entrez le code',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Un code à 4 chiffres a été envoyé au +221 ${widget.phone}.',
@@ -142,9 +150,12 @@ class _OtpVerifyViewState extends State<_OtpVerifyView> {
                   else
                     Center(
                       child: _remaining > 0
-                          ? Text('Renvoyer le code dans $_remaining s',
+                          ? Text(
+                              'Renvoyer le code dans $_remaining s',
                               style: const TextStyle(
-                                  color: AppColors.textTertiary))
+                                color: AppColors.textTertiary,
+                              ),
+                            )
                           : TextButton(
                               onPressed: _resend,
                               child: const Text('Renvoyer le code'),
