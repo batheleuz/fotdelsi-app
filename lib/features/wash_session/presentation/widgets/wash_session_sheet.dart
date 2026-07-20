@@ -63,7 +63,8 @@ class WashSessionSheet extends StatelessWidget {
         }
 
         final cubit = context.read<WashSessionCubit>();
-        final isRetry = state.pendingSession!.machineStartStatus ==
+        final isRetry =
+            state.pendingSession!.machineStartStatus ==
             MachineStartStatus.startFailed;
 
         return _SheetContainer(
@@ -109,8 +110,10 @@ class WashSessionSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              const _PaymentNote(),
-              SizedBox(height: MediaQuery.of(context).padding.bottom + AppSpacing.sm),
+              const _ReservationNote(),
+              SizedBox(
+                height: MediaQuery.of(context).padding.bottom + AppSpacing.sm,
+              ),
             ],
           ),
         );
@@ -130,7 +133,10 @@ class _SheetContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0,
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        0,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -183,28 +189,33 @@ class _Header extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSpacing.md),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              isRetry ? 'Démarrage échoué' : 'Paiement confirmé',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+        // Expanded : le sous-titre tient sur plusieurs lignes sans déborder.
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isRetry
+                    ? 'Le démarrage n\'a pas fonctionné'
+                    : 'Paiement confirmé',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              isRetry
-                  ? 'L\'API EQLink était indisponible. Réessayez.'
-                  : 'La machine est prête à être démarrée.',
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
+              const SizedBox(height: 2),
+              Text(
+                isRetry
+                    ? 'La machine n\'a pas répondu. Vous pouvez réessayer.'
+                    : 'Chargez votre linge et fermez le hublot, puis appuyez sur Démarrer.',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -250,14 +261,18 @@ class _MachineLine extends StatelessWidget {
   }
 }
 
-class _PaymentNote extends StatelessWidget {
-  const _PaymentNote();
+/// La machine n'est PAS lancée tant que le client n'appuie pas sur Démarrer :
+/// on le rassure sur le fait qu'elle lui reste réservée en attendant. Pas de
+/// durée codée en dur ici — elle vit côté backend et pourrait diverger.
+class _ReservationNote extends StatelessWidget {
+  const _ReservationNote();
 
   @override
   Widget build(BuildContext context) {
     return const Center(
       child: Text(
-        'Le paiement a été confirmé par votre opérateur.',
+        'La machine vous est réservée le temps de charger votre linge.',
+        textAlign: TextAlign.center,
         style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
       ),
     );

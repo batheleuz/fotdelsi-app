@@ -75,12 +75,11 @@ class _ScanViewState extends State<_ScanView> {
       context.push(AppRoutes.payment, extra: args).then((_) {
         if (mounted) _resumeScanning();
       });
-    } else if (state.status == ScanStatus.error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(state.error ?? 'Code QR invalide.')),
-      );
-      _resumeScanning();
     }
+    // En cas d'erreur : on NE relance PAS le scan automatiquement. La caméra
+    // reste arrêtée et `_ErrorOverlay` affiche le message avec un bouton
+    // « Scanner à nouveau ». Sinon le QR, toujours devant l'objectif, serait
+    // redétecté instantanément → même erreur en boucle.
   }
 
   void _resumeScanning() {
@@ -145,9 +144,14 @@ class _ScanViewState extends State<_ScanView> {
             ),
             BlocBuilder<ScanBloc, ScanState>(
               buildWhen: (p, c) => p.status != c.status,
-              builder: (context, state) => state.status == ScanStatus.processing
-                  ? const _ProcessingOverlay()
-                  : const SizedBox.shrink(),
+              builder: (context, state) => switch (state.status) {
+                ScanStatus.processing => const _ProcessingOverlay(),
+                ScanStatus.error => _ErrorOverlay(
+                    message: state.error ?? 'Code QR invalide.',
+                    onRetry: _resumeScanning,
+                  ),
+                _ => const SizedBox.shrink(),
+              },
             ),
           ],
         ),
@@ -189,6 +193,54 @@ class _ProcessingOverlay extends StatelessWidget {
           Text(
             'Identification de la machine…',
             style: TextStyle(color: Colors.white, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Erreur de scan (QR inconnu, machine indisponible…). Bloquante par choix :
+/// tant qu'elle est affichée la caméra reste arrêtée, ce qui évite de
+/// redétecter le même QR en boucle. L'utilisateur relance explicitement.
+class _ErrorOverlay extends StatelessWidget {
+  const _ErrorOverlay({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.78),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.qr_code_scanner_rounded,
+            color: Colors.white70,
+            size: 48,
+          ),
+          const SizedBox(height: 18),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 26),
+          FilledButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Scanner à nouveau'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+            ),
           ),
         ],
       ),

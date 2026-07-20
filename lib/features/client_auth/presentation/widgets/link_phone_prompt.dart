@@ -39,8 +39,7 @@ abstract final class LinkPhonePrompt {
       context: context,
       backgroundColor: AppColors.background,
       shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
       builder: (_) => const _LinkPhonePromptSheet(),
     );
@@ -64,15 +63,18 @@ class _LinkPhonePromptSheetState extends State<_LinkPhonePromptSheet> {
   bool _dontShowAgain = false;
 
   void _close({required bool link}) {
-    Navigator.of(context)
-        .pop((link: link, dontShowAgain: _dontShowAgain));
+    Navigator.of(context).pop((link: link, dontShowAgain: _dontShowAgain));
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -96,14 +98,19 @@ class _LinkPhonePromptSheetState extends State<_LinkPhonePromptSheet> {
                 color: AppColors.surfaceTint,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.sms_outlined,
-                  color: AppColors.primary, size: 28),
+              child: const Icon(
+                Icons.sms_outlined,
+                color: AppColors.primary,
+                size: 28,
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('Lier votre téléphone',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'Lier votre téléphone',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: AppSpacing.sm),
           Text(
             'Recevez une alerte dès que votre linge est prêt et retrouvez '
@@ -128,9 +135,13 @@ class _LinkPhonePromptSheetState extends State<_LinkPhonePromptSheet> {
                     visualDensity: VisualDensity.compact,
                   ),
                   const SizedBox(width: 4),
-                  const Text('Ne plus afficher',
-                      style: TextStyle(
-                          fontSize: 13, color: AppColors.textSecondary)),
+                  const Text(
+                    'Ne plus afficher',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 ],
               ),
             ),

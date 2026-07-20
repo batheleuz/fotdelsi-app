@@ -27,7 +27,8 @@ class WashSessionRepositoryImpl implements WashSessionRepository {
 
   @override
   Future<Either<Failure, SessionStatusResult>> getSessionStatus(
-      String washSessionToken) async {
+    String washSessionToken,
+  ) async {
     try {
       final model = await _api.getStatus(washSessionToken);
       return Right(_toResult(model));
@@ -51,11 +52,11 @@ class WashSessionRepositoryImpl implements WashSessionRepository {
       _socket.watchStatus(washSessionToken).map(_toResult);
 
   SessionStatusResult _toResult(WashSessionStatusModel model) => (
-        paymentStatus: model.paymentStatus,
-        machineStartStatus: model.machineStartStatus,
-        remainingSeconds: model.remainTimeSeconds,
-        canRetry: model.canRetry,
-        isFinished: model.isFinished,
-        failureReason: model.failureReason,
-      );
+    paymentStatus: model.paymentStatus,
+    machineStartStatus: model.machineStartStatus,
+    remainingSeconds: model.remainTimeSeconds,
+    canRetry: model.canRetry,
+    isFinished: model.isFinished,
+    failureReason: model.failureReason,
+  );
 }

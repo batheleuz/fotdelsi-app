@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 
+import 'package:fotdelsi/core/network/failures.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:fotdelsi/features/machines/domain/repositories/machine_repository.dart';
 import '../utils/qr_payload_parser.dart';
@@ -38,7 +39,12 @@ class ScanBloc extends Bloc<ScanEvent, ScanState> {
     either.fold(
       (failure) => emit(state.copyWith(
         status: ScanStatus.error,
-        error: failure.message,
+        // Un 404 remonte le libellé générique « Ressource introuvable » : sans
+        // valeur ici. Dans le contexte du scan, on dit ce que ça signifie.
+        error: failure is NotFoundFailure
+            ? 'QR code non reconnu : il ne correspond à aucune machine FOTDELSI. '
+                'Vérifiez que vous scannez bien le code collé sur la machine.'
+            : failure.message,
       )),
       (machine) {
         // Vérification disponibilité avant de laisser passer vers le paiement.

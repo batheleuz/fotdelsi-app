@@ -65,8 +65,9 @@ final class WashSessionState extends Equatable {
     bool clearFailureReason = false,
   }) {
     return WashSessionState(
-      pendingSession:
-          clearPendingSession ? null : pendingSession ?? this.pendingSession,
+      pendingSession: clearPendingSession
+          ? null
+          : pendingSession ?? this.pendingSession,
       startStatus: startStatus ?? this.startStatus,
       startError: startError,
       startedMachine: startedMachine ?? this.startedMachine,
@@ -74,21 +75,22 @@ final class WashSessionState extends Equatable {
           ? null
           : remainingSeconds ?? this.remainingSeconds,
       canRetry: canRetry ?? this.canRetry,
-      failureReason:
-          clearFailureReason ? null : failureReason ?? this.failureReason,
+      failureReason: clearFailureReason
+          ? null
+          : failureReason ?? this.failureReason,
     );
   }
 
   @override
   List<Object?> get props => [
-        pendingSession?.washSessionToken,
-        pendingSession?.sessionPaymentStatus,
-        pendingSession?.machineStartStatus,
-        startStatus,
-        startError,
-        startedMachine,
-        remainingSeconds,
-        canRetry,
-        failureReason,
-      ];
+    pendingSession?.washSessionToken,
+    pendingSession?.sessionPaymentStatus,
+    pendingSession?.machineStartStatus,
+    startStatus,
+    startError,
+    startedMachine,
+    remainingSeconds,
+    canRetry,
+    failureReason,
+  ];
 }

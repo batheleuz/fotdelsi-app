@@ -27,7 +27,8 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) =>
-          serviceLocator<MachinesBloc>()..add(const MachinesSubscriptionRequested()),
+          serviceLocator<MachinesBloc>()
+            ..add(const MachinesSubscriptionRequested()),
       child: const _HomeView(),
     );
   }
@@ -97,13 +98,14 @@ class _HomeViewState extends State<_HomeView> with WidgetsBindingObserver {
 
   Widget _body(BuildContext context, MachinesState state) {
     return switch (state.status) {
-      MachinesStatus.initial || MachinesStatus.loading => const MachinesLoading(),
+      MachinesStatus.initial ||
+      MachinesStatus.loading => const MachinesLoading(),
       MachinesStatus.failure => MachinesError(
-          message: state.error ?? 'Connexion au temps réel impossible.',
-          onRetry: () => context
-              .read<MachinesBloc>()
-              .add(const MachinesSubscriptionRequested()),
+        message: state.error ?? 'Connexion au temps réel impossible.',
+        onRetry: () => context.read<MachinesBloc>().add(
+          const MachinesSubscriptionRequested(),
         ),
+      ),
       MachinesStatus.success => MachinesContent(machines: state.machines),
     };
   }
@@ -154,6 +156,7 @@ class _SessionFab extends StatelessWidget {
   /// Priorité au `machineId` de la session ; repli sur `startedMachine`.
   Machine? _resolveMachine(BuildContext context) {
     final session = state.pendingSession;
+    print("Session State => $state");
     if (session == null) return state.startedMachine;
 
     final machines = context.read<MachinesBloc>().state.machines;

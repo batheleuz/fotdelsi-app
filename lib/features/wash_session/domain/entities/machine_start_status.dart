@@ -16,9 +16,9 @@ enum MachineStartStatus {
 
   /// Mappe la valeur `sessionStatus` du backend.
   static MachineStartStatus fromSessionStatus(String value) => switch (value) {
-        'RUNNING' => MachineStartStatus.started,
-        'DONE' => MachineStartStatus.started,
-        'FAILED' => MachineStartStatus.startFailed,
-        _ => MachineStartStatus.pending,
-      };
+    'RUNNING' => MachineStartStatus.started,
+    'DONE' => MachineStartStatus.started,
+    'FAILED' => MachineStartStatus.startFailed,
+    _ => MachineStartStatus.pending,
+  };
 }

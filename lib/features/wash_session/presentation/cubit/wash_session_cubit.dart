@@ -40,6 +40,11 @@ class WashSessionCubit extends Cubit<WashSessionState> {
 
   Future<void> _init() async {
     final session = _repository.load();
+    print("Local Wash Session Loaded => ${session?.washSessionToken}");
+    print("Local Wash Session Loaded => ${session?.machineId}");
+    print("Local Wash Session Loaded => ${session?.machineStartStatus}");
+    print("Local Wash Session Loaded => ${session?.sessionPaymentStatus}");
+    print("Local Wash Session Loaded => ${session?.provider}");
     if (session == null) return;
 
     // Affiche immédiatement ce qu'on a en local (pas de flash vide).
@@ -52,6 +57,8 @@ class WashSessionCubit extends Cubit<WashSessionState> {
 
   Future<void> _refreshSessionStatus(String token) async {
     final result = await _repository.getSessionStatus(token);
+    print("Result After getSessionStatus Token => $token");
+    print("Result After getSessionStatus => $result");
     // Erreur réseau : on garde ce qu'on a en local, pas bloquant.
     result.fold((_) => null, _applyStatus);
   }
@@ -74,13 +81,15 @@ class WashSessionCubit extends Cubit<WashSessionState> {
     _repository.save(updated);
 
     final isStarted = status.machineStartStatus == MachineStartStatus.started;
-    emit(state.copyWith(
-      pendingSession: updated,
-      canRetry: status.canRetry,
-      failureReason: status.failureReason,
-      clearFailureReason: status.failureReason == null,
-      remainingSeconds: isStarted ? status.remainingSeconds : null,
-    ));
+    emit(
+      state.copyWith(
+        pendingSession: updated,
+        canRetry: status.canRetry,
+        failureReason: status.failureReason,
+        clearFailureReason: status.failureReason == null,
+        remainingSeconds: isStarted ? status.remainingSeconds : null,
+      ),
+    );
 
     if (isStarted) {
       _startLocalCountdown(status.remainingSeconds);
@@ -128,13 +137,16 @@ class WashSessionCubit extends Cubit<WashSessionState> {
     result.fold(
       (failure) {
         final updated = session.copyWith(
-            machineStartStatus: MachineStartStatus.startFailed);
+          machineStartStatus: MachineStartStatus.startFailed,
+        );
         _repository.save(updated);
-        emit(state.copyWith(
-          pendingSession: updated,
-          startStatus: WashStartStatus.failure,
-          startError: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            pendingSession: updated,
+            startStatus: WashStartStatus.failure,
+            startError: failure.message,
+          ),
+        );
       },
       (_) async {
         // Transition vers "session en cours". Le countdown sera alimenté par
@@ -143,11 +155,13 @@ class WashSessionCubit extends Cubit<WashSessionState> {
           machineStartStatus: MachineStartStatus.started,
         );
         await _repository.save(updated);
-        emit(state.copyWith(
-          pendingSession: updated,
-          startStatus: WashStartStatus.success,
-          startedMachine: machine,
-        ));
+        emit(
+          state.copyWith(
+            pendingSession: updated,
+            startStatus: WashStartStatus.success,
+            startedMachine: machine,
+          ),
+        );
         _subscribeToStatus(session.washSessionToken);
       },
     );

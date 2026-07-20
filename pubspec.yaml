@@ -65,6 +65,21 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_native_splash: ^2.4.4
+  flutter_launcher_icons: ^0.14.4
+
+# Icône de l'app (générée par `dart run flutter_launcher_icons`).
+# Source : l'emblème rond du logo, recadré en carré sur fond blanc — le logo
+# complet est un lockup horizontal, inutilisable tel quel comme icône.
+flutter_launcher_icons:
+  image_path: "assets/icon/app_icon.png"
+  android: true
+  ios: true
+  # iOS interdit la transparence sur l'icône.
+  remove_alpha_ios: true
+  # Android adaptatif : le système rogne les bords, d'où un premier plan
+  # volontairement plus petit (zone de sécurité) sur fond blanc.
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
 
 # Splash natif (généré par `dart run flutter_native_splash:create`).
 # Fond blanc + logo, pour une transition fluide vers la SplashPage in-app.
