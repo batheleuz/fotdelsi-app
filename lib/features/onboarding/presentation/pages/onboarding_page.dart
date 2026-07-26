@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:fotdelsi/core/di/service_locator.dart';
+import 'package:fotdelsi/core/onboarding/onboarding_store.dart';
 import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_curves.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
@@ -48,7 +50,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
         curve: AppCurves.standard,
       );
 
-  void _onFinish() => context.go(AppRoutes.home);
+  Future<void> _onFinish() async {
+    // Onboarding vu → ne plus l'afficher aux prochaines ouvertures.
+    await serviceLocator<OnboardingStore>().markSeen();
+    if (mounted) context.go(AppRoutes.home);
+  }
 
   @override
   void dispose() {

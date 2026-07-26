@@ -34,6 +34,12 @@ final class NotFoundFailure extends Failure {
   const NotFoundFailure([super.message = 'Ressource introuvable.']);
 }
 
+final class ServiceUnavailableFailure extends Failure {
+  const ServiceUnavailableFailure(
+      [super.message =
+          'Service temporairement indisponible. Réessayez dans un instant.']);
+}
+
 final class UnknownFailure extends Failure {
   const UnknownFailure(
       [super.message = 'Une erreur inattendue est survenue.']);

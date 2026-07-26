@@ -1,20 +1,24 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:fotdelsi/app.dart';
 
+import 'firebase_options.dart';
+import 'core/di/service_locator.dart';
 import 'core/router/app_router.dart';
-import 'core/theme/app_theme.dart';
+import 'features/auth/presentation/cubit/auth_cubit.dart';
+import 'features/notifications/presentation/push_notification_service.dart';
 
-void main() => runApp(const FotDelsiApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await setupLocator();
 
-class FotDelsiApp extends StatelessWidget {
-  const FotDelsiApp({super.key});
+  final authCubit = serviceLocator<AuthCubit>();
+  final router = AppRouter.create(authCubit);
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'FOT DELSI',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      routerConfig: AppRouter.router,
-    );
-  }
+  serviceLocator<PushNotificationService>().init(router);
+
+  runApp(FotDelsiApp(router: router));
 }

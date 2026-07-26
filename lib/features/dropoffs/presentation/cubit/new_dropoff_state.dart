@@ -1,0 +1,124 @@
+part of 'new_dropoff_cubit.dart';
+
+enum LoadStatus { initial, loading, success, failure }
+
+enum SubmitStatus { idle, loading, success, failure }
+
+final _phoneRegex = RegExp(r'^(70|71|75|76|77|78)\d{7}$');
+
+final class NewDropOffState extends Equatable {
+  const NewDropOffState({
+    this.step = 0,
+    this.contactPhone = '',
+    this.customerName = '',
+    this.pieces = 1,
+    this.types = const {},
+    this.instructions = '',
+    this.prestations = const [],
+    this.prestationsStatus = LoadStatus.initial,
+    this.amount,
+    this.withDrying = false,
+    this.dryingPrice,
+    this.provider,
+    this.draftId,
+    this.submitStatus = SubmitStatus.idle,
+    this.error,
+  });
+
+  final int step;
+
+  final String contactPhone;
+  final String customerName;
+
+  final int pieces;
+  final Set<LaundryType> types;
+  final String instructions;
+
+  final List<Prestation> prestations;
+  final LoadStatus prestationsStatus;
+
+  /// Prix du lavage choisi (base). Le total facturé ajoute le séchage.
+  final int? amount;
+
+  /// Séchage inclus (option cochée à l'étape 3).
+  final bool withDrying;
+
+  /// Prix unique du séchage (dérivé des sécheuses). Null si aucune sécheuse.
+  final int? dryingPrice;
+
+  final PaymentProvider? provider;
+
+  /// Brouillon créé à la soumission (réutilisé par le renvoi de paiement).
+  final String? draftId;
+
+  /// Total facturé = lavage + séchage (si coché).
+  int? get total =>
+      amount == null ? null : amount! + (withDrying ? (dryingPrice ?? 0) : 0);
+
+  final SubmitStatus submitStatus;
+  final String? error;
+
+  // ── Validations ─────────────────────────────────────────────────────────────
+
+  bool get isPhoneValid => _phoneRegex.hasMatch(contactPhone);
+  bool get canLeaveClient => isPhoneValid && customerName.trim().isNotEmpty;
+  bool get canLeaveLaundry => pieces >= 1 && types.isNotEmpty;
+  bool get canSubmit => amount != null && provider != null;
+  bool get isSubmitting => submitStatus == SubmitStatus.loading;
+
+  NewDropOffState copyWith({
+    int? step,
+    String? contactPhone,
+    String? customerName,
+    int? pieces,
+    Set<LaundryType>? types,
+    String? instructions,
+    List<Prestation>? prestations,
+    LoadStatus? prestationsStatus,
+    int? amount,
+    bool? withDrying,
+    int? dryingPrice,
+    PaymentProvider? provider,
+    String? draftId,
+    SubmitStatus? submitStatus,
+    String? error,
+    bool clearError = false,
+  }) {
+    return NewDropOffState(
+      step: step ?? this.step,
+      contactPhone: contactPhone ?? this.contactPhone,
+      customerName: customerName ?? this.customerName,
+      pieces: pieces ?? this.pieces,
+      types: types ?? this.types,
+      instructions: instructions ?? this.instructions,
+      prestations: prestations ?? this.prestations,
+      prestationsStatus: prestationsStatus ?? this.prestationsStatus,
+      amount: amount ?? this.amount,
+      withDrying: withDrying ?? this.withDrying,
+      dryingPrice: dryingPrice ?? this.dryingPrice,
+      provider: provider ?? this.provider,
+      draftId: draftId ?? this.draftId,
+      submitStatus: submitStatus ?? this.submitStatus,
+      error: clearError ? null : (error ?? this.error),
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    step,
+    contactPhone,
+    customerName,
+    pieces,
+    types,
+    instructions,
+    prestations,
+    prestationsStatus,
+    amount,
+    withDrying,
+    dryingPrice,
+    provider,
+    draftId,
+    submitStatus,
+    error,
+  ];
+}

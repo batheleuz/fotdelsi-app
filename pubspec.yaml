@@ -40,6 +40,19 @@ dependencies:
   dio: ^5.9.2
   equatable: ^2.0.8
   flutter_svg: ^2.3.0
+  dartz: ^0.10.1
+  flutter_bloc: ^9.1.1
+  bloc: ^9.2.1
+  get_it: ^9.2.1
+  socket_io_client: ^3.1.4
+  connectivity_plus: ^7.0.0
+  mobile_scanner: ^7.2.0
+  url_launcher: ^6.3.1
+  shared_preferences: ^2.5.3
+  flutter_secure_storage: ^10.3.1
+  firebase_core: ^4.11.0
+  firebase_messaging: ^16.4.1
+  flutter_local_notifications: ^22.0.1
 
 dev_dependencies:
   flutter_test:
@@ -51,6 +64,34 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.4
+  flutter_launcher_icons: ^0.14.4
+
+# Icône de l'app (générée par `dart run flutter_launcher_icons`).
+# Source : l'emblème rond du logo, recadré en carré sur fond blanc — le logo
+# complet est un lockup horizontal, inutilisable tel quel comme icône.
+flutter_launcher_icons:
+  image_path: "assets/icon/app_icon.png"
+  android: true
+  ios: true
+  # iOS interdit la transparence sur l'icône.
+  remove_alpha_ios: true
+  # Android adaptatif : le système rogne les bords, d'où un premier plan
+  # volontairement plus petit (zone de sécurité) sur fond blanc.
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+
+# Splash natif (généré par `dart run flutter_native_splash:create`).
+# Fond blanc + logo, pour une transition fluide vers la SplashPage in-app.
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/logo/logo.png
+  android_12:
+    color: "#FFFFFF"
+    image: assets/logo/logo.png
+  android: true
+  ios: true
+  web: false
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
