@@ -25,7 +25,9 @@ class DropOffDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => serviceLocator<DropOffDetailCubit>()..load(dropOffId),
+      create: (_) => serviceLocator<DropOffDetailCubit>()
+        ..load(dropOffId)
+        ..startRealtime(),
       child: const _DetailView(),
     );
   }
@@ -239,13 +241,37 @@ class _DetailView extends StatelessWidget {
         ),
       ),
 
-      DropOffStatus.inProgress => _bar(
+      // Lavage terminé (auto) + séchage payé → l'agent lance le séchage.
+      DropOffStatus.inProgress when dropOff.canStartDrying => _bar(
+        PrimaryButton(
+          label: 'Lancer le séchage',
+          icon: Icons.dry_cleaning_outlined,
+          loading: isActing,
+          backgroundColor: AppColors.secondary,
+          onPressed: () async {
+            await context.push(AppRoutes.agentStartDrying(dropOff.id));
+            if (context.mounted) cubit.load(dropOff.id);
+          },
+        ),
+      ),
+
+      // Cycle requis terminé → l'agent peut marquer prêt.
+      DropOffStatus.inProgress when dropOff.canMarkReady => _bar(
         PrimaryButton(
           label: 'Marquer prêt',
           icon: Icons.check_rounded,
           loading: isActing,
           backgroundColor: AppColors.primaryLight,
           onPressed: () => cubit.markReady(),
+        ),
+      ),
+
+      // Un cycle tourne encore : on attend sa fin (détectée automatiquement).
+      DropOffStatus.inProgress => _bar(
+        _CycleRunningBar(
+          label: dropOff.dryStartedAt != null
+              ? 'Séchage en cours…'
+              : 'Lavage en cours…',
         ),
       ),
 
@@ -311,6 +337,49 @@ class _DetailView extends StatelessWidget {
           types: types,
           instructions: instructions,
         ),
+      ),
+    );
+  }
+}
+
+/// Barre non-actionnable affichée pendant qu'un cycle tourne : l'agent attend
+/// la fin (marquée automatiquement quand la machine repasse disponible).
+class _CycleRunningBar extends StatelessWidget {
+  const _CycleRunningBar({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.primaryLight,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }

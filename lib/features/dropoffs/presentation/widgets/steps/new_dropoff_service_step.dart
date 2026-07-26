@@ -26,7 +26,15 @@ class NewDropOffServiceStep extends StatelessWidget {
         const _Title('Prestation'),
         const SizedBox(height: AppSpacing.sm),
         _prestations(context, state, cubit),
-        if (state.amount != null) ...[
+        if (state.dryingPrice != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          _DryingToggle(
+            price: state.dryingPrice!,
+            enabled: state.withDrying,
+            onChanged: cubit.toggleDrying,
+          ),
+        ],
+        if (state.total != null) ...[
           const SizedBox(height: AppSpacing.md),
           Center(
             child: Column(
@@ -41,7 +49,7 @@ class NewDropOffServiceStep extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  formatFcfa(state.amount!),
+                  formatFcfa(state.total!),
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
@@ -117,6 +125,67 @@ class _Title extends StatelessWidget {
       color: AppColors.textPrimary,
     ),
   );
+}
+
+/// Option séchage : payée d'avance avec le dépôt, prix unique.
+class _DryingToggle extends StatelessWidget {
+  const _DryingToggle({
+    required this.price,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final int price;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!enabled),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: enabled ? AppColors.surfaceTint : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(
+            color: enabled ? AppColors.primaryLight : AppColors.border,
+            width: enabled ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.dry_cleaning_outlined,
+                size: 20, color: AppColors.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Ajouter le séchage',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    '+ ${formatFcfa(price, withSuffix: false)}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Switch.adaptive(value: enabled, onChanged: onChanged),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _PrestationCard extends StatelessWidget {

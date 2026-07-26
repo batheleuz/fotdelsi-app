@@ -8,13 +8,12 @@ abstract final class ApiEndpoints {
 
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://fotdelsi.sonkobusinessfamily.sn/api/v1',
-    // defaultValue: 'http://192.168.2.100:8080/api/v1',
+    defaultValue: 'https://api.fotdelsi.sn/api/v1',
   );
 
   static const String webSocketUrl = String.fromEnvironment(
     'WEB_SOCKET_URL',
-    defaultValue: 'https://fotdelsi.sonkobusinessfamily.sn',
+    defaultValue: 'https://api.fotdelsi.sn',
   );
 
   // Disponibilité des services (bannière) — public
@@ -55,6 +54,7 @@ abstract final class ApiEndpoints {
   static String dropOffByCode(String code) => '/drop-offs/by-code/$code';
   static String dropOff(String id) => '/drop-offs/$id';
   static String dropOffAssignMachine(String id) => '/drop-offs/$id/assign-machine';
+  static String dropOffStartDrying(String id) => '/drop-offs/$id/start-drying';
   static String dropOffMarkReady(String id) => '/drop-offs/$id/mark-ready';
   static String dropOffMarkCollected(String id) => '/drop-offs/$id/mark-collected';
   static String dropOffLaundry(String id) => '/drop-offs/$id/laundry';

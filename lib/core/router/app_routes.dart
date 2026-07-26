@@ -25,4 +25,6 @@ abstract final class AppRoutes {
   static String agentDropOffDetail(String id) => '/agent/dropoffs/$id';
   static String agentAssignMachine(String id) =>
       '/agent/dropoffs/$id/assign-machine';
+  static String agentStartDrying(String id) =>
+      '/agent/dropoffs/$id/start-drying';
 }

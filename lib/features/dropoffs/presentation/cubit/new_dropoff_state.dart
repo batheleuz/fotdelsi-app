@@ -17,6 +17,8 @@ final class NewDropOffState extends Equatable {
     this.prestations = const [],
     this.prestationsStatus = LoadStatus.initial,
     this.amount,
+    this.withDrying = false,
+    this.dryingPrice,
     this.provider,
     this.draftId,
     this.submitStatus = SubmitStatus.idle,
@@ -35,11 +37,23 @@ final class NewDropOffState extends Equatable {
   final List<Prestation> prestations;
   final LoadStatus prestationsStatus;
 
+  /// Prix du lavage choisi (base). Le total facturé ajoute le séchage.
   final int? amount;
+
+  /// Séchage inclus (option cochée à l'étape 3).
+  final bool withDrying;
+
+  /// Prix unique du séchage (dérivé des sécheuses). Null si aucune sécheuse.
+  final int? dryingPrice;
+
   final PaymentProvider? provider;
 
   /// Brouillon créé à la soumission (réutilisé par le renvoi de paiement).
   final String? draftId;
+
+  /// Total facturé = lavage + séchage (si coché).
+  int? get total =>
+      amount == null ? null : amount! + (withDrying ? (dryingPrice ?? 0) : 0);
 
   final SubmitStatus submitStatus;
   final String? error;
@@ -62,6 +76,8 @@ final class NewDropOffState extends Equatable {
     List<Prestation>? prestations,
     LoadStatus? prestationsStatus,
     int? amount,
+    bool? withDrying,
+    int? dryingPrice,
     PaymentProvider? provider,
     String? draftId,
     SubmitStatus? submitStatus,
@@ -78,6 +94,8 @@ final class NewDropOffState extends Equatable {
       prestations: prestations ?? this.prestations,
       prestationsStatus: prestationsStatus ?? this.prestationsStatus,
       amount: amount ?? this.amount,
+      withDrying: withDrying ?? this.withDrying,
+      dryingPrice: dryingPrice ?? this.dryingPrice,
       provider: provider ?? this.provider,
       draftId: draftId ?? this.draftId,
       submitStatus: submitStatus ?? this.submitStatus,
@@ -96,6 +114,8 @@ final class NewDropOffState extends Equatable {
     prestations,
     prestationsStatus,
     amount,
+    withDrying,
+    dryingPrice,
     provider,
     draftId,
     submitStatus,

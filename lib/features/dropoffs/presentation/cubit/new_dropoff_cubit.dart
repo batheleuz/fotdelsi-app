@@ -41,9 +41,11 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
     result.fold(
       (failure) => emit(state.copyWith(prestationsStatus: LoadStatus.failure)),
       (machines) {
-        print("Machines Prestation => $machines");
-        final sorted = machines.where((m) => m.size != null && m.type == MachineType.washer).toList()
-          ..sort((a, b) => a.size!.compareTo(b.size!));
+        final sorted =
+            machines
+                .where((m) => m.size != null && m.type == MachineType.washer)
+                .toList()
+              ..sort((a, b) => a.size!.compareTo(b.size!));
         final seen = <int>{};
         final prestations = <Prestation>[];
         for (final m in sorted) {
@@ -52,9 +54,20 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
             prestations.add(Prestation(amount: amount, sizeKg: m.size));
           }
         }
+
+        // Prix unique du séchage : dérivé des sécheuses (le moins cher).
+        // Null si aucune sécheuse → l'option ne sera pas proposée.
+        final dryerPrices = machines
+            .where((m) => m.type == MachineType.dryer)
+            .map((m) => m.price.toInt());
+        final dryingPrice = dryerPrices.isEmpty
+            ? null
+            : dryerPrices.reduce((a, b) => a < b ? a : b);
+
         emit(
           state.copyWith(
             prestations: prestations,
+            dryingPrice: dryingPrice,
             prestationsStatus: LoadStatus.success,
           ),
         );
@@ -89,6 +102,8 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
 
   void selectPrestation(int amount) => emit(state.copyWith(amount: amount));
 
+  void toggleDrying(bool value) => emit(state.copyWith(withDrying: value));
+
   void selectProvider(PaymentProvider provider) =>
       emit(state.copyWith(provider: provider));
 
@@ -116,7 +131,8 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
     final draft = await _dropOffRepository.createDraft(
       contactPhone: state.contactPhone,
       customerName: state.customerName,
-      amount: state.amount!,
+      amount: state.total!,
+      withDrying: state.withDrying,
       pieces: state.pieces,
       types: state.types.toList(),
       instructions: state.instructions,
@@ -155,7 +171,7 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
   Future<Either<Failure, void>> _initiate() =>
       _paymentRepository.initiateDropOffPayment(
         draftId: state.draftId!,
-        amount: state.amount!,
+        amount: state.total!,
         provider: state.provider!,
         customerFullName: state.customerName,
         customerPhone: state.contactPhone,

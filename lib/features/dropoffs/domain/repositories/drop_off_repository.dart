@@ -16,6 +16,7 @@ abstract interface class DropOffRepository {
     required String contactPhone,
     required String customerName,
     required int amount,
+    required bool withDrying,
     required int pieces,
     required List<LaundryType> types,
     String? instructions,
@@ -37,6 +38,9 @@ abstract interface class DropOffRepository {
 
   /// `POST /drop-offs/:id/assign-machine` — lance le lavage sur [machineId].
   Future<Either<Failure, void>> assignMachine(String id, String machineId);
+
+  /// `POST /drop-offs/:id/start-drying` — lance le séchage sur une sécheuse.
+  Future<Either<Failure, void>> startDrying(String id, String dryerMachineId);
 
   /// `POST /drop-offs/:id/mark-ready` — marque prêt (fallback manuel).
   Future<Either<Failure, void>> markReady(String id);

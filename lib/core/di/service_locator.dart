@@ -22,7 +22,7 @@ import 'package:fotdelsi/features/client_auth/presentation/cubit/link_phone_cubi
 import 'package:fotdelsi/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:fotdelsi/features/auth/domain/repositories/auth_repository.dart';
 import 'package:fotdelsi/features/auth/presentation/cubit/auth_cubit.dart';
-import 'package:fotdelsi/features/dropoffs/data/datasources/agent_queue_realtime_data_source.dart';
+import 'package:fotdelsi/features/dropoffs/data/datasources/agent_realtime_data_source.dart';
 import 'package:fotdelsi/features/dropoffs/data/datasources/drop_off_api_data_source.dart';
 import 'package:fotdelsi/features/dropoffs/data/repositories/drop_off_repository_impl.dart';
 import 'package:fotdelsi/features/dropoffs/domain/repositories/drop_off_repository.dart';
@@ -181,8 +181,8 @@ void _registerDropOffs() {
     () => DropOffRepositoryImpl(serviceLocator()),
   );
   // Source temps réel de la file (room `agents`) : RealtimeSocket + token agent.
-  serviceLocator.registerLazySingleton<AgentQueueRealtimeDataSource>(
-    () => AgentQueueRealtimeDataSource(serviceLocator(), serviceLocator()),
+  serviceLocator.registerLazySingleton<AgentRealtimeDataSource>(
+    () => AgentRealtimeDataSource(serviceLocator(), serviceLocator()),
   );
   // Factory : un cubit par ouverture de l'écran file d'attente.
   serviceLocator.registerFactory<DropOffQueueCubit>(
@@ -197,7 +197,7 @@ void _registerDropOffs() {
     ),
   );
   serviceLocator.registerFactory<DropOffDetailCubit>(
-    () => DropOffDetailCubit(serviceLocator()),
+    () => DropOffDetailCubit(serviceLocator(), serviceLocator()),
   );
   serviceLocator.registerFactory<AssignMachineCubit>(
     () => AssignMachineCubit(serviceLocator(), serviceLocator()),

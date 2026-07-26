@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../data/datasources/agent_queue_realtime_data_source.dart';
+import '../../data/datasources/agent_realtime_data_source.dart';
 import '../../domain/entities/agent_queue.dart';
 import '../../domain/repositories/drop_off_repository.dart';
 
@@ -21,9 +21,9 @@ class DropOffQueueCubit extends Cubit<DropOffQueueState> {
     : super(const DropOffQueueState());
 
   final DropOffRepository _repository;
-  final AgentQueueRealtimeDataSource _realtime;
+  final AgentRealtimeDataSource _realtime;
 
-  StreamSubscription<void>? _realtimeSub;
+  StreamSubscription<AgentDropOffChange?>? _realtimeSub;
 
   Future<bool> load({bool silent = false}) async {
     if (!silent) emit(state.copyWith(status: DropOffQueueStatus.loading));
@@ -61,9 +61,8 @@ class DropOffQueueCubit extends Cubit<DropOffQueueState> {
   /// nudge déclenche un rechargement silencieux — pas de polling.
   void startRealtime() {
     _realtimeSub?.cancel();
-    _realtimeSub = _realtime.watchQueueChanges().listen(
-      (_) => load(silent: true),
-    );
+    // Tout changement (quel que soit le dépôt) peut modifier la file.
+    _realtimeSub = _realtime.watchChanges().listen((_) => load(silent: true));
   }
 
   @override

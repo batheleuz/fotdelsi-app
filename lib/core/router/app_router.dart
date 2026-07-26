@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/drop_off_queue_page.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/assign_machine_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/assign_machine_page.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/drop_off_detail_page.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/drop_off_search_page.dart';
@@ -146,6 +147,13 @@ abstract final class AppRouter {
         path: '/agent/dropoffs/:id/assign-machine',
         builder: (context, state) =>
             AssignMachinePage(dropOffId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/agent/dropoffs/:id/start-drying',
+        builder: (context, state) => AssignMachinePage(
+          dropOffId: state.pathParameters['id']!,
+          mode: AssignMode.dry,
+        ),
       ),
     ],
   );

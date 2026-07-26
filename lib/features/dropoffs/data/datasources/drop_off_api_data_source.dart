@@ -36,6 +36,7 @@ class DropOffApiDataSource {
     required String contactPhone,
     required String customerName,
     required int amount,
+    required bool withDrying,
     required int pieces,
     required List<LaundryType> types,
     String? instructions,
@@ -46,6 +47,7 @@ class DropOffApiDataSource {
         'contactPhone': contactPhone,
         'customerName': customerName,
         'amount': amount,
+        'withDrying': withDrying,
         'laundry': {
           'pieces': pieces,
           'types': types.map((t) => t.apiValue).toList(),
@@ -98,6 +100,13 @@ class DropOffApiDataSource {
     await _dio.post<dynamic>(
       ApiEndpoints.dropOffAssignMachine(id),
       data: {'machineId': machineId},
+    );
+  }
+
+  Future<void> startDrying(String id, String dryerMachineId) async {
+    await _dio.post<dynamic>(
+      ApiEndpoints.dropOffStartDrying(id),
+      data: {'machineId': dryerMachineId},
     );
   }
 

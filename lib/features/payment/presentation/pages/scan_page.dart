@@ -10,7 +10,6 @@ import 'package:fotdelsi/core/router/app_routes.dart';
 import '../bloc/scan_bloc.dart';
 import '../bloc/scan_event.dart';
 import '../bloc/scan_state.dart';
-import '../widgets/manual_entry_button.dart';
 import '../widgets/scan_top_bar.dart';
 import '../widgets/scan_viewfinder.dart';
 
@@ -155,23 +154,6 @@ class _ScanViewState extends State<_ScanView> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showManualEntry() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => _ManualEntrySheet(
-        onSubmit: (code) {
-          Navigator.of(ctx).pop();
-          context.read<ScanBloc>().add(ScanQrDetected(code));
-        },
       ),
     );
   }

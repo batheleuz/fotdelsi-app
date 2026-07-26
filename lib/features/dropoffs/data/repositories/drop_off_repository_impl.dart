@@ -31,6 +31,7 @@ class DropOffRepositoryImpl implements DropOffRepository {
     required String contactPhone,
     required String customerName,
     required int amount,
+    required bool withDrying,
     required int pieces,
     required List<LaundryType> types,
     String? instructions,
@@ -40,6 +41,7 @@ class DropOffRepositoryImpl implements DropOffRepository {
         contactPhone: contactPhone,
         customerName: customerName,
         amount: amount,
+        withDrying: withDrying,
         pieces: pieces,
         types: types,
         instructions: instructions,
@@ -71,6 +73,10 @@ class DropOffRepositoryImpl implements DropOffRepository {
   @override
   Future<Either<Failure, void>> assignMachine(String id, String machineId) =>
       _guard(() => _api.assignMachine(id, machineId));
+
+  @override
+  Future<Either<Failure, void>> startDrying(String id, String dryerMachineId) =>
+      _guard(() => _api.startDrying(id, dryerMachineId));
 
   @override
   Future<Either<Failure, void>> markReady(String id) =>

@@ -10,25 +10,36 @@ import 'package:fotdelsi/core/widgets/primary_button.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/assign_machine_cubit.dart';
 
-/// Choix d'une machine disponible pour lancer le lavage d'un dépôt.
+/// Choix d'une machine disponible pour lancer le lavage (laveuse) ou le
+/// séchage (sécheuse) d'un dépôt, selon [mode].
 class AssignMachinePage extends StatelessWidget {
-  const AssignMachinePage({super.key, required this.dropOffId});
+  const AssignMachinePage({
+    super.key,
+    required this.dropOffId,
+    this.mode = AssignMode.wash,
+  });
 
   final String dropOffId;
+  final AssignMode mode;
 
   @override
   Widget build(BuildContext context) {
+    final type =
+        mode == AssignMode.dry ? MachineType.dryer : MachineType.washer;
     return BlocProvider(
-      create: (_) => serviceLocator<AssignMachineCubit>()..loadMachines(),
-      child: _AssignView(dropOffId: dropOffId),
+      create: (_) => serviceLocator<AssignMachineCubit>()..loadMachines(type),
+      child: _AssignView(dropOffId: dropOffId, mode: mode),
     );
   }
 }
 
 class _AssignView extends StatelessWidget {
-  const _AssignView({required this.dropOffId});
+  const _AssignView({required this.dropOffId, required this.mode});
 
   final String dropOffId;
+  final AssignMode mode;
+
+  bool get _isDry => mode == AssignMode.dry;
 
   @override
   Widget build(BuildContext context) {
@@ -38,9 +49,9 @@ class _AssignView extends StatelessWidget {
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        title: const Text(
-          'Choisir une machine',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        title: Text(
+          _isDry ? 'Choisir une sécheuse' : 'Choisir une laveuse',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
       body: BlocConsumer<AssignMachineCubit, AssignMachineState>(
@@ -49,7 +60,9 @@ class _AssignView extends StatelessWidget {
           if (state.assignStatus == AssignStatus.success) {
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
-              ..showSnackBar(const SnackBar(content: Text('Lavage démarré')));
+              ..showSnackBar(SnackBar(
+                content: Text(_isDry ? 'Séchage démarré' : 'Lavage démarré'),
+              ));
             context.pop();
           } else if (state.assignStatus == AssignStatus.failure) {
             ScaffoldMessenger.of(context)
@@ -89,6 +102,7 @@ class _AssignView extends StatelessWidget {
                   (m) => _MachineTile(
                     machine: m,
                     selected: state.selectedId == m.id,
+                    isDry: _isDry,
                     onTap: () => cubit.select(m.id),
                   ),
                 )
@@ -98,34 +112,39 @@ class _AssignView extends StatelessWidget {
         SafeArea(
           minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: PrimaryButton(
-            label: 'Démarrer le lavage',
+            label: _isDry ? 'Démarrer le séchage' : 'Démarrer le lavage',
             icon: Icons.play_arrow_rounded,
             enabled: state.selectedId != null && !state.isAssigning,
             loading: state.isAssigning,
             backgroundColor: AppColors.primaryLight,
-            onPressed: () => cubit.assign(dropOffId),
+            onPressed: () =>
+                _isDry ? cubit.startDrying(dropOffId) : cubit.assign(dropOffId),
           ),
         ),
       ],
     );
   }
 
-  Widget _empty() => const Center(
+  Widget _empty() => Center(
     child: Padding(
-      padding: EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.local_laundry_service_outlined,
+            _isDry
+                ? Icons.dry_cleaning_outlined
+                : Icons.local_laundry_service_outlined,
             size: 44,
             color: AppColors.textTertiary,
           ),
-          SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
           Text(
-            'Aucune machine libre actuellement.',
+            _isDry
+                ? 'Aucune sécheuse libre actuellement.'
+                : 'Aucune laveuse libre actuellement.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textSecondary),
+            style: const TextStyle(color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -137,12 +156,19 @@ class _MachineTile extends StatelessWidget {
   const _MachineTile({
     required this.machine,
     required this.selected,
+    required this.isDry,
     required this.onTap,
   });
 
   final Machine machine;
   final bool selected;
+  final bool isDry;
   final VoidCallback onTap;
+
+  String _label() {
+    final kind = isDry ? 'Sèche-linge' : 'Lave-linge';
+    return machine.size != null ? '$kind · ${machine.size} kg' : kind;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -168,8 +194,10 @@ class _MachineTile extends StatelessWidget {
                 color: AppColors.surfaceTint,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
-              child: const Icon(
-                Icons.local_laundry_service_rounded,
+              child: Icon(
+                isDry
+                    ? Icons.dry_cleaning_rounded
+                    : Icons.local_laundry_service_rounded,
                 color: AppColors.primary,
                 size: 20,
               ),
@@ -187,9 +215,7 @@ class _MachineTile extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  machine.size != null
-                      ? 'Lave-linge · ${machine.size} kg'
-                      : 'Lave-linge',
+                  _label(),
                   style: const TextStyle(
                     fontSize: 11.5,
                     color: AppColors.textSecondary,
