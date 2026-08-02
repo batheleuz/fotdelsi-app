@@ -9,6 +9,8 @@ import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
+import 'package:fotdelsi/features/notifications/presentation/push_notification_service.dart';
+import '../cubit/client_session_cubit.dart';
 import '../cubit/link_phone_cubit.dart';
 
 final _phoneRegex = RegExp(r'^(70|71|75|76|77|78)\d{7}$');
@@ -48,7 +50,7 @@ class _LinkPhoneViewState extends State<_LinkPhoneView> {
   void _submit() {
     if (_valid) {
       FocusScope.of(context).unfocus();
-      context.read<LinkPhoneCubit>().requestOtp(_phone);
+      context.read<LinkPhoneCubit>().start(_phone);
     }
   }
 
@@ -56,17 +58,32 @@ class _LinkPhoneViewState extends State<_LinkPhoneView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lier mon numéro'),
+        title: const Text('Connexion client'),
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
       body: SafeArea(
         child: BlocConsumer<LinkPhoneCubit, LinkPhoneState>(
-          listenWhen: (p, c) => p.requestStatus != c.requestStatus,
+          listenWhen: (p, c) =>
+              p.requestStatus != c.requestStatus ||
+              p.verifyStatus != c.verifyStatus,
           listener: (context, state) {
+            // OTP requis → écran de saisie du code.
             if (state.requestStatus == LinkStatus.success) {
               context.push(AppRoutes.linkPhoneVerify, extra: _phone);
+            }
+            // Liaison directe (OTP désactivé côté serveur) → déjà lié.
+            else if (state.verifyStatus == LinkStatus.success) {
+              context.read<ClientSessionCubit>().refresh();
+              serviceLocator<PushNotificationService>()
+                  .registerDeviceIfLinked();
+              context.go(AppRoutes.home);
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  const SnackBar(content: Text('Numéro lié avec succès')),
+                );
             } else if (state.requestStatus == LinkStatus.failure &&
                 state.error != null) {
               ScaffoldMessenger.of(context)
@@ -156,8 +173,10 @@ class _LinkPhoneViewState extends State<_LinkPhoneView> {
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   PrimaryButton(
-                    label: 'Recevoir le code',
-                    icon: Icons.sms_outlined,
+                    // Libellé neutre : le mode (OTP ou liaison directe) est
+                    // décidé par le serveur, l'app ne le connaît qu'après l'appel.
+                    label: 'Continuer',
+                    icon: Icons.arrow_forward_rounded,
                     enabled: _valid && !state.isRequesting,
                     loading: state.isRequesting,
                     backgroundColor: AppColors.primaryLight,

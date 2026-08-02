@@ -12,7 +12,6 @@ import 'package:fotdelsi/features/client_auth/presentation/widgets/link_phone_pr
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:fotdelsi/features/wash_session/presentation/cubit/wash_session_cubit.dart';
 import 'package:fotdelsi/features/wash_session/presentation/widgets/wash_running_sheet.dart';
-import 'package:fotdelsi/features/wash_session/presentation/widgets/wash_session_sheet.dart';
 import '../bloc/machines_bloc.dart';
 import '../bloc/machines_event.dart';
 import '../bloc/machines_state.dart';
@@ -77,22 +76,44 @@ class _HomeViewState extends State<_HomeView> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            const HomeAppBar(),
-            Expanded(
-              child: BlocBuilder<MachinesBloc, MachinesState>(
-                builder: (context, state) => _body(context, state),
+    // Retour d'info du bouton « Démarrer » (désormais dans la carte machine) :
+    // en cas d'échec on prévient, et on réinitialise le statut dans tous les cas.
+    return BlocListener<WashSessionCubit, WashSessionState>(
+      listenWhen: (p, c) => p.startStatus != c.startStatus,
+      listener: (context, state) {
+        if (state.startStatus == WashStartStatus.failure) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(
+                  state.startError ?? 'Impossible de démarrer la machine.',
+                ),
+                backgroundColor: AppColors.danger,
               ),
-            ),
-          ],
+            );
+          context.read<WashSessionCubit>().resetStartStatus();
+        } else if (state.startStatus == WashStartStatus.success) {
+          context.read<WashSessionCubit>().resetStartStatus();
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              const HomeAppBar(),
+              Expanded(
+                child: BlocBuilder<MachinesBloc, MachinesState>(
+                  builder: (context, state) => _body(context, state),
+                ),
+              ),
+            ],
+          ),
         ),
+        floatingActionButton: const _HomeFabs(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        bottomNavigationBar: const ServiceStatusBanner(),
       ),
-      floatingActionButton: const _HomeFabs(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      bottomNavigationBar: const ServiceStatusBanner(),
     );
   }
 
@@ -123,17 +144,15 @@ class _HomeFabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<WashSessionCubit, WashSessionState>(
-      buildWhen: (prev, curr) =>
-          prev.hasConfirmedPendingSession != curr.hasConfirmedPendingSession ||
-          prev.isRunning != curr.isRunning,
+      buildWhen: (prev, curr) => prev.isRunning != curr.isRunning,
       builder: (context, sessionState) {
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // FAB session en attente OU session en cours
-            if (sessionState.hasConfirmedPendingSession ||
-                sessionState.isRunning) ...[
+            // FAB « session en cours » (le bouton « Démarrer » est désormais
+            // dans la carte de la machine concernée).
+            if (sessionState.isRunning) ...[
               _SessionFab(state: sessionState),
               const SizedBox(height: AppSpacing.sm),
             ],
@@ -156,7 +175,6 @@ class _SessionFab extends StatelessWidget {
   /// Priorité au `machineId` de la session ; repli sur `startedMachine`.
   Machine? _resolveMachine(BuildContext context) {
     final session = state.pendingSession;
-    print("Session State => $state");
     if (session == null) return state.startedMachine;
 
     final machines = context.read<MachinesBloc>().state.machines;
@@ -168,25 +186,19 @@ class _SessionFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isRunning = state.isRunning;
-
+    // N'apparaît que pour une session EN COURS (voir _HomeFabs).
     return FloatingActionButton.extended(
       heroTag: 'session_fab',
       onPressed: () {
         final machine = _resolveMachine(context);
-        if (machine == null) return;
-        if (isRunning) {
-          WashRunningSheet.show(context, machine);
-        } else if (state.hasConfirmedPendingSession) {
-          WashSessionSheet.show(context, machine);
-        }
+        if (machine != null) WashRunningSheet.show(context, machine);
       },
-      backgroundColor: isRunning ? AppColors.success : AppColors.secondary,
+      backgroundColor: AppColors.success,
       foregroundColor: Colors.white,
       icon: const Icon(Icons.local_laundry_service_rounded),
-      label: Text(
-        isRunning ? 'En cours' : 'Démarrer',
-        style: const TextStyle(fontWeight: FontWeight.w600),
+      label: const Text(
+        'En cours',
+        style: TextStyle(fontWeight: FontWeight.w600),
       ),
     );
   }

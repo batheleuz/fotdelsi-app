@@ -44,7 +44,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Connexion personnel'),
+        title: const Text('Connexion Admin'),
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -75,7 +75,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     const SizedBox(height: AppSpacing.lg),
                     Text(
-                      'Espace personnel',
+                      'Espace administrateur',
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     const SizedBox(height: AppSpacing.xs),

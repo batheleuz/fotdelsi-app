@@ -41,34 +41,53 @@ class _MachineGridState extends State<MachineGrid>
   @override
   Widget build(BuildContext context) {
     final total = widget.machines.length;
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.zero,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        mainAxisExtent: 160,
-      ),
-      itemCount: total,
-      itemBuilder: (context, index) {
-        final machine = widget.machines[index];
-        final anim = _intervalFor(index, total);
-        return FadeTransition(
-          opacity: anim,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.12),
-              end: Offset.zero,
-            ).animate(anim),
-            child: MachineCard(
-              machine: machine,
-              onTap: () => widget.onTapMachine?.call(machine),
-            ),
+    // Deux colonnes indépendantes (« masonry ») : chaque carte prend la hauteur
+    // de son contenu — pas de cellule à hauteur fixe, donc pas de vide sous les
+    // cartes courtes. Répartition en quinconce (pair→gauche, impair→droite).
+    final left = <int>[];
+    final right = <int>[];
+    for (var i = 0; i < total; i++) {
+      (i.isEven ? left : right).add(i);
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: _column(left)),
+        const SizedBox(width: 12),
+        Expanded(child: _column(right)),
+      ],
+    );
+  }
+
+  Widget _column(List<int> indices) {
+    final total = widget.machines.length;
+    return Column(
+      children: [
+        for (final index in indices)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _animatedCard(index, total),
           ),
-        );
-      },
+      ],
+    );
+  }
+
+  Widget _animatedCard(int index, int total) {
+    final machine = widget.machines[index];
+    final anim = _intervalFor(index, total);
+    return FadeTransition(
+      opacity: anim,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.12),
+          end: Offset.zero,
+        ).animate(anim),
+        child: MachineCard(
+          machine: machine,
+          onTap: () => widget.onTapMachine?.call(machine),
+        ),
+      ),
     );
   }
 }

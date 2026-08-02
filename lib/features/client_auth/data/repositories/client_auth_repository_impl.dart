@@ -15,6 +15,24 @@ class ClientAuthRepositoryImpl implements ClientAuthRepository {
   final ClientSessionStore _store;
 
   @override
+  Future<Either<Failure, String?>> startLink(String phone) async {
+    try {
+      final r = await _api.startLink(phone);
+      // Liaison directe : le backend a émis la session → on la persiste.
+      if (!r.otpRequired && r.token != null) {
+        await _store.save(token: r.token!, phone: r.phone);
+        return Right(r.phone);
+      }
+      // OTP envoyé : l'app enchaîne sur la saisie du code.
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(mapExceptionToFailure(AppException.fromDio(e)));
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> requestOtp(String phone) async {
     try {
       await _api.requestOtp(phone);

@@ -68,12 +68,12 @@ class HomeAppBar extends StatelessWidget {
                     ] else
                       AppMenuEntry(
                         icon: Icons.sms_outlined,
-                        label: 'Lier mon numéro',
+                        label: 'Connexion Client',
                         onSelected: () => context.push(AppRoutes.linkPhone),
                       ),
                     AppMenuEntry(
                       icon: Icons.badge_outlined,
-                      label: 'Connexion personnel',
+                      label: 'Connexion Admin',
                       onSelected: () => context.push(AppRoutes.login),
                     ),
                   ],
