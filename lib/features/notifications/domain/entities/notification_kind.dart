@@ -6,9 +6,9 @@ enum NotificationKind {
   unknown;
 
   static NotificationKind fromApi(String? value) => switch (value) {
-        'PAYMENT_REQUEST' => paymentRequest,
-        'DROPOFF_REGISTERED' => dropoffRegistered,
-        'WASH_READY' => washReady,
-        _ => unknown,
-      };
+    'PAYMENT_REQUEST' => paymentRequest,
+    'DROPOFF_REGISTERED' => dropoffRegistered,
+    'WASH_READY' => washReady,
+    _ => unknown,
+  };
 }

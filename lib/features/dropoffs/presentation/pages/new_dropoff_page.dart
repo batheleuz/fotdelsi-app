@@ -42,10 +42,12 @@ class _NewDropOffView extends StatelessWidget {
         if (state.submitStatus == SubmitStatus.failure && state.error != null) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(
-              content: Text(state.error!),
-              backgroundColor: AppColors.danger,
-            ));
+            ..showSnackBar(
+              SnackBar(
+                content: Text(state.error!),
+                backgroundColor: AppColors.danger,
+              ),
+            );
         }
       },
       child: BlocBuilder<NewDropOffCubit, NewDropOffState>(
@@ -71,13 +73,16 @@ class _NewDropOffView extends StatelessWidget {
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Nouveau dépôt',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                  const Text(
+                    'Nouveau dépôt',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
                   Text(
                     _subtitles[state.step],
                     style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary),
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -101,8 +106,9 @@ class _NewDropOffView extends StatelessWidget {
                 ),
               ),
             ),
-            bottomNavigationBar:
-                state.step >= 3 ? null : _BottomBar(state: state),
+            bottomNavigationBar: state.step >= 3
+                ? null
+                : _BottomBar(state: state),
           );
         },
       ),

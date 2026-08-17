@@ -61,6 +61,9 @@ class DropOffDetailCubit extends Cubit<DropOffDetailState> {
     return super.close();
   }
 
+  Future<void> receiveHandoff() =>
+      _runAction(() => _repository.receiveHandoff(_id));
+
   Future<void> markReady() => _runAction(() => _repository.markReady(_id));
 
   Future<void> markCollected() =>
@@ -70,23 +73,32 @@ class DropOffDetailCubit extends Cubit<DropOffDetailState> {
     required int pieces,
     required List<LaundryType> types,
     String? instructions,
-  }) =>
-      _runAction(() => _repository.updateLaundry(
-            _id,
-            pieces: pieces,
-            types: types,
-            instructions: instructions,
-          ));
+  }) => _runAction(
+    () => _repository.updateLaundry(
+      _id,
+      pieces: pieces,
+      types: types,
+      instructions: instructions,
+    ),
+  );
 
   Future<void> _runAction(
-      Future<Either<Failure, void>> Function() action) async {
-    emit(state.copyWith(actionStatus: ActionStatus.loading, clearActionError: true));
+    Future<Either<Failure, void>> Function() action,
+  ) async {
+    emit(
+      state.copyWith(
+        actionStatus: ActionStatus.loading,
+        clearActionError: true,
+      ),
+    );
     final result = await action();
     await result.fold(
-      (f) async => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        actionError: f.message,
-      )),
+      (f) async => emit(
+        state.copyWith(
+          actionStatus: ActionStatus.failure,
+          actionError: f.message,
+        ),
+      ),
       (_) async {
         emit(state.copyWith(actionStatus: ActionStatus.success));
         await load(_id);

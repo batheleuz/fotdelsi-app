@@ -24,8 +24,9 @@ class AssignMachinePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final type =
-        mode == AssignMode.dry ? MachineType.dryer : MachineType.washer;
+    final type = mode == AssignMode.dry
+        ? MachineType.dryer
+        : MachineType.washer;
     return BlocProvider(
       create: (_) => serviceLocator<AssignMachineCubit>()..loadMachines(type),
       child: _AssignView(dropOffId: dropOffId, mode: mode),
@@ -60,9 +61,11 @@ class _AssignView extends StatelessWidget {
           if (state.assignStatus == AssignStatus.success) {
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
-              ..showSnackBar(SnackBar(
-                content: Text(_isDry ? 'Séchage démarré' : 'Lavage démarré'),
-              ));
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(_isDry ? 'Séchage démarré' : 'Lavage démarré'),
+                ),
+              );
             context.pop();
           } else if (state.assignStatus == AssignStatus.failure) {
             ScaffoldMessenger.of(context)

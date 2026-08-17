@@ -20,6 +20,9 @@ class AgentQueue extends Equatable {
   /// À remettre (READY).
   final List<DropOff> ready;
 
+  /// Ce qu'il reste à traiter. Les remises en attente n'y figurent pas : leur
+  /// linge est encore chez le client, elles ont leur propre chargement
+  /// (`GET /drop-offs/handoffs`).
   int get total => received.length + inProgress.length + ready.length;
   bool get isEmpty => total == 0;
 

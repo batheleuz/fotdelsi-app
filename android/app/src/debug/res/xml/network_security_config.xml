@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Autorise le HTTP en clair vers un backend de développement local.
+
+    Ce fichier vit dans le source set `debug` : il n'est PAS embarqué dans les
+    builds de release, qui restent en HTTPS strict vers api.fotdelsi.sn.
+
+    Les domaines sont listés un par un plutôt qu'ouverts en grand — un
+    `cleartextTrafficPermitted` global masquerait un jour une vraie régression
+    (une URL de prod repassée en http sans que rien ne proteste).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Machine de dev sur le réseau local (voir ApiEndpoints.baseUrl). -->
+        <domain includeSubdomains="false">192.168.2.100</domain>
+        <!-- Hôte vu depuis l'émulateur Android. -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- Appareil physique relié par `adb reverse`. -->
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

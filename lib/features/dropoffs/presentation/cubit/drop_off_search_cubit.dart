@@ -17,12 +17,14 @@ class DropOffSearchCubit extends Cubit<DropOffSearchState> {
     emit(state.copyWith(status: SearchStatus.loading));
     final result = await _repository.getByCode(code, day: day);
     result.fold(
-      (failure) => emit(state.copyWith(
-        status: failure is NotFoundFailure
-            ? SearchStatus.notFound
-            : SearchStatus.failure,
-        error: failure.message,
-      )),
+      (failure) => emit(
+        state.copyWith(
+          status: failure is NotFoundFailure
+              ? SearchStatus.notFound
+              : SearchStatus.failure,
+          error: failure.message,
+        ),
+      ),
       (dropOff) =>
           emit(state.copyWith(status: SearchStatus.found, result: dropOff)),
     );

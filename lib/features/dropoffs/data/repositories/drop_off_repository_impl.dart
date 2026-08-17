@@ -6,6 +6,7 @@ import 'package:fotdelsi/core/network/exceptions.dart';
 import 'package:fotdelsi/core/network/failures.dart';
 import '../../domain/entities/agent_queue.dart';
 import '../../domain/entities/drop_off.dart';
+import '../../domain/entities/pending_drop_off_payment.dart';
 import '../../domain/entities/laundry_type.dart';
 import '../../domain/repositories/drop_off_repository.dart';
 import '../datasources/drop_off_api_data_source.dart';
@@ -27,11 +28,34 @@ class DropOffRepositoryImpl implements DropOffRepository {
   }
 
   @override
+  Future<Either<Failure, List<DropOff>>> getHandoffs() async {
+    try {
+      return Right(await _api.getHandoffs());
+    } on DioException catch (e) {
+      return Left(mapExceptionToFailure(AppException.fromDio(e)));
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<PendingDropOffPayment>>>
+  getPendingPayments() async {
+    try {
+      return Right(await _api.getPendingPayments());
+    } on DioException catch (e) {
+      return Left(mapExceptionToFailure(AppException.fromDio(e)));
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
   Future<Either<Failure, String>> createDraft({
     required String contactPhone,
     required String customerName,
-    required int amount,
-    required bool withDrying,
+    required String formulaCode,
+    required int sizeKg,
     required int pieces,
     required List<LaundryType> types,
     String? instructions,
@@ -40,8 +64,8 @@ class DropOffRepositoryImpl implements DropOffRepository {
       final draftId = await _api.createDraft(
         contactPhone: contactPhone,
         customerName: customerName,
-        amount: amount,
-        withDrying: withDrying,
+        formulaCode: formulaCode,
+        sizeKg: sizeKg,
         pieces: pieces,
         types: types,
         instructions: instructions,
@@ -77,6 +101,10 @@ class DropOffRepositoryImpl implements DropOffRepository {
   @override
   Future<Either<Failure, void>> startDrying(String id, String dryerMachineId) =>
       _guard(() => _api.startDrying(id, dryerMachineId));
+
+  @override
+  Future<Either<Failure, void>> receiveHandoff(String id) =>
+      _guard(() => _api.receiveHandoff(id));
 
   @override
   Future<Either<Failure, void>> markReady(String id) =>

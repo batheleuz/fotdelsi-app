@@ -20,10 +20,12 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> bootstrap() async {
     final user = await _repository.restoreSession();
     print("USER => $user");
-    emit(state.copyWith(
-      status: user == null ? AuthStatus.anonymous : AuthStatus.authenticated,
-      user: user,
-    ));
+    emit(
+      state.copyWith(
+        status: user == null ? AuthStatus.anonymous : AuthStatus.authenticated,
+        user: user,
+      ),
+    );
   }
 
   Future<void> login(String email, String password) async {
@@ -32,15 +34,19 @@ class AuthCubit extends Cubit<AuthState> {
     final result = await _repository.login(email: email, password: password);
 
     result.fold(
-      (failure) => emit(state.copyWith(
-        formStatus: AuthFormStatus.failure,
-        error: failure.message,
-      )),
-      (user) => emit(state.copyWith(
-        status: AuthStatus.authenticated,
-        user: user,
-        formStatus: AuthFormStatus.idle,
-      )),
+      (failure) => emit(
+        state.copyWith(
+          formStatus: AuthFormStatus.failure,
+          error: failure.message,
+        ),
+      ),
+      (user) => emit(
+        state.copyWith(
+          status: AuthStatus.authenticated,
+          user: user,
+          formStatus: AuthFormStatus.idle,
+        ),
+      ),
     );
   }
 

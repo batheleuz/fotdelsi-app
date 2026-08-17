@@ -35,7 +35,8 @@ class ServiceStatus {
       services.forEach((key, value) {
         if (value is Map && value['available'] == false) {
           final k = key.toString();
-          final message = (value['message'] as String?) ??
+          final message =
+              (value['message'] as String?) ??
               _defaults[k] ??
               'Service temporairement indisponible.';
           warnings.add(ServiceWarning(key: k, message: message));

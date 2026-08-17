@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fotdelsi/core/connectivity/connectivity_cubit.dart';
 import 'package:fotdelsi/core/connectivity/offline_banner.dart';
+import 'package:fotdelsi/core/deeplink/deep_link_service.dart';
 import 'package:fotdelsi/core/di/service_locator.dart';
 import 'package:fotdelsi/core/theme/app_theme.dart';
 import 'package:fotdelsi/core/websocket/ws_connection_cubit.dart';
@@ -25,6 +26,12 @@ class FotDelsiApp extends StatefulWidget {
 class _FotDelsiAppState extends State<FotDelsiApp>
     with WidgetsBindingObserver {
   final ServiceStatusCubit _serviceStatus = serviceLocator<ServiceStatusCubit>();
+  final DeepLinkService _deepLinks = DeepLinkService();
+
+  /// Clé globale du ScaffoldMessenger : permet d'afficher un SnackBar depuis
+  /// un service sans BuildContext (retour de deep link paiement).
+  final GlobalKey<ScaffoldMessengerState> _messengerKey =
+      GlobalKey<ScaffoldMessengerState>();
 
   @override
   void initState() {
@@ -32,6 +39,8 @@ class _FotDelsiAppState extends State<FotDelsiApp>
     WidgetsBinding.instance.addObserver(this);
     // Démarre l'interrogation de /status (immédiate + périodique).
     _serviceStatus.start();
+    // Écoute les deep links de retour paiement (fotdelsi://payment/...).
+    _deepLinks.start(router: widget.router, messengerKey: _messengerKey);
   }
 
   @override
@@ -48,6 +57,7 @@ class _FotDelsiAppState extends State<FotDelsiApp>
 
   @override
   void dispose() {
+    _deepLinks.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -75,6 +85,7 @@ class _FotDelsiAppState extends State<FotDelsiApp>
         title: 'FOT DELSI',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
+        scaffoldMessengerKey: _messengerKey,
         routerConfig: widget.router,
         // Bandeau « hors ligne » global, posé au-dessus de toutes les pages.
         builder: (context, child) => Stack(

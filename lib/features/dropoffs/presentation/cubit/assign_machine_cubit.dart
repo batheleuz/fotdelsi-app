@@ -16,7 +16,7 @@ enum AssignMode { wash, dry }
 /// Choix d'une machine disponible pour lancer le lavage ou le séchage d'un dépôt.
 class AssignMachineCubit extends Cubit<AssignMachineState> {
   AssignMachineCubit(this._machines, this._dropOffs)
-      : super(const AssignMachineState());
+    : super(const AssignMachineState());
 
   final MachineRepository _machines;
   final DropOffRepository _dropOffs;
@@ -27,27 +27,28 @@ class AssignMachineCubit extends Cubit<AssignMachineState> {
     final result = await _machines.getMachines();
     result.fold(
       (f) => emit(state.copyWith(status: AssignLoad.failure, error: f.message)),
-      (all) => emit(state.copyWith(
-        status: AssignLoad.success,
-        machines: all
-            .where((m) => m.status == MachineStatus.available && m.type == type)
-            .toList(),
-      )),
+      (all) => emit(
+        state.copyWith(
+          status: AssignLoad.success,
+          machines: all
+              .where(
+                (m) => m.status == MachineStatus.available && m.type == type,
+              )
+              .toList(),
+        ),
+      ),
     );
   }
 
-  void select(String machineId) =>
-      emit(state.copyWith(selectedId: machineId));
+  void select(String machineId) => emit(state.copyWith(selectedId: machineId));
 
   /// Lance le lavage. Renvoie `true` en cas de succès.
-  Future<bool> assign(String dropOffId) => _run(
-        (machineId) => _dropOffs.assignMachine(dropOffId, machineId),
-      );
+  Future<bool> assign(String dropOffId) =>
+      _run((machineId) => _dropOffs.assignMachine(dropOffId, machineId));
 
   /// Lance le séchage sur la sécheuse choisie. Renvoie `true` en cas de succès.
-  Future<bool> startDrying(String dropOffId) => _run(
-        (machineId) => _dropOffs.startDrying(dropOffId, machineId),
-      );
+  Future<bool> startDrying(String dropOffId) =>
+      _run((machineId) => _dropOffs.startDrying(dropOffId, machineId));
 
   Future<bool> _run(
     Future<Either<Failure, void>> Function(String machineId) action,
@@ -59,7 +60,9 @@ class AssignMachineCubit extends Cubit<AssignMachineState> {
     final result = await action(machineId);
     return result.fold(
       (f) {
-        emit(state.copyWith(assignStatus: AssignStatus.failure, error: f.message));
+        emit(
+          state.copyWith(assignStatus: AssignStatus.failure, error: f.message),
+        );
         return false;
       },
       (_) {

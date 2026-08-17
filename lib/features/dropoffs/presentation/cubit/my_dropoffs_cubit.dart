@@ -16,17 +16,23 @@ class MyDropOffsCubit extends Cubit<MyDropOffsState> {
     if (!silent) emit(state.copyWith(status: MyDropOffsStatus.loading));
     final result = await _repository.getMyDropOffs();
     result.fold(
-      (f) => emit(state.copyWith(
-        status: silent && state.items != null
-            ? MyDropOffsStatus.success
-            : MyDropOffsStatus.failure,
-        error: f.message,
-      )),
-      (items) => emit(state.copyWith(
-        status: MyDropOffsStatus.success,
-        items: items,
-        clearError: true,
-      )),
+      // Voir ci-dessus : un rafraîchissement de fond qui échoue sur un écran
+      // déjà rempli ne vaut pas un message.
+      (f) => silent && state.items != null
+          ? null
+          : emit(
+              state.copyWith(
+                status: MyDropOffsStatus.failure,
+                error: f.message,
+              ),
+            ),
+      (items) => emit(
+        state.copyWith(
+          status: MyDropOffsStatus.success,
+          items: items,
+          clearError: true,
+        ),
+      ),
     );
   }
 

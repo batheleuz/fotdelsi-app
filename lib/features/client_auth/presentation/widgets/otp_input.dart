@@ -74,8 +74,8 @@ class _OtpInputState extends State<OtpInput> {
                   color: widget.hasError
                       ? AppColors.danger
                       : (active || filled)
-                          ? AppColors.primaryLight
-                          : AppColors.border,
+                      ? AppColors.primaryLight
+                      : AppColors.border,
                   width: (active || widget.hasError) ? 2 : 1,
                 ),
               ),

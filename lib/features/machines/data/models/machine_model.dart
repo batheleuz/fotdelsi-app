@@ -31,27 +31,27 @@ class MachineModel {
       status: _status(json['status'] as String?),
       remainTime: (json['remain_time'] as num?)?.toInt() ?? 0,
       price: json['price'] as int,
-      size: json['size'] as int?
+      size: json['size'] as int?,
     );
   }
 
   Machine toEntity() => Machine(
-        id: id,
-        code: code,
-        name: name,
-        type: type,
-        status: status,
-        remainTime: remainTime,
-        price: price.toDouble(),
-        size: size,
-      );
+    id: id,
+    code: code,
+    name: name,
+    type: type,
+    status: status,
+    remainTime: remainTime,
+    price: price.toDouble(),
+    size: size,
+  );
 
   static MachineType _type(String? value) =>
       value == 'SECHEUSE' ? MachineType.dryer : MachineType.washer;
 
   static MachineStatus _status(String? value) => switch (value) {
-        'AVAILABLE' => MachineStatus.available,
-        'IN_USE' => MachineStatus.inUse,
-        _ => MachineStatus.offline,
-      };
+    'AVAILABLE' => MachineStatus.available,
+    'IN_USE' => MachineStatus.inUse,
+    _ => MachineStatus.offline,
+  };
 }

@@ -20,8 +20,9 @@ class PhoneNumberField extends StatefulWidget {
 }
 
 class _PhoneNumberFieldState extends State<PhoneNumberField> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initialValue);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialValue,
+  );
 
   @override
   void dispose() {
@@ -71,8 +72,10 @@ class _PhoneNumberFieldState extends State<PhoneNumberField> {
                 border: InputBorder.none,
                 hintText: '77 123 45 67',
                 hintStyle: TextStyle(color: AppColors.textTertiary),
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 15,
+                ),
               ),
             ),
           ),

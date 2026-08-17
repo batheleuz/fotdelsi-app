@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'package:fotdelsi/core/network/api_endpoints.dart';
+import 'package:fotdelsi/core/utils/phone_number.dart';
 
 /// Source distante REST des notifications (device token + ack).
 class NotificationApiDataSource {
@@ -15,7 +16,11 @@ class NotificationApiDataSource {
   }) async {
     await _dio.post<dynamic>(
       ApiEndpoints.devices,
-      data: {'phone': phone, 'fcmToken': fcmToken, 'platform': platform},
+      data: {
+        'phone': normalizePhone(phone),
+        'fcmToken': fcmToken,
+        'platform': platform,
+      },
     );
   }
 

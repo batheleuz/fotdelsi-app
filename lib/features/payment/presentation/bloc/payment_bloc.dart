@@ -18,8 +18,8 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
     this._paymentRepository,
     CustomerProfileRepository profileRepository,
     this._sessionCubit,
-  )   : _profileRepository = profileRepository,
-        super(_initialState(profileRepository.load())) {
+  ) : _profileRepository = profileRepository,
+      super(_initialState(profileRepository.load())) {
     on<PaymentNameChanged>(_onNameChanged);
     on<PaymentProviderSelected>(_onProviderSelected);
     on<PaymentPhoneChanged>(_onPhoneChanged);
@@ -31,10 +31,8 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   final WashSessionCubit _sessionCubit;
 
   /// État initial prérempli avec le profil mémorisé.
-  static PaymentState _initialState(CustomerProfile profile) => PaymentState(
-        customerFullName: profile.fullName,
-        phone: profile.phone,
-      );
+  static PaymentState _initialState(CustomerProfile profile) =>
+      PaymentState(customerFullName: profile.fullName, phone: profile.phone);
 
   void _onNameChanged(PaymentNameChanged event, Emitter<PaymentState> emit) {
     emit(state.copyWith(customerFullName: event.name));
@@ -61,30 +59,32 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
 
     final result = await _paymentRepository.initiatePayment(
       machineId: event.machineId,
+      formulaCode: event.formulaCode,
       provider: state.provider!,
       customerFullName: state.customerFullName.trim(),
       customerPhone: state.phone,
     );
 
     await result.fold(
-      (failure) async => emit(state.copyWith(
-        status: PaymentStatus.failure,
-        errorMessage: failure.message,
-      )),
+      (failure) async => emit(
+        state.copyWith(
+          status: PaymentStatus.failure,
+          errorMessage: failure.message,
+        ),
+      ),
       (session) async {
         // Mémorise les coordonnées pour les prochains paiements.
-        await _profileRepository.save(CustomerProfile(
-          fullName: state.customerFullName.trim(),
-          phone: state.phone,
-        ));
+        await _profileRepository.save(
+          CustomerProfile(
+            fullName: state.customerFullName.trim(),
+            phone: state.phone,
+          ),
+        );
         // Persiste la session et met à jour le cubit global.
         await _sessionCubit.onPaymentInitiated(
           PendingWashSession.fromPaymentSession(session),
         );
-        emit(state.copyWith(
-          status: PaymentStatus.success,
-          session: session,
-        ));
+        emit(state.copyWith(status: PaymentStatus.success, session: session));
       },
     );
   }

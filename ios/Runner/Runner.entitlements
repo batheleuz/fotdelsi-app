@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  ════════════════════════════════════════════════════════════════════
+	  FICHIER VOLONTAIREMENT DÉTACHÉ — aucune configuration ne le référence.
+	  ════════════════════════════════════════════════════════════════════
+
+	  POURQUOI
+
+	  Le développement se fait sous une équipe Apple PERSONNELLE (gratuite),
+	  qui n'a pas droit à la capacité Push Notifications. Toute configuration
+	  déclarant `aps-environment` devient alors impossible à signer :
+
+	      Personal development teams, including "…", do not support
+	      the Push Notifications capability.
+
+	  Les tests sur iPhone se faisant aussi bien en Debug qu'en Release,
+	  AUCUNE configuration ne porte d'entitlements aujourd'hui.
+
+	  CE QUE ÇA COÛTE
+
+	  Un build produit en l'état — y compris une archive TestFlight — n'a pas
+	  d'`aps-environment`, donc iOS ne délivre aucun jeton APNs et le push
+	  reste muet. Le reste de l'application fonctionne normalement : c'est
+	  précisément ce qui rend la panne difficile à repérer.
+
+	  COMMENT RÉACTIVER LE PUSH, le jour où l'app est signée par le compte
+	  payant
+
+	    1. Sur l'App ID, activer la capacité Push Notifications.
+	    2. Dans le bloc de réglages de la configuration voulue (cible Runner),
+	       ajouter :
+	           CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
+	    3. Ajuster la valeur ci-dessous selon la signature :
+	         • `development` pour un build signé en développement ;
+	         • `production`  pour une archive TestFlight / App Store.
+	       Se tromper de valeur ne casse pas le build : ça donne une app qui
+	       s'installe et ne reçoit jamais rien.
+	-->
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>

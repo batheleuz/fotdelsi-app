@@ -13,16 +13,28 @@ class SessionCountdownRing extends StatelessWidget {
     this.size = 180,
   });
 
-  /// Secondes restantes / durée totale du cycle.
-  final int remaining;
+  /// Secondes restantes, ou `null` tant que la machine n'a rien annoncé.
+  ///
+  /// EQLink ne donne aucune durée à la commande de démarrage : il y a donc un
+  /// intervalle, entre le lancement et le premier relevé utile, où la durée
+  /// est inconnue. L'annoncer comme « 00:00 » dirait au client que son lavage
+  /// est fini alors qu'il vient de commencer.
+  final int? remaining;
   final int total;
   final double size;
 
-  double get _progress => total <= 0 ? 0 : (remaining / total).clamp(0.0, 1.0);
+  /// Anneau vide tant que la durée est inconnue : rien à représenter.
+  double get _progress {
+    final left = remaining;
+    if (left == null || total <= 0) return 0;
+    return (left / total).clamp(0.0, 1.0);
+  }
 
   String get _formatted {
-    final m = (remaining ~/ 60).toString().padLeft(2, '0');
-    final s = (remaining % 60).toString().padLeft(2, '0');
+    final left = remaining;
+    if (left == null) return '--:--';
+    final m = (left ~/ 60).toString().padLeft(2, '0');
+    final s = (left % 60).toString().padLeft(2, '0');
     return '$m:$s';
   }
 

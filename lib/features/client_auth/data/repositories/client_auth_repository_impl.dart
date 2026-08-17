@@ -7,6 +7,7 @@ import 'package:fotdelsi/core/network/exceptions.dart';
 import 'package:fotdelsi/core/network/failures.dart';
 import '../../domain/repositories/client_auth_repository.dart';
 import '../datasources/client_auth_api_data_source.dart';
+import '../../domain/entities/client_profile.dart';
 
 class ClientAuthRepositoryImpl implements ClientAuthRepository {
   const ClientAuthRepositoryImpl(this._api, this._store);
@@ -71,6 +72,24 @@ class ClientAuthRepositoryImpl implements ClientAuthRepository {
       // Best-effort : on purge la session locale quoi qu'il arrive.
     } finally {
       await _store.clear();
+    }
+  }
+
+  @override
+  Future<Either<Failure, ClientProfile>> profile() async {
+    try {
+      return Right(await _api.getProfile());
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ClientProfile>> updateName(String? fullName) async {
+    try {
+      return Right(await _api.updateProfile(fullName));
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
     }
   }
 }

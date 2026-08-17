@@ -31,12 +31,16 @@ class DropOffQueueCubit extends Cubit<DropOffQueueState> {
     final result = await _repository.getQueue(day: state.day);
     return result.fold(
       (failure) {
+        // Un rafraîchissement de fond qui échoue alors que du contenu est
+        // déjà affiché ne concerne pas l'utilisateur : ce qu'il voit reste
+        // juste, seule sa fraîcheur est en jeu. On n'émet donc rien — poser un
+        // message ici le faisait surgir en snackbar au milieu d'un écran
+        // parfaitement correct.
+        if (silent && state.queue != null) return false;
+
         emit(
           state.copyWith(
-            // En refresh silencieux, on garde les données affichées.
-            status: silent && state.queue != null
-                ? DropOffQueueStatus.success
-                : DropOffQueueStatus.failure,
+            status: DropOffQueueStatus.failure,
             error: failure.message,
           ),
         );

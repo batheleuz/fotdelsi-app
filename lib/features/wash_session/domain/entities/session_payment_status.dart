@@ -15,12 +15,12 @@ enum SessionPaymentStatus {
   /// Mappe la valeur `paymentStatus` du backend
   /// (`PENDING | CONFIRMED | FAILED | EXPIRED | ANOMALY`).
   static SessionPaymentStatus fromApi(String value) => switch (value) {
-        'CONFIRMED' => confirmed,
-        'FAILED' => failed,
-        'EXPIRED' => expired,
-        'ANOMALY' => anomaly,
-        _ => pendingPayment,
-      };
+    'CONFIRMED' => confirmed,
+    'FAILED' => failed,
+    'EXPIRED' => expired,
+    'ANOMALY' => anomaly,
+    _ => pendingPayment,
+  };
 
   /// Le paiement a définitivement échoué (plus aucune action possible).
   bool get isTerminalFailure =>

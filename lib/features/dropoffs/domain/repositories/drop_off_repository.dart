@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import 'package:fotdelsi/core/network/failures.dart';
 import '../entities/agent_queue.dart';
 import '../entities/drop_off.dart';
+import '../entities/pending_drop_off_payment.dart';
 import '../entities/laundry_type.dart';
 
 /// Contrat domaine des dépôts (espace agent / admin).
@@ -11,12 +12,20 @@ abstract interface class DropOffRepository {
   /// [day] au format `YYYY-MM-DD` ; par défaut, le jour courant côté backend.
   Future<Either<Failure, AgentQueue>> getQueue({String? day});
 
+  /// `GET /drop-offs/handoffs` — remises payées en attente du linge.
+  Future<Either<Failure, List<DropOff>>> getHandoffs();
+
+  /// `GET /drop-offs/pending-payment` — dépôts saisis, pas encore encaissés.
+  Future<Either<Failure, List<PendingDropOffPayment>>> getPendingPayments();
+
   /// `POST /drop-offs/draft` — crée le brouillon, retourne son `draftId`.
+  /// Crée le brouillon de dépôt. Aucun montant n'est transmis : le serveur le
+  /// calcule depuis la grille à partir de (formule, capacité).
   Future<Either<Failure, String>> createDraft({
     required String contactPhone,
     required String customerName,
-    required int amount,
-    required bool withDrying,
+    required String formulaCode,
+    required int sizeKg,
     required int pieces,
     required List<LaundryType> types,
     String? instructions,
@@ -41,6 +50,9 @@ abstract interface class DropOffRepository {
 
   /// `POST /drop-offs/:id/start-drying` — lance le séchage sur une sécheuse.
   Future<Either<Failure, void>> startDrying(String id, String dryerMachineId);
+
+  /// `POST /drop-offs/:id/receive` — le client apporte son linge déjà lavé.
+  Future<Either<Failure, void>> receiveHandoff(String id);
 
   /// `POST /drop-offs/:id/mark-ready` — marque prêt (fallback manuel).
   Future<Either<Failure, void>> markReady(String id);

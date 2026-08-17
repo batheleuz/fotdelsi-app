@@ -40,6 +40,11 @@ final class DropOffDetailState extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [status, dropOff, error, actionStatus, actionError];
+  List<Object?> get props => [
+    status,
+    dropOff,
+    error,
+    actionStatus,
+    actionError,
+  ];
 }

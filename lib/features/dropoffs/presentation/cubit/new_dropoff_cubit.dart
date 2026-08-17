@@ -3,12 +3,11 @@ import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 
 import 'package:fotdelsi/core/network/failures.dart';
-import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
-import 'package:fotdelsi/features/machines/domain/repositories/machine_repository.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
+import 'package:fotdelsi/features/catalog/domain/repositories/service_formula_repository.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart';
 import 'package:fotdelsi/features/payment/domain/repositories/payment_repository.dart';
 import '../../domain/entities/laundry_type.dart';
-import '../../domain/entities/prestation.dart';
 import '../../domain/repositories/drop_off_repository.dart';
 
 part 'new_dropoff_state.dart';
@@ -22,60 +21,33 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
   NewDropOffCubit(
     this._dropOffRepository,
     this._paymentRepository,
-    this._machineRepository,
+    this._formulaRepository,
   ) : super(const NewDropOffState()) {
-    _loadPrestations();
+    _loadFormulas();
   }
 
   final DropOffRepository _dropOffRepository;
   final PaymentRepository _paymentRepository;
-  final MachineRepository _machineRepository;
+  final ServiceFormulaRepository _formulaRepository;
 
-  // ── Catalogue de prestations (dérivé des machines) ──────────────────────────
+  // ── Catalogue de services ───────────────────────────────────────────────────
 
-  Future<void> _loadPrestations() async {
-    emit(state.copyWith(prestationsStatus: LoadStatus.loading));
+  /// Charge la grille tarifaire officielle. Le comptoir propose toutes les
+  /// formules, y compris celles réalisées à la main (pliage, repassage).
+  Future<void> _loadFormulas() async {
+    emit(state.copyWith(formulasStatus: LoadStatus.loading));
 
-    final result = await _machineRepository.getMachines();
-    
+    final result = await _formulaRepository.getFormulas();
+
     result.fold(
-      (failure) => emit(state.copyWith(prestationsStatus: LoadStatus.failure)),
-      (machines) {
-        final sorted =
-            machines
-                .where((m) => m.size != null && m.type == MachineType.washer)
-                .toList()
-              ..sort((a, b) => a.size!.compareTo(b.size!));
-        final seen = <int>{};
-        final prestations = <Prestation>[];
-        for (final m in sorted) {
-          final amount = m.price.toInt();
-          if (seen.add(amount)) {
-            prestations.add(Prestation(amount: amount, sizeKg: m.size));
-          }
-        }
-
-        // Prix unique du séchage : dérivé des sécheuses (le moins cher).
-        // Null si aucune sécheuse → l'option ne sera pas proposée.
-        final dryerPrices = machines
-            .where((m) => m.type == MachineType.dryer)
-            .map((m) => m.price.toInt());
-        final dryingPrice = dryerPrices.isEmpty
-            ? null
-            : dryerPrices.reduce((a, b) => a < b ? a : b);
-
-        emit(
-          state.copyWith(
-            prestations: prestations,
-            dryingPrice: dryingPrice,
-            prestationsStatus: LoadStatus.success,
-          ),
-        );
-      },
+      (failure) => emit(state.copyWith(formulasStatus: LoadStatus.failure)),
+      (formulas) => emit(
+        state.copyWith(formulas: formulas, formulasStatus: LoadStatus.success),
+      ),
     );
   }
 
-  void retryPrestations() => _loadPrestations();
+  void retryFormulas() => _loadFormulas();
 
   // ── Saisies ─────────────────────────────────────────────────────────────────
 
@@ -100,9 +72,22 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
   void setInstructions(String value) =>
       emit(state.copyWith(instructions: value));
 
-  void selectPrestation(int amount) => emit(state.copyWith(amount: amount));
+  /// Choisit une formule. La capacité est réinitialisée si elle n'est pas
+  /// tarifée pour cette formule — mieux vaut redemander que d'afficher un
+  /// total incohérent.
+  void selectFormula(ServiceFormula formula) {
+    final keepSize =
+        state.sizeKg != null && formula.priceFor(state.sizeKg!) != null;
+    emit(
+      state.copyWith(
+        formulaCode: formula.code,
+        sizeKg: keepSize ? state.sizeKg : null,
+        clearSize: !keepSize,
+      ),
+    );
+  }
 
-  void toggleDrying(bool value) => emit(state.copyWith(withDrying: value));
+  void selectSize(int sizeKg) => emit(state.copyWith(sizeKg: sizeKg));
 
   void selectProvider(PaymentProvider provider) =>
       emit(state.copyWith(provider: provider));
@@ -128,11 +113,13 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
 
     emit(state.copyWith(submitStatus: SubmitStatus.loading, clearError: true));
 
+    // Aucun montant transmis : le serveur retarifie depuis la grille à partir
+    // du couple (formule, capacité).
     final draft = await _dropOffRepository.createDraft(
       contactPhone: state.contactPhone,
       customerName: state.customerName,
-      amount: state.total!,
-      withDrying: state.withDrying,
+      formulaCode: state.formulaCode!,
+      sizeKg: state.sizeKg!,
       pieces: state.pieces,
       types: state.types.toList(),
       instructions: state.instructions,
@@ -171,7 +158,6 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
   Future<Either<Failure, void>> _initiate() =>
       _paymentRepository.initiateDropOffPayment(
         draftId: state.draftId!,
-        amount: state.total!,
         provider: state.provider!,
         customerFullName: state.customerName,
         customerPhone: state.contactPhone,

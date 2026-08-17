@@ -17,18 +17,18 @@ class AuthUser extends Equatable {
   final AuthRole? role;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
-        id: json['id'] as String,
-        email: json['email'] as String,
-        name: json['name'] as String,
-        role: AuthRole.fromApi(json['role'] as String? ?? ''),
-      );
+    id: json['id'] as String,
+    email: json['email'] as String,
+    name: json['name'] as String,
+    role: AuthRole.fromApi(json['role'] as String? ?? ''),
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'email': email,
-        'name': name,
-        'role': role?.apiValue,
-      };
+    'id': id,
+    'email': email,
+    'name': name,
+    'role': role?.apiValue,
+  };
 
   bool get isAgent => role == AuthRole.agent;
   bool get isAdmin => role == AuthRole.admin;

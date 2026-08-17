@@ -15,31 +15,32 @@ sealed class AppException implements Exception {
 
   /// Traduit une [DioException] en exception applicative typée.
   factory AppException.fromDio(DioException e) {
-    
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
         return const TimeoutException();
-      
+
       case DioExceptionType.badResponse:
         final code = e.response?.statusCode;
         final serverMessage = _extractMessage(e.response?.data);
         return switch (code) {
           401 || 403 => UnauthorizedException(message: serverMessage),
-          404        => const NotFoundException(),
-          503        => ServiceUnavailableException(message: serverMessage),
-          final c? when c >= 400 && c < 500 =>
-              ServerException(message: serverMessage, statusCode: c),
-          _          => ServerException(statusCode: code),
+          404 => const NotFoundException(),
+          503 => ServiceUnavailableException(message: serverMessage),
+          final c? when c >= 400 && c < 500 => ServerException(
+            message: serverMessage,
+            statusCode: c,
+          ),
+          _ => ServerException(statusCode: code),
         };
-      
+
       case DioExceptionType.connectionError:
         return const NetworkException();
-      
+
       case DioExceptionType.cancel:
         return const UnknownException(message: 'Requête annulée.');
-      
+
       case DioExceptionType.badCertificate:
       case DioExceptionType.unknown:
         if (e.error is SocketException) return const NetworkException();
@@ -64,7 +65,7 @@ sealed class AppException implements Exception {
 
 final class ServerException extends AppException {
   const ServerException({String? message, super.statusCode})
-      : super(message ?? 'Erreur serveur.');
+    : super(message ?? 'Erreur serveur.');
 }
 
 final class NetworkException extends AppException {
@@ -77,24 +78,24 @@ final class TimeoutException extends AppException {
 
 final class UnauthorizedException extends AppException {
   const UnauthorizedException({String? message})
-      : super(message ?? 'Accès non autorisé.', statusCode: 401);
+    : super(message ?? 'Accès non autorisé.', statusCode: 401);
 }
 
 final class NotFoundException extends AppException {
   const NotFoundException({String? message})
-      : super(message ?? 'Ressource introuvable.', statusCode: 404);
+    : super(message ?? 'Ressource introuvable.', statusCode: 404);
 }
 
 final class ServiceUnavailableException extends AppException {
   const ServiceUnavailableException({String? message})
-      : super(
-          message ??
-              'Service temporairement indisponible. Réessayez dans un instant.',
-          statusCode: 503,
-        );
+    : super(
+        message ??
+            'Service temporairement indisponible. Réessayez dans un instant.',
+        statusCode: 503,
+      );
 }
 
 final class UnknownException extends AppException {
   const UnknownException({String? message})
-      : super(message ?? 'Une erreur inattendue est survenue.');
+    : super(message ?? 'Une erreur inattendue est survenue.');
 }

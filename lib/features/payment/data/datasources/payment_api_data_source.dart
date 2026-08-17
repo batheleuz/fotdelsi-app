@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'package:fotdelsi/core/network/api_endpoints.dart';
+import 'package:fotdelsi/core/utils/phone_number.dart';
 import 'package:fotdelsi/core/network/api_response.dart';
 import 'package:fotdelsi/core/network/exceptions.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart';
@@ -14,25 +15,33 @@ class PaymentApiDataSource {
 
   Future<PaymentSessionModel> initiatePayment({
     required String machineId,
+    required String formulaCode,
     required PaymentProvider provider,
     required String customerFullName,
     required String customerPhone,
+    bool atCounter = false,
   }) async {
     try {
       final response = await _dio.post<dynamic>(
         ApiEndpoints.paymentsInitiate,
         data: {
           'machineId': machineId,
+          'formulaCode': formulaCode,
           'provider': provider.apiValue,
           'customerFullName': customerFullName,
-          'customerPhone': customerPhone,
-          'purpose': "SELF_SERVICE"
+          'customerPhone': normalizePhone(customerPhone),
+          'purpose': "SELF_SERVICE",
+          // Déclare une vente au comptoir. Ne transmet aucune identité : le
+          // serveur exige alors un jeton d'agent valide et refuse sinon.
+          // C'est ce qui empêche une vente de devenir anonyme quand le jeton
+          // a expiré — l'app le renouvelle et rejoue l'appel.
+          if (atCounter) 'atCounter': true,
         },
       );
 
       final json = response.data as Map<String, dynamic>;
       final apiResponse = ApiResponse<dynamic>.fromJson(json);
-      
+
       return PaymentSessionModel.fromJson(
         apiResponse.data as Map<String, dynamic>,
       );
@@ -45,7 +54,6 @@ class PaymentApiDataSource {
   /// poussé vers le téléphone du client — l'agent n'a besoin que du succès.
   Future<void> initiateDropOffPayment({
     required String draftId,
-    required int amount,
     required PaymentProvider provider,
     required String customerFullName,
     required String customerPhone,
@@ -56,10 +64,9 @@ class PaymentApiDataSource {
         data: {
           'purpose': 'DROP_OFF',
           'draftId': draftId,
-          'amount': amount,
           'provider': provider.apiValue,
           'customerFullName': customerFullName,
-          'customerPhone': customerPhone,
+          'customerPhone': normalizePhone(customerPhone),
         },
       );
     } on DioException catch (e) {

@@ -56,7 +56,11 @@ class DropOffQueueCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                DropOffStatusBadge(status: dropOff.status),
+                DropOffStatusBadge(
+                  status: dropOff.status,
+                  // Une machine tourne : la pastille respire.
+                  pulse: dropOff.status.isInProgress,
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -79,7 +83,10 @@ class DropOffQueueCard extends StatelessWidget {
             const SizedBox(height: 1),
             Text(
               _footer(),
-              style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textTertiary,
+              ),
             ),
             if (onAction != null && _actionLabel() != null) ...[
               const SizedBox(height: 11),
@@ -100,35 +107,49 @@ class DropOffQueueCard extends StatelessWidget {
     final pieces =
         '${dropOff.laundry.pieces} pièce${dropOff.laundry.pieces > 1 ? 's' : ''}';
     return switch (dropOff.status) {
+      // Le linge n'a jamais été décompté : c'est le client qui a lavé, et
+      // l'agent ne l'a pas encore en main. Afficher « 0 pièce » serait faux.
+      DropOffStatus.awaitingHandoff => 'Linge à décompter au comptoir',
+      DropOffStatus.inProgress when dropOff.isSelfService =>
+        'Finition en cours',
       DropOffStatus.inProgress => 'Lavage en cours',
-      _ => dropOff.laundry.types.isEmpty
-          ? pieces
-          : '$pieces · ${dropOff.laundry.typesLabel}',
+      _ =>
+        dropOff.laundry.types.isEmpty
+            ? pieces
+            : '$pieces · ${dropOff.laundry.typesLabel}',
     };
   }
 
   String _footer() => switch (dropOff.status) {
-        DropOffStatus.received => 'déposé ${relativeTimeFr(dropOff.receivedAt)}',
-        DropOffStatus.inProgress => dropOff.startedAt != null
-            ? 'démarré ${relativeTimeFr(dropOff.startedAt!)}'
-            : '',
-        DropOffStatus.ready => dropOff.readyAt != null
-            ? 'prêt ${relativeTimeFr(dropOff.readyAt!)}'
-            : 'prêt à remettre',
-        _ => '',
-      };
+    DropOffStatus.awaitingHandoff =>
+      'payé ${relativeTimeFr(dropOff.receivedAt)}',
+    DropOffStatus.received => 'déposé ${relativeTimeFr(dropOff.receivedAt)}',
+    DropOffStatus.inProgress =>
+      dropOff.startedAt != null
+          ? 'démarré ${relativeTimeFr(dropOff.startedAt!)}'
+          : '',
+    DropOffStatus.ready =>
+      dropOff.readyAt != null
+          ? 'prêt ${relativeTimeFr(dropOff.readyAt!)}'
+          : 'prêt à remettre',
+    _ => '',
+  };
 
   String? _actionLabel() => switch (dropOff.status) {
-        DropOffStatus.received => 'Lancer le lavage',
-        DropOffStatus.ready => 'Remettre au client',
-        _ => null,
-      };
+    DropOffStatus.awaitingHandoff => 'Prendre en charge',
+    // Un linge lavé en libre-service ne se relance pas : le backend le
+    // refuserait, autant ne pas proposer le geste.
+    DropOffStatus.received when dropOff.isSelfService => null,
+    DropOffStatus.received => 'Lancer le lavage',
+    DropOffStatus.ready => 'Remettre au client',
+    _ => null,
+  };
 
   IconData? _actionIcon() => switch (dropOff.status) {
-        DropOffStatus.received => Icons.play_arrow_rounded,
-        DropOffStatus.ready => Icons.back_hand_outlined,
-        _ => null,
-      };
+    DropOffStatus.received => Icons.play_arrow_rounded,
+    DropOffStatus.ready => Icons.back_hand_outlined,
+    _ => null,
+  };
 
   Color _actionColor() => dropOff.status == DropOffStatus.ready
       ? AppColors.success

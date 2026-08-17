@@ -87,7 +87,8 @@ class RealtimeSocket {
       })
       ..onDisconnect((reason) {
         if (kDebugMode) print('❌ Socket déconnecté: $reason');
-        final intentional = reason == 'io client disconnect' ||
+        final intentional =
+            reason == 'io client disconnect' ||
             reason == 'io server disconnect';
         _connectionController.add(
           intentional

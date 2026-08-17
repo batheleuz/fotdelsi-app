@@ -18,7 +18,9 @@ class _CodeFormatter extends TextInputFormatter {
 
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     final filtered = newValue.text
         .toUpperCase()
         .split('')
@@ -56,8 +58,10 @@ class _SearchView extends StatelessWidget {
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        title: const Text('Rechercher',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Rechercher',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -69,9 +73,10 @@ class _SearchView extends StatelessWidget {
             textCapitalization: TextCapitalization.characters,
             inputFormatters: [_CodeFormatter()],
             style: const TextStyle(
-                fontSize: 34,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 12),
+              fontSize: 34,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 12,
+            ),
             decoration: InputDecoration(
               counterText: '',
               hintText: 'A7K3',
@@ -87,8 +92,10 @@ class _SearchView extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                borderSide:
-                    const BorderSide(color: AppColors.primaryLight, width: 1.5),
+                borderSide: const BorderSide(
+                  color: AppColors.primaryLight,
+                  width: 1.5,
+                ),
               ),
             ),
             onChanged: (v) {
@@ -101,8 +108,10 @@ class _SearchView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Center(
-            child: Text('Lettres et chiffres, sans O · 0 · I · 1 · L',
-                style: TextStyle(fontSize: 11, color: AppColors.textTertiary)),
+            child: Text(
+              'Lettres et chiffres, sans O · 0 · I · 1 · L',
+              style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           BlocBuilder<DropOffSearchCubit, DropOffSearchState>(
@@ -115,15 +124,14 @@ class _SearchView extends StatelessWidget {
 
   Widget _result(BuildContext context, DropOffSearchState state) {
     return switch (state.status) {
-      SearchStatus.loading =>
-        const Center(child: CircularProgressIndicator()),
+      SearchStatus.loading => const Center(child: CircularProgressIndicator()),
       SearchStatus.notFound => const _Hint('Aucun dépôt pour ce code.'),
       SearchStatus.failure => _Hint(state.error ?? 'Erreur de recherche.'),
       SearchStatus.found => _ResultCard(
-          dropOff: state.result!,
-          onTap: () =>
-              context.push(AppRoutes.agentDropOffDetail(state.result!.id)),
-        ),
+        dropOff: state.result!,
+        onTap: () =>
+            context.push(AppRoutes.agentDropOffDetail(state.result!.id)),
+      ),
       SearchStatus.idle => const SizedBox.shrink(),
     };
   }
@@ -135,12 +143,11 @@ class _Hint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-        child: Center(
-          child: Text(text,
-              style: const TextStyle(color: AppColors.textSecondary)),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+    child: Center(
+      child: Text(text, style: const TextStyle(color: AppColors.textSecondary)),
+    ),
+  );
 }
 
 class _ResultCard extends StatelessWidget {
@@ -165,20 +172,31 @@ class _ResultCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(dropOff.code,
-                    style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
-                        color: AppColors.textPrimary)),
+                Text(
+                  dropOff.code,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(dropOff.customerName,
-                    style: const TextStyle(
-                        fontSize: 13, color: AppColors.textSecondary)),
+                Text(
+                  dropOff.customerName,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
             const Spacer(),
-            DropOffStatusBadge(status: dropOff.status),
+            DropOffStatusBadge(
+              status: dropOff.status,
+              // Une machine tourne : la pastille respire.
+              pulse: dropOff.status.isInProgress,
+            ),
             const SizedBox(width: 6),
             const Icon(Icons.chevron_right, color: AppColors.textTertiary),
           ],

@@ -7,8 +7,6 @@ import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
-import 'package:fotdelsi/core/widgets/app_confirmation_dialog.dart';
-import 'package:fotdelsi/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/domain/entities/agent_queue.dart';
 import 'package:fotdelsi/features/dropoffs/domain/entities/drop_off.dart';
 import 'package:fotdelsi/features/dropoffs/domain/entities/drop_off_status.dart';
@@ -16,8 +14,11 @@ import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_queue_cub
 import 'package:fotdelsi/features/dropoffs/presentation/utils/drop_off_status_presentation.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/drop_off_queue_card.dart';
 
-/// Écran principal de l'agent : la file d'attente du jour, groupée en
-/// À lancer / En cours / À remettre.
+/// La file d'attente du jour, groupée en À lancer / En cours / À remettre.
+///
+/// Écran de travail, pas point d'entrée : l'agent y revient sans cesse pendant
+/// son service. La déconnexion vit sur l'accueil agent — ici, elle était à un
+/// doigt des actions de traitement, pour un geste qu'on fait une fois par jour.
 class DropOffQueuePage extends StatelessWidget {
   const DropOffQueuePage({super.key});
 
@@ -69,19 +70,6 @@ class _AgentQueueViewState extends State<_AgentQueueView>
   Future<void> _openDetail(String id) async {
     await context.push(AppRoutes.agentDropOffDetail(id));
     if (mounted) context.read<DropOffQueueCubit>().refresh();
-  }
-
-  Future<void> _confirmLogout() async {
-    final ok = await showAppConfirmationDialog(
-      context: context,
-      title: 'Déconnexion agent ?',
-      message:
-          'Vous allez quitter l’espace agent. Vous devrez vous reconnecter pour gérer la file.',
-      confirmLabel: 'Déconnecter',
-      destructive: true,
-    );
-    if (!ok || !mounted) return;
-    await context.read<AuthCubit>().logout();
   }
 
   /// Pull-to-refresh : recharge la file et, en cas d'échec, le signale
@@ -137,11 +125,6 @@ class _AgentQueueViewState extends State<_AgentQueueView>
             icon: const Icon(Icons.calendar_today_outlined),
             onPressed: () => _soon('Choix du jour'),
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Déconnexion',
-            onPressed: _confirmLogout,
-          ),
         ],
       ),
       body: SafeArea(
@@ -150,6 +133,10 @@ class _AgentQueueViewState extends State<_AgentQueueView>
           builder: (context, state) => _body(context, state),
         ),
       ),
+      // Seul le dépôt reste ici : c'est l'action qu'un agent déclenche sans
+      // quitter sa file, quand un client se présente pendant qu'il travaille.
+      // La vente au comptoir part du hub — c'est un autre parcours, avec son
+      // propre point d'entrée.
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.secondary,
         foregroundColor: AppColors.onPrimary,

@@ -46,6 +46,17 @@ class PendingWashSession {
   /// Orange Money — QR code de secours.
   final String? qrCodeUrl;
 
+  /// URL à encoder en QR pour qu'un tiers paie depuis SON téléphone.
+  ///
+  /// Le lien direct de l'opérateur, court et en `https` — donc scannable par
+  /// n'importe quel appareil photo. Surtout pas [qrCodeUrl] : malgré son nom,
+  /// c'est une page HTML PayDunya affichant elle-même un QR (le PNG est encodé
+  /// en base64 dans sa query string).
+  String? get qrPayload => switch (provider) {
+    PaymentProvider.wave => redirectUrl,
+    PaymentProvider.orangeMoney => omUrl ?? maxitUrl,
+  };
+
   PendingWashSession copyWith({
     SessionPaymentStatus? sessionPaymentStatus,
     MachineStartStatus? machineStartStatus,

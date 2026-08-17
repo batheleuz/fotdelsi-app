@@ -7,13 +7,13 @@ enum AuthRole {
   agent;
 
   static AuthRole? fromApi(String value) => switch (value) {
-        'ADMIN' => AuthRole.admin,
-        'AGENT' => AuthRole.agent,
-        _ => null,
-      };
+    'ADMIN' => AuthRole.admin,
+    'AGENT' => AuthRole.agent,
+    _ => null,
+  };
 
   String get apiValue => switch (this) {
-        AuthRole.admin => 'ADMIN',
-        AuthRole.agent => 'AGENT',
-      };
+    AuthRole.admin => 'ADMIN',
+    AuthRole.agent => 'AGENT',
+  };
 }

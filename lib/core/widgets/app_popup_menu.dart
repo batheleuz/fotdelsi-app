@@ -44,8 +44,7 @@ class _AppPopupMenuState extends State<AppPopupMenu> {
 
   void _open() {
     final box = context.findRenderObject() as RenderBox;
-    final overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final topLeft = box.localToGlobal(Offset.zero, ancestor: overlay);
 
     final top = topLeft.dy + box.size.height + 6;
@@ -76,8 +75,10 @@ class _AppPopupMenuState extends State<AppPopupMenu> {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: Icon(widget.icon,
-          color: widget.iconColor ?? AppColors.textSecondary),
+      icon: Icon(
+        widget.icon,
+        color: widget.iconColor ?? AppColors.textSecondary,
+      ),
       onPressed: _open,
     );
   }
@@ -156,7 +157,10 @@ class _MenuOverlay extends StatelessWidget {
                 for (var i = 0; i < entries.length; i++) ...[
                   if (i > 0)
                     const Divider(
-                        height: 0.5, thickness: 0.5, color: AppColors.border),
+                      height: 0.5,
+                      thickness: 0.5,
+                      color: AppColors.border,
+                    ),
                   _MenuItem(entry: entries[i], onClose: onClose),
                 ],
               ],
@@ -186,8 +190,9 @@ class _MenuItemState extends State<_MenuItem> {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        widget.entry.destructive ? AppColors.danger : AppColors.textPrimary;
+    final color = widget.entry.destructive
+        ? AppColors.danger
+        : AppColors.textPrimary;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -210,7 +215,10 @@ class _MenuItemState extends State<_MenuItem> {
               child: Text(
                 widget.entry.label,
                 style: TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w500, color: color),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: color,
+                ),
               ),
             ),
           ],

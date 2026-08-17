@@ -116,7 +116,11 @@ class _DetailView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              DropOffStatusBadge(status: d.status),
+              DropOffStatusBadge(
+                status: d.status,
+                // Une machine tourne : la pastille respire.
+                pulse: d.status.isInProgress,
+              ),
             ],
           ),
         ),
@@ -228,6 +232,19 @@ class _DetailView extends StatelessWidget {
     final cubit = context.read<DropOffDetailCubit>();
 
     return switch (dropOff.status) {
+      // Libre-service : le client a lavé lui-même, il apporte son linge pour
+      // la finition payée. Aucun lavage à lancer — seulement à prendre en
+      // charge, ce que le backend refuserait autrement.
+      DropOffStatus.awaitingHandoff => _bar(
+        PrimaryButton(
+          label: 'Prendre en charge',
+          icon: Icons.inventory_2_outlined,
+          loading: isActing,
+          backgroundColor: AppColors.primaryLight,
+          onPressed: () => cubit.receiveHandoff(),
+        ),
+      ),
+
       DropOffStatus.received => _bar(
         PrimaryButton(
           label: 'Lancer le lavage',
@@ -267,6 +284,8 @@ class _DetailView extends StatelessWidget {
       ),
 
       // Un cycle tourne encore : on attend sa fin (détectée automatiquement).
+      // Sans objet en libre-service, où le travail restant est manuel :
+      // `canMarkReady` y est vrai dès la prise en charge.
       DropOffStatus.inProgress => _bar(
         _CycleRunningBar(
           label: dropOff.dryStartedAt != null

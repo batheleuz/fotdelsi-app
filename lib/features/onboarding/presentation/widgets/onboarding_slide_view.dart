@@ -34,7 +34,9 @@ class OnboardingSlideView extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm + 4),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                  ),
                   child: Text(
                     slide.description,
                     textAlign: TextAlign.center,
@@ -76,8 +78,10 @@ class _FadeSlideInState extends State<_FadeSlideIn>
 
   @override
   Widget build(BuildContext context) {
-    final curved =
-        CurvedAnimation(parent: _controller, curve: AppCurves.standard);
+    final curved = CurvedAnimation(
+      parent: _controller,
+      curve: AppCurves.standard,
+    );
     return FadeTransition(
       opacity: curved,
       child: SlideTransition(

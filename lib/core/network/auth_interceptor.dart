@@ -50,6 +50,15 @@ class AuthInterceptor extends QueuedInterceptor {
         !_isAuthPath(req.path) &&
         req.extra['retried'] != true;
 
+    // Aucun renouvellement possible pour une session client (jeton opaque sans
+    // refresh) : un 401 signifie que le jeton stocké est définitivement mort —
+    // révoqué, expiré, ou émis par un autre backend après un changement d'URL.
+    // Le purger évite que l'appareil reste bloqué sur une identité fantôme,
+    // avec toutes les requêtes en échec et aucun moyen de se reconnecter.
+    if (err.response?.statusCode == 401 && !_isAuthPath(req.path)) {
+      await _clearRejectedClientSession(req);
+    }
+
     if (shouldRefresh && await _tryRefresh()) {
       final token = await _store.accessToken();
       req.headers['Authorization'] = 'Bearer $token';
@@ -70,10 +79,31 @@ class AuthInterceptor extends QueuedInterceptor {
     handler.next(err);
   }
 
+  /// Purge la session client si c'est bien SON jeton que le serveur a rejeté.
+  ///
+  /// La comparaison avec le jeton envoyé est nécessaire : quand un compte
+  /// personnel est connecté, c'est son JWT qui part (voir [onRequest]), et un
+  /// 401 le concerne lui — pas la session client, qu'il ne faut pas détruire
+  /// au passage.
+  Future<void> _clearRejectedClientSession(RequestOptions req) async {
+    final sent = req.headers['Authorization'];
+    if (sent is! String) return;
+
+    final clientToken = await _clientStore.token();
+    if (clientToken == null) return;
+
+    if (sent == 'Bearer $clientToken') {
+      await _clientStore.clear();
+    }
+  }
+
   /// Renvoie `true` si un nouveau couple de jetons a été obtenu et stocké.
   Future<bool> _tryRefresh() async {
     final refresh = await _store.refreshToken();
     if (refresh == null) {
+      // Jeton d'accès rejeté et aucun moyen de le renouveler : la session
+      // personnel est morte, on la purge plutôt que de la traîner.
+      await _store.clear();
       return false;
     }
 

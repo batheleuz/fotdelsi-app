@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Stockage sécurisé de la session client (identité par numéro, OTP SMS).
@@ -22,6 +24,20 @@ class ClientSessionStore {
   String? _phone;
   bool _loaded = false;
   Future<void>? _loading;
+
+  final _changes = StreamController<void>.broadcast();
+
+  /// Émet à chaque changement de session (liaison, purge).
+  ///
+  /// Permet à l'interface de réagir quand la session est invalidée hors de
+  /// tout écran — typiquement une purge décidée par l'intercepteur HTTP sur
+  /// un 401. Un `Stream` plutôt qu'une dépendance directe vers un cubit :
+  /// la couche réseau n'a pas à connaître la présentation.
+  Stream<void> get changes => _changes.stream;
+
+  void _notify() {
+    if (!_changes.isClosed) _changes.add(null);
+  }
 
   /// Précharge la session en mémoire (à appeler au démarrage). Idempotent.
   Future<void> preload() => _ensureLoaded();
@@ -51,10 +67,13 @@ class ClientSessionStore {
     _token = token;
     _phone = phone;
     _loaded = true;
-    await _bestEffort(Future.wait([
-      _storage.write(key: _kToken, value: token),
-      _storage.write(key: _kPhone, value: phone),
-    ]));
+    await _bestEffort(
+      Future.wait([
+        _storage.write(key: _kToken, value: token),
+        _storage.write(key: _kPhone, value: phone),
+      ]),
+    );
+    _notify();
   }
 
   Future<String?> token() async {
@@ -68,13 +87,19 @@ class ClientSessionStore {
   }
 
   Future<void> clear() async {
+    final had = _token != null;
     _token = null;
     _phone = null;
     _loaded = true;
-    await _bestEffort(Future.wait([
-      _storage.delete(key: _kToken),
-      _storage.delete(key: _kPhone),
-    ]));
+    await _bestEffort(
+      Future.wait([
+        _storage.delete(key: _kToken),
+        _storage.delete(key: _kPhone),
+      ]),
+    );
+    // Pas de notification si rien n'était stocké : évite de réveiller
+    // l'interface pour rien à chaque purge défensive.
+    if (had) _notify();
   }
 
   Future<void> _bestEffort(Future<Object?> op) async {

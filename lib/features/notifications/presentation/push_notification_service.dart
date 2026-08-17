@@ -52,11 +52,14 @@ class PushNotificationService {
     await registerDeviceIfLinked();
 
     _tokenSub?.cancel();
-    _tokenSub = _messaging.onTokenRefresh.listen((_) => registerDeviceIfLinked());
+    _tokenSub = _messaging.onTokenRefresh.listen(
+      (_) => registerDeviceIfLinked(),
+    );
 
     _openedSub?.cancel();
-    _openedSub = _messaging.onMessageOpenedApp
-        .listen((data) => _handleTap(NotificationPayload.fromData(data)));
+    _openedSub = _messaging.onMessageOpenedApp.listen(
+      (data) => _handleTap(NotificationPayload.fromData(data)),
+    );
 
     final initial = await _messaging.getInitialMessage();
     if (initial != null) {
@@ -87,8 +90,10 @@ class PushNotificationService {
     }
     if (token == null) {
       if (kDebugMode) {
-        debugPrint('[push] device non enregistré : jeton FCM indisponible '
-            '(APNs non configuré sur iOS / simulateur ?).');
+        debugPrint(
+          '[push] device non enregistré : jeton FCM indisponible '
+          '(APNs non configuré sur iOS / simulateur ?).',
+        );
       }
       return;
     }
@@ -102,14 +107,18 @@ class PushNotificationService {
     result.fold(
       (failure) {
         if (kDebugMode) {
-          debugPrint('[push] échec enregistrement device ($platform) : '
-              '${failure.message}');
+          debugPrint(
+            '[push] échec enregistrement device ($platform) : '
+            '${failure.message}',
+          );
         }
       },
       (_) {
         if (kDebugMode) {
-          debugPrint('[push] device enregistré ($platform), '
-              'token: ${token!.substring(0, 12)}…');
+          debugPrint(
+            '[push] device enregistré ($platform), '
+            'token: ${token!.substring(0, 12)}…',
+          );
         }
       },
     );
@@ -144,7 +153,10 @@ class PushNotificationService {
       final fallback = payload.fallbackUrl;
       try {
         if (fallback != null) {
-          await launchUrl(Uri.parse(fallback), mode: LaunchMode.externalApplication);
+          await launchUrl(
+            Uri.parse(fallback),
+            mode: LaunchMode.externalApplication,
+          );
         } else {
           await launchUrl(Uri.parse(primary), mode: LaunchMode.inAppWebView);
         }

@@ -15,16 +15,20 @@ class PaymentRepositoryImpl implements PaymentRepository {
   @override
   Future<Either<Failure, PaymentSession>> initiatePayment({
     required String machineId,
+    required String formulaCode,
     required PaymentProvider provider,
     required String customerFullName,
     required String customerPhone,
+    bool atCounter = false,
   }) async {
     try {
       final model = await _api.initiatePayment(
         machineId: machineId,
+        formulaCode: formulaCode,
         provider: provider,
         customerFullName: customerFullName,
         customerPhone: customerPhone,
+        atCounter: atCounter,
       );
       return Right(model.toEntity());
     } catch (e) {
@@ -35,7 +39,6 @@ class PaymentRepositoryImpl implements PaymentRepository {
   @override
   Future<Either<Failure, void>> initiateDropOffPayment({
     required String draftId,
-    required int amount,
     required PaymentProvider provider,
     required String customerFullName,
     required String customerPhone,
@@ -43,7 +46,6 @@ class PaymentRepositoryImpl implements PaymentRepository {
     try {
       await _api.initiateDropOffPayment(
         draftId: draftId,
-        amount: amount,
         provider: provider,
         customerFullName: customerFullName,
         customerPhone: customerPhone,

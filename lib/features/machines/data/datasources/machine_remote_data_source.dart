@@ -50,13 +50,10 @@ class MachineRemoteDataSource {
   Stream<List<Machine>> watchMachines() async* {
     var machines = _seed;
     yield machines;
-    yield* Stream<List<Machine>>.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        machines = machines.map(_tick).toList();
-        return machines;
-      },
-    );
+    yield* Stream<List<Machine>>.periodic(const Duration(seconds: 1), (_) {
+      machines = machines.map(_tick).toList();
+      return machines;
+    });
   }
 
   static Machine _tick(Machine m) {

@@ -8,8 +8,7 @@ part 'my_dropoff_detail_state.dart';
 
 /// Détail d'un dépôt côté client (lecture seule, `GET /me/dropoffs/:id`).
 class MyDropOffDetailCubit extends Cubit<MyDropOffDetailState> {
-  MyDropOffDetailCubit(this._repository)
-      : super(const MyDropOffDetailState());
+  MyDropOffDetailCubit(this._repository) : super(const MyDropOffDetailState());
 
   final DropOffRepository _repository;
   String _id = '';
@@ -19,15 +18,16 @@ class MyDropOffDetailCubit extends Cubit<MyDropOffDetailState> {
     emit(state.copyWith(status: MyDropOffDetailStatus.loading));
     final result = await _repository.getMyDropOffById(id);
     result.fold(
-      (f) => emit(state.copyWith(
-        status: MyDropOffDetailStatus.failure,
-        error: f.message,
-      )),
-      (d) => emit(state.copyWith(
-        status: MyDropOffDetailStatus.success,
-        dropOff: d,
-        clearError: true,
-      )),
+      (f) => emit(
+        state.copyWith(status: MyDropOffDetailStatus.failure, error: f.message),
+      ),
+      (d) => emit(
+        state.copyWith(
+          status: MyDropOffDetailStatus.success,
+          dropOff: d,
+          clearError: true,
+        ),
+      ),
     );
   }
 

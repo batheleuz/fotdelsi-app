@@ -68,7 +68,7 @@ class PaymentSessionModel {
     redirectUrl: redirectUrl,
   );
 
-  PaymentProvider fromApiValue(String provider) => switch(provider) {
+  PaymentProvider fromApiValue(String provider) => switch (provider) {
     "WAVE" => PaymentProvider.wave,
     "ORANGE_MONEY" => PaymentProvider.orangeMoney,
     _ => throw ArgumentError("Provider inconnu: $provider"),

@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import 'package:fotdelsi/core/network/failures.dart';
+import '../entities/client_profile.dart';
 
 /// Contrat domaine de l'identité client (liaison du numéro par OTP SMS).
 abstract interface class ClientAuthRepository {
@@ -24,4 +25,10 @@ abstract interface class ClientAuthRepository {
 
   /// Délie le numéro : révoque côté backend (best-effort) et purge le stockage.
   Future<void> unlink();
+
+  /// `GET /me/profile` — identité du client authentifié.
+  Future<Either<Failure, ClientProfile>> profile();
+
+  /// `PATCH /me/profile` — renomme le client. `null` efface le nom.
+  Future<Either<Failure, ClientProfile>> updateName(String? fullName);
 }
