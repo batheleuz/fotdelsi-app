@@ -27,6 +27,8 @@ import 'package:fotdelsi/features/dropoffs/data/datasources/drop_off_api_data_so
 import 'package:fotdelsi/features/dropoffs/data/repositories/drop_off_repository_impl.dart';
 import 'package:fotdelsi/features/dropoffs/domain/repositories/drop_off_repository.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/agent_handoffs_cubit.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_history_cubit.dart';
+import 'package:fotdelsi/features/payment/presentation/cubit/pending_payments_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/pending_payments_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_queue_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/assign_machine_cubit.dart';
@@ -209,9 +211,15 @@ void _registerDropOffs() {
     () => CounterSaleCyclesCubit(serviceLocator()),
   );
   serviceLocator.registerFactory<MyCyclesCubit>(
-    () => MyCyclesCubit(serviceLocator()),
+    () => MyCyclesCubit(serviceLocator(), serviceLocator()),
   );
   // Factory : un cubit par ouverture de l'écran des remises en attente.
+  serviceLocator.registerFactory<ClientPendingPaymentsCubit>(
+    () => ClientPendingPaymentsCubit(serviceLocator(), serviceLocator()),
+  );
+  serviceLocator.registerFactory<DropOffHistoryCubit>(
+    () => DropOffHistoryCubit(serviceLocator()),
+  );
   serviceLocator.registerFactory<AgentHandoffsCubit>(
     () => AgentHandoffsCubit(serviceLocator(), serviceLocator()),
   );

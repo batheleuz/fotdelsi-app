@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import 'package:fotdelsi/core/network/failures.dart';
 import '../entities/agent_queue.dart';
 import '../entities/drop_off.dart';
+import '../entities/drop_off_history_page.dart';
 import '../entities/pending_drop_off_payment.dart';
 import '../entities/laundry_type.dart';
 
@@ -14,6 +15,16 @@ abstract interface class DropOffRepository {
 
   /// `GET /drop-offs/handoffs` — remises payées en attente du linge.
   Future<Either<Failure, List<DropOff>>> getHandoffs();
+
+  /// Historique complet, paginé — tous les jours, tous les statuts.
+  ///
+  /// Distinct de [getQueue], qui ne montre que le jour courant et les statuts
+  /// actifs : un dépôt rendu la veille en disparaît, et avec lui le numéro du
+  /// client qu'un agent peut vouloir rappeler.
+  Future<Either<Failure, DropOffHistoryPage>> getHistory({
+    int? limit,
+    int? offset,
+  });
 
   /// `GET /drop-offs/pending-payment` — dépôts saisis, pas encore encaissés.
   Future<Either<Failure, List<PendingDropOffPayment>>> getPendingPayments();

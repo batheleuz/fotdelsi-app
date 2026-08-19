@@ -1,7 +1,10 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:fotdelsi/core/auth/client_session_store.dart';
 
 import 'package:fotdelsi/core/network/failures.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
@@ -33,8 +36,18 @@ class _FailingCycles extends WashCyclesCubit {
       const Left(TimeoutFailure());
 }
 
+/// Session cliente presente : ces tests decrivent un client dont le numero est
+/// lie. `token()` est surcharge pour ne jamais toucher au stockage securise,
+/// qui exige un canal de plateforme.
+class _LinkedSession extends ClientSessionStore {
+  _LinkedSession() : super(const FlutterSecureStorage());
+
+  @override
+  Future<String?> token() async => 'jeton-client';
+}
+
 class _FakeMyCycles extends MyCyclesCubit {
-  _FakeMyCycles(this._cycles) : super(_NoRepository());
+  _FakeMyCycles(this._cycles) : super(_NoRepository(), _LinkedSession());
 
   final List<WashCycle> _cycles;
 
@@ -116,6 +129,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Démarrer la machine'));
+    await tester.pumpAndSettle();
+
+    // La feuille de confirmation porte le même libellé que la carte : `.last`
+    // vise celle qui vient de s'ouvrir, par-dessus.
+    await tester.tap(find.text('Démarrer la machine').last);
     await tester.pump();
 
     // Le bug : la page demandait `CounterSaleCyclesCubit` alors que le provider
@@ -123,6 +141,35 @@ void main() {
     // où Flutter l'avale — le bouton semblait simplement mort, sans message ni
     // trace, aussi bien côté agent que côté client.
     expect(cubit.started, ['jeton-1']);
+  });
+
+  testWidgets('rien ne démarre tant que la confirmation n\'est pas donnée', (
+    tester,
+  ) async {
+    // Le geste lance une vraie machine, et un cycle commencé ne s'annule pas.
+    // Un appui involontaire — la liste qui défile, un pouce qui glisse — le
+    // consommait sur un tambour vide.
+    final cubit = _FakeCyclesCubit([cycleToStart()]);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WashCyclesPage(
+          createCubit: () => cubit,
+          explanation: 'Test',
+          layout: CyclesLayout.worklist,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Démarrer la machine'));
+    await tester.pumpAndSettle();
+    expect(cubit.started, isEmpty);
+
+    await tester.tap(find.text('Pas encore'));
+    await tester.pumpAndSettle();
+
+    expect(cubit.started, isEmpty);
   });
 
   testWidgets('un second démarrage est refusé pendant le premier', (
@@ -703,4 +750,99 @@ void main() {
       expect(cubit.state.onHome, hasLength(1));
     });
   });
+
+  group('appareil anonyme', () {
+    /// Aucun numéro lié — l'état d'un téléphone qui n'a jamais servi de client,
+    /// ou dont le compte personnel vient de se déconnecter.
+    _AnonymousSession session() => _AnonymousSession();
+
+    test('n\'interroge pas les routes client sans numéro lié', () async {
+      // `GET /me/cycles` exige une session client. Sans elle le serveur répond
+      // 401 « Votre session a expiré. Reliez à nouveau votre numéro. » — un
+      // message qui décrit une session perdue alors qu'il n'y en a jamais eu.
+      // L'accueil chargeait pourtant ces cycles à chaque ouverture.
+      final repo = _CountingRepo();
+      final cubit = MyCyclesCubit(repo, session());
+
+      await cubit.load();
+
+      expect(repo.appels, 0);
+      expect(cubit.state.status, WashCyclesStatus.success);
+      expect(cubit.state.error, isNull);
+    });
+
+    test('interroge le serveur dès qu\'un numéro est lié', () async {
+      // Le garde-fou ne doit pas priver de cycles un client bel et bien lié.
+      final repo = _CountingRepo();
+      final cubit = MyCyclesCubit(repo, _LinkedSession());
+
+      await cubit.load();
+
+      expect(repo.appels, 1);
+    });
+  });
+
+  group('erreur de geste et erreur de chargement', () {
+    test('un chargement raté ne remplit pas l\'erreur de geste', () async {
+      // L'accueil n'écoute que le geste : confondre les deux y faisait surgir
+      // le message du chargement à chaque ouverture.
+      final cubit = _FailingCycles();
+
+      await cubit.load();
+
+      expect(cubit.state.error, isNotNull);
+      expect(cubit.state.startError, isNull);
+    });
+
+    test('un démarrage refusé remplit l\'erreur de geste', () async {
+      final cubit = _RefusingStart();
+
+      await cubit.start(cycleToStart());
+
+      expect(cubit.state.startError, isNotNull);
+      expect(cubit.state.error, isNull);
+    });
+  });
+}
+
+/// Aucune session cliente sur l'appareil.
+class _AnonymousSession extends ClientSessionStore {
+  _AnonymousSession() : super(const FlutterSecureStorage());
+
+  @override
+  Future<String?> token() async => null;
+}
+
+/// Compte les appels réseau réellement partis.
+class _CountingRepo implements WashSessionRepository {
+  int appels = 0;
+
+  @override
+  Future<Either<Failure, List<WashCycle>>> getMyCycles() async {
+    appels++;
+    return const Right([]);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+/// Dépôt dont le démarrage est refusé par le serveur.
+///
+/// C'est le VRAI `start()` du cubit qui s'exécute : le doubler reviendrait à
+/// tester le double au lieu du code.
+class _RefusingRepo implements WashSessionRepository {
+  @override
+  Future<Either<Failure, void>> startMachine(String token) async =>
+      const Left(ServerFailure('Machine occupée'));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _RefusingStart extends WashCyclesCubit {
+  _RefusingStart() : super(_RefusingRepo());
+
+  @override
+  Future<Either<Failure, List<WashCycle>>> fetch() async => const Right([]);
 }

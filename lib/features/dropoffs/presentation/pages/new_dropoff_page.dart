@@ -27,7 +27,7 @@ class NewDropOffPage extends StatelessWidget {
 class _NewDropOffView extends StatelessWidget {
   const _NewDropOffView();
 
-  static const _subtitles = [
+  static const _subTitles = [
     'Étape 1 / 4 · Le client',
     'Étape 2 / 4 · Le linge',
     'Étape 3 / 4 · Prestation',
@@ -37,9 +37,12 @@ class _NewDropOffView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocListener<NewDropOffCubit, NewDropOffState>(
-      listenWhen: (p, c) => p.submitStatus != c.submitStatus,
+      listenWhen: (prevState, currentState) =>
+          prevState.submitStatus != currentState.submitStatus,
       listener: (context, state) {
-        if (state.submitStatus == SubmitStatus.failure && state.error != null) {
+        final canShowError =
+            state.submitStatus == SubmitStatus.failure && state.error != null;
+        if (canShowError) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(
@@ -52,41 +55,9 @@ class _NewDropOffView extends StatelessWidget {
       },
       child: BlocBuilder<NewDropOffCubit, NewDropOffState>(
         builder: (context, state) {
-          final cubit = context.read<NewDropOffCubit>();
-
           return Scaffold(
             backgroundColor: const Color(0xFFF5F8FC),
-            appBar: AppBar(
-              backgroundColor: AppColors.background,
-              foregroundColor: AppColors.textPrimary,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () {
-                  if (state.step > 0 && state.step < 3) {
-                    cubit.back();
-                  } else {
-                    context.pop();
-                  }
-                },
-              ),
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Nouveau dépôt',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                  ),
-                  Text(
-                    _subtitles[state.step],
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            appBar: _appBar(context, state),
             body: SafeArea(
               top: false,
               // Tap n'importe où hors d'un champ → ferme le clavier. Nécessaire
@@ -111,6 +82,42 @@ class _NewDropOffView extends StatelessWidget {
                 : _BottomBar(state: state),
           );
         },
+      ),
+    );
+  }
+
+  PreferredSizeWidget? _appBar(BuildContext context, NewDropOffState state) {
+    final cubit = context.read<NewDropOffCubit>();
+
+    return AppBar(
+      backgroundColor: AppColors.background,
+      foregroundColor: AppColors.textPrimary,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () {
+          if (state.step > 0 && state.step < 3) {
+            cubit.back();
+          } else {
+            context.pop();
+          }
+        },
+      ),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Nouveau dépôt',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          Text(
+            _subTitles[state.step],
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }

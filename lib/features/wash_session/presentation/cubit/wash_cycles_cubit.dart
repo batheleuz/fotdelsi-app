@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:fotdelsi/core/auth/client_session_store.dart';
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 
@@ -111,16 +112,16 @@ abstract class WashCyclesCubit extends Cubit<WashCyclesState> {
   /// Un échec ne retire rien non plus : le cycle reste dû, et il doit rester
   /// possible de réessayer après avoir vérifié la machine.
   Future<bool> start(WashCycle cycle) async {
-    emit(state.copyWith(startingToken: cycle.token, clearError: true));
+    emit(state.copyWith(startingToken: cycle.token, clearStartError: true));
 
     final result = await repository.startMachine(cycle.token);
     return result.fold(
       (failure) {
-        emit(state.copyWith(clearStarting: true, error: failure.message));
+        emit(state.copyWith(clearStarting: true, startError: failure.message));
         return false;
       },
       (_) {
-        emit(state.copyWith(clearStarting: true, clearError: true));
+        emit(state.copyWith(clearStarting: true, clearStartError: true));
         // Le serveur renvoie le cycle en RUNNING, avec son temps restant.
         load(silent: true);
         return true;
@@ -147,7 +148,7 @@ abstract class WashCyclesCubit extends Cubit<WashCyclesState> {
   ///
   /// Même contrat que `ClientSessionCubit.rename`, pour la même raison.
   Future<String?> startDrying(WashCycle cycle, Machine dryer) async {
-    emit(state.copyWith(startingToken: cycle.token, clearError: true));
+    emit(state.copyWith(startingToken: cycle.token, clearStartError: true));
 
     final result = await repository.startDrying(
       washSessionToken: cycle.token,
@@ -155,7 +156,7 @@ abstract class WashCyclesCubit extends Cubit<WashCyclesState> {
     );
     return result.fold(
       (failure) {
-        emit(state.copyWith(clearStarting: true, clearError: true));
+        emit(state.copyWith(clearStarting: true, clearStartError: true));
         return failure.message;
       },
       (_) {
@@ -189,9 +190,28 @@ class CounterSaleCyclesCubit extends WashCyclesCubit {
 /// Écran client : ses propres cycles, retrouvés par son numéro.
 ///
 /// Y compris ceux qu'un agent lui a vendus au comptoir : ce sont ses achats.
+///
+/// ─── Sans numéro lié, on n'interroge pas le serveur ───
+///
+/// `GET /me/cycles` exige une session client. Un appareil anonyme — jamais lié,
+/// ou dont le personnel vient de se déconnecter — n'en a pas, et le serveur
+/// répond 401 « Votre session a expiré. Reliez à nouveau votre numéro. » Ce
+/// message décrit une session perdue, alors qu'il n'y en a jamais eu.
+///
+/// L'accueil chargeait pourtant ces cycles à chaque ouverture, sans condition.
+/// Un anonyme y récoltait donc une erreur à chaque visite, et à chaque
+/// redémarrage de l'application.
+///
+/// Anonyme n'est pas une panne : c'est un état normal, dont la réponse juste
+/// est « aucun cycle ». L'interface anonyme s'affiche alors d'elle-même.
 class MyCyclesCubit extends WashCyclesCubit {
-  MyCyclesCubit(super.repository);
+  MyCyclesCubit(super.repository, this._session);
+
+  final ClientSessionStore _session;
 
   @override
-  Future<Either<Failure, List<WashCycle>>> fetch() => repository.getMyCycles();
+  Future<Either<Failure, List<WashCycle>>> fetch() async {
+    if (await _session.token() == null) return const Right([]);
+    return repository.getMyCycles();
+  }
 }

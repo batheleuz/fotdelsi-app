@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/agent_handoffs_page.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/pages/drop_off_history_page.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/pending_payments_page.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/agent_home_page.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/drop_off_queue_page.dart';
@@ -189,6 +190,10 @@ abstract final class AppRouter {
       GoRoute(
         path: AppRoutes.agentHandoffs,
         builder: (context, state) => const AgentHandoffsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.agentHistory,
+        builder: (context, state) => const DropOffHistoryPage(),
       ),
       GoRoute(
         path: AppRoutes.agentPendingPayments,

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fotdelsi/core/di/service_locator.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
+import 'package:fotdelsi/features/wash_session/presentation/widgets/confirm_start_sheet.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
 import '../cubit/counter_sale_cubit.dart';
 import '../widgets/counter_sale_stepper.dart';
@@ -133,7 +134,18 @@ class _ActionBar extends StatelessWidget {
                   : AppColors.secondary,
               onPressed: started
                   ? () => Navigator.of(context).pop()
-                  : cubit.startMachine,
+                  // Confirmation avant tout démarrage physique : ici le
+                  // téléphone est dans la main de l'agent, souvent tendu vers
+                  // le client, et un appui involontaire consommerait le cycle
+                  // qui vient d'être payé sur un tambour vide.
+                  : () async {
+                      if (await confirmMachineStart(
+                        context,
+                        machineName: state.machine?.name,
+                      )) {
+                        await cubit.startMachine();
+                      }
+                    },
             )
           else
             PrimaryButton(

@@ -51,7 +51,8 @@ class _LoginPageState extends State<LoginPage> {
       ),
       body: SafeArea(
         child: BlocConsumer<AuthCubit, AuthState>(
-          listenWhen: (p, c) => p.formStatus != c.formStatus,
+          listenWhen: (prevState, currentState) =>
+              prevState.formStatus != currentState.formStatus,
           listener: (context, state) {
             if (state.formStatus == AuthFormStatus.failure &&
                 state.error != null) {

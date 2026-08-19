@@ -5,6 +5,7 @@ import 'package:fotdelsi/core/utils/phone_number.dart';
 import 'package:fotdelsi/core/network/api_response.dart';
 import 'package:fotdelsi/core/network/exceptions.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart';
+import '../../domain/entities/pending_payment.dart';
 import '../models/payment_session_model.dart';
 
 /// Source distante REST des paiements.
@@ -52,6 +53,30 @@ class PaymentApiDataSource {
 
   /// Initie un paiement de dépôt (`purpose: DROP_OFF`). Le prompt SOFTPAY est
   /// poussé vers le téléphone du client — l'agent n'a besoin que du succès.
+  /// `GET /me/payments/pending` — paiements que le client peut encore honorer.
+  Future<List<PendingPayment>> pendingPayments() async {
+    final resp = await _dio.get<Map<String, dynamic>>(
+      ApiEndpoints.myPendingPayments,
+    );
+    final data = (resp.data?['data'] as Map<String, dynamic>?) ?? const {};
+    return ((data['payments'] as List?) ?? const [])
+        .map((e) => _pending(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  static PendingPayment _pending(Map<String, dynamic> json) => PendingPayment(
+    paymentId: json['paymentId'] as String,
+    amount: (json['amount'] as num?)?.toInt() ?? 0,
+    expiresAt:
+        DateTime.tryParse(json['expiresAt'] as String? ?? '')?.toLocal() ??
+        DateTime.now(),
+    machineStillHeld: json['machineStillHeld'] as bool? ?? false,
+    machineName: json['machineName'] as String?,
+    formulaLabel: json['formulaLabel'] as String?,
+    checkoutUrl: json['checkoutUrl'] as String?,
+    fallbackUrl: json['fallbackUrl'] as String?,
+  );
+
   Future<void> initiateDropOffPayment({
     required String draftId,
     required PaymentProvider provider,

@@ -8,6 +8,7 @@ import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
 import '../../domain/entities/wash_cycle.dart';
 import '../cubit/wash_cycles_cubit.dart';
+import '../widgets/confirm_start_sheet.dart';
 import '../widgets/pick_dryer_sheet.dart';
 
 // ─────────────────────────── Durées ────────────────────────────────────────
@@ -167,13 +168,16 @@ class _WashCyclesView extends StatelessWidget {
       body: SafeArea(
         top: false,
         child: BlocConsumer<WashCyclesCubit, WashCyclesState>(
-          listenWhen: (p, c) => p.error != c.error && c.error != null,
+          // Le geste seul : un échec de CHARGEMENT s'affiche dans l'écran
+          // ci-dessous, et le doubler d'une surimpression le dirait deux fois.
+          listenWhen: (p, c) =>
+              p.startError != c.startError && c.startError != null,
           listener: (context, state) {
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(
                 SnackBar(
-                  content: Text(state.error!),
+                  content: Text(state.startError!),
                   backgroundColor: AppColors.danger,
                 ),
               );
@@ -255,9 +259,16 @@ class _WashCyclesView extends StatelessWidget {
                                       // avalé par Flutter, donc un bouton qui ne
                                       // faisait simplement rien.
                                       onStart: state.startingToken == null
-                                          ? () => context
-                                                .read<WashCyclesCubit>()
-                                                .start(cycle)
+                                          ? () async {
+                                              final cubit = context
+                                                  .read<WashCyclesCubit>();
+                                              if (await confirmMachineStart(
+                                                context,
+                                                machineName: cycle.machineName,
+                                              )) {
+                                                await cubit.start(cycle);
+                                              }
+                                            }
                                           : null,
                                     ),
                             ),

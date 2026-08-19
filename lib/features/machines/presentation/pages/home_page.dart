@@ -15,6 +15,8 @@ import '../widgets/home_app_bar.dart';
 import '../widgets/home_fabs.dart';
 import 'package:fotdelsi/features/catalog/presentation/cubit/service_catalog_cubit.dart';
 import 'package:fotdelsi/features/catalog/presentation/widgets/service_catalog_content.dart';
+import 'package:fotdelsi/features/payment/presentation/cubit/pending_payments_cubit.dart';
+import 'package:fotdelsi/features/payment/presentation/widgets/pending_payment_banner.dart';
 import 'package:fotdelsi/features/wash_session/presentation/widgets/active_session_card.dart';
 import 'package:fotdelsi/features/wash_session/presentation/cubit/wash_cycles_cubit.dart';
 
@@ -39,6 +41,11 @@ class HomePage extends StatelessWidget {
         // Alimente le bandeau de cycle. Le battement fait avancer le temps
         // écoulé et resynchronise sur le serveur toutes les 10 s, au rythme
         // du relevé des machines.
+        // Rattrapage d'un paiement laissé en plan — solde insuffisant,
+        // application fermée. Le lien reste honorable une trentaine de minutes.
+        BlocProvider(
+          create: (_) => serviceLocator<ClientPendingPaymentsCubit>()..load(),
+        ),
         BlocProvider(
           create: (_) => serviceLocator<MyCyclesCubit>()
             ..load()
@@ -103,12 +110,17 @@ class _HomeViewState extends State<_HomeView> with WidgetsBindingObserver {
     // rien, alors que « Mes lavages », branché sur le bon cubit, affichait
     // bien le message.
     //
-    // `start()` vide l'erreur avant chaque tentative : deux échecs identiques
+    // `startError` et non `error` : le second couvre les CHARGEMENTS, qui ont
+    // leur propre place dans l'écran de liste. Les confondre faisait surgir
+    // ici « Votre session a expiré » à chaque ouverture sur un appareil
+    // anonyme, alors que rien n'avait été tenté.
+    //
+    // `start()` vide ce champ avant chaque tentative : deux échecs identiques
     // d'affilée restent deux transitions distinctes, et le second geste obtient
     // bien son message.
     return BlocListener<MyCyclesCubit, WashCyclesState>(
-      listenWhen: (p, c) => p.error != c.error && c.error != null,
-      listener: (context, state) => _signalerEchec(context, state.error!),
+      listenWhen: (p, c) => p.startError != c.startError && c.startError != null,
+      listener: (context, state) => _signalerEchec(context, state.startError!),
       child: Scaffold(
         body: SafeArea(
           child: Column(
@@ -155,9 +167,7 @@ class _HomeViewState extends State<_HomeView> with WidgetsBindingObserver {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Ne dépend plus de la liste des machines : le cycle et son temps
-          // restant viennent du serveur. C'est cette dépendance qui faisait
-          // clignoter le bandeau à chaque message temps réel.
+          const PendingPaymentBanner(),
           const ActiveSessionCard(),
           const ServiceCatalogContent(),
         ],

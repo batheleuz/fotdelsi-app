@@ -4,6 +4,7 @@ import 'package:fotdelsi/core/network/error_mapper.dart';
 import 'package:fotdelsi/core/network/failures.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_session.dart';
+import 'package:fotdelsi/features/payment/domain/entities/pending_payment.dart';
 import 'package:fotdelsi/features/payment/domain/repositories/payment_repository.dart';
 import '../datasources/payment_api_data_source.dart';
 
@@ -31,6 +32,15 @@ class PaymentRepositoryImpl implements PaymentRepository {
         atCounter: atCounter,
       );
       return Right(model.toEntity());
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<PendingPayment>>> pendingPayments() async {
+    try {
+      return Right(await _api.pendingPayments());
     } catch (e) {
       return Left(mapExceptionToFailure(e));
     }

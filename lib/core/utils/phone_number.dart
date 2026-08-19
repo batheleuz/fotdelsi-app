@@ -26,3 +26,30 @@ String normalizePhone(String input) {
       ? digits.substring(_countryCode.length)
       : digits;
 }
+
+/// Numéro tel qu'on le montre à un humain : « 77 123 45 67 ».
+///
+/// Le groupement est celui que les gens lisent et dictent au Sénégal — deux
+/// chiffres d'opérateur, puis trois groupes. Un bloc de neuf chiffres collés
+/// est exact mais illisible, et un agent qui recopie un numéro à l'oral se
+/// trompe d'autant plus qu'il doit compter les caractères.
+///
+/// Toute entrée non canonique ressort telle quelle : mieux vaut afficher une
+/// valeur inattendue que la découper à tort et laisser croire à un autre numéro.
+String displayPhone(String canonical) {
+  final digits = normalizePhone(canonical);
+  if (digits.length != 9) return canonical;
+
+  return '${digits.substring(0, 2)} ${digits.substring(2, 5)} '
+      '${digits.substring(5, 7)} ${digits.substring(7)}';
+}
+
+/// Numéro sous la forme attendue par un composeur : indicatif inclus.
+///
+/// L'indicatif n'est pas enregistré — il ne l'est jamais — mais un `tel:` sans
+/// lui dépend du pays configuré sur le téléphone. On le rétablit ici, au seul
+/// endroit qui en a besoin.
+String dialablePhone(String canonical) {
+  final digits = normalizePhone(canonical);
+  return digits.length == 9 ? '+$_countryCode$digits' : digits;
+}

@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import 'package:fotdelsi/core/network/failures.dart';
 import '../entities/payment_provider.dart';
 import '../entities/payment_session.dart';
+import '../entities/pending_payment.dart';
 
 /// Contrat domaine pour les opérations de paiement.
 abstract interface class PaymentRepository {
@@ -29,6 +30,12 @@ abstract interface class PaymentRepository {
   /// Initie un paiement de dépôt (`purpose: DROP_OFF`). Le montant n'est pas
   /// transmis : le serveur le relit sur le brouillon, où il a été calculé
   /// depuis la grille tarifaire. Le prompt est envoyé au téléphone du client.
+  /// Paiements que le client peut encore honorer.
+  ///
+  /// Sert à lui reproposer un paiement laissé en plan — solde insuffisant,
+  /// application fermée — tant que le lien reste valable.
+  Future<Either<Failure, List<PendingPayment>>> pendingPayments();
+
   Future<Either<Failure, void>> initiateDropOffPayment({
     required String draftId,
     required PaymentProvider provider,

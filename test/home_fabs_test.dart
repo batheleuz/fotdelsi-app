@@ -1,7 +1,10 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:fotdelsi/core/auth/client_session_store.dart';
 
 import 'package:fotdelsi/core/network/failures.dart';
 import 'package:fotdelsi/features/machines/presentation/widgets/home_fabs.dart';
@@ -17,8 +20,18 @@ class _NoRepository implements WashSessionRepository {
 
 /// Typé `MyCyclesCubit` : c'est ce type précis que l'accueil fournit, et que
 /// les boutons lisent.
+/// Session cliente presente : ces tests decrivent un client dont le numero est
+/// lie. `token()` est surcharge pour ne jamais toucher au stockage securise,
+/// qui exige un canal de plateforme.
+class _LinkedSession extends ClientSessionStore {
+  _LinkedSession() : super(const FlutterSecureStorage());
+
+  @override
+  Future<String?> token() async => 'jeton-client';
+}
+
 class _FakeMyCycles extends MyCyclesCubit {
-  _FakeMyCycles(this._cycles) : super(_NoRepository());
+  _FakeMyCycles(this._cycles) : super(_NoRepository(), _LinkedSession());
 
   final List<WashCycle> _cycles;
 

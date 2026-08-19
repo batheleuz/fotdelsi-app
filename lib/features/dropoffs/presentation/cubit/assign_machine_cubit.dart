@@ -24,15 +24,21 @@ class AssignMachineCubit extends Cubit<AssignMachineState> {
   /// Charge les machines disponibles du [type] voulu (laveuses ou sécheuses).
   Future<void> loadMachines(MachineType type) async {
     emit(state.copyWith(status: AssignLoad.loading));
+
     final result = await _machines.getMachines();
+
     result.fold(
-      (f) => emit(state.copyWith(status: AssignLoad.failure, error: f.message)),
-      (all) => emit(
+      (failure) => emit(
+        state.copyWith(status: AssignLoad.failure, error: failure.message),
+      ),
+      (machines) => emit(
         state.copyWith(
           status: AssignLoad.success,
-          machines: all
+          machines: machines
               .where(
-                (m) => m.status == MachineStatus.available && m.type == type,
+                (machine) =>
+                    machine.status == MachineStatus.available &&
+                    machine.type == type,
               )
               .toList(),
         ),
@@ -56,12 +62,21 @@ class AssignMachineCubit extends Cubit<AssignMachineState> {
     final machineId = state.selectedId;
     if (machineId == null) return false;
 
-    emit(state.copyWith(assignStatus: AssignStatus.loading, clearError: true));
+    final loadingState = state.copyWith(
+      assignStatus: AssignStatus.loading,
+      clearError: true,
+    );
+    emit(loadingState);
+
     final result = await action(machineId);
+
     return result.fold(
-      (f) {
+      (failure) {
         emit(
-          state.copyWith(assignStatus: AssignStatus.failure, error: f.message),
+          state.copyWith(
+            assignStatus: AssignStatus.failure,
+            error: failure.message,
+          ),
         );
         return false;
       },

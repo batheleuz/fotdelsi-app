@@ -40,10 +40,17 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
     final result = await _formulaRepository.getFormulas();
 
     result.fold(
-      (failure) => emit(state.copyWith(formulasStatus: LoadStatus.failure)),
-      (formulas) => emit(
-        state.copyWith(formulas: formulas, formulasStatus: LoadStatus.success),
-      ),
+      (failure) {
+        final errorState = state.copyWith(formulasStatus: LoadStatus.failure);
+        emit(errorState);
+      },
+      (formulas) {
+        final newState = state.copyWith(
+          formulas: formulas,
+          formulasStatus: LoadStatus.success,
+        );
+        emit(newState);
+      },
     );
   }
 

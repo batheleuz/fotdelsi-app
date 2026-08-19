@@ -8,6 +8,7 @@ final class WashCyclesState extends Equatable {
     this.cycles,
     this.startingToken,
     this.error,
+    this.startError,
     this.tick = 0,
   });
 
@@ -20,7 +21,19 @@ final class WashCyclesState extends Equatable {
   /// Jeton du cycle en cours de démarrage : une seule machine à la fois, pour
   /// que l'on voie exactement laquelle vient d'être lancée.
   final String? startingToken;
+
+  /// Échec d'un CHARGEMENT. L'écran s'affiche en échec et propose de
+  /// réessayer ; rien ne surgit par-dessus.
   final String? error;
+
+  /// Échec du GESTE « Démarrer ».
+  ///
+  /// Distinct de [error], et pas par élégance : un écran qui remonte toute
+  /// erreur en surimpression faisait surgir « Votre session a expiré » sur
+  /// l'accueil d'un appareil anonyme, à chaque ouverture. Un chargement qui
+  /// échoue se dit dans l'écran ; un geste refusé se dit là où le doigt vient
+  /// d'appuyer.
+  final String? startError;
 
   /// Battement de seconde. Ne porte aucune donnée : il force le rendu pour que
   /// le temps écoulé avance, sans redemander quoi que ce soit au serveur.
@@ -160,8 +173,10 @@ final class WashCyclesState extends Equatable {
     List<WashCycle>? cycles,
     String? startingToken,
     String? error,
+    String? startError,
     int? tick,
     bool clearError = false,
+    bool clearStartError = false,
     bool clearStarting = false,
   }) {
     return WashCyclesState(
@@ -171,10 +186,18 @@ final class WashCyclesState extends Equatable {
           ? null
           : (startingToken ?? this.startingToken),
       error: clearError ? null : (error ?? this.error),
+      startError: clearStartError ? null : (startError ?? this.startError),
       tick: tick ?? this.tick,
     );
   }
 
   @override
-  List<Object?> get props => [status, cycles, startingToken, error, tick];
+  List<Object?> get props => [
+    status,
+    cycles,
+    startingToken,
+    error,
+    startError,
+    tick,
+  ];
 }

@@ -85,13 +85,14 @@ class DropOffDetailCubit extends Cubit<DropOffDetailState> {
   Future<void> _runAction(
     Future<Either<Failure, void>> Function() action,
   ) async {
-    emit(
-      state.copyWith(
-        actionStatus: ActionStatus.loading,
-        clearActionError: true,
-      ),
+    final loadingState = state.copyWith(
+      actionStatus: ActionStatus.loading,
+      clearActionError: true,
     );
+    emit(loadingState);
+    
     final result = await action();
+    
     await result.fold(
       (f) async => emit(
         state.copyWith(

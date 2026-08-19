@@ -4,6 +4,7 @@ import 'package:fotdelsi/core/network/api_endpoints.dart';
 import 'package:fotdelsi/core/utils/phone_number.dart';
 import '../../domain/entities/agent_queue.dart';
 import '../../domain/entities/drop_off.dart';
+import '../../domain/entities/drop_off_history_page.dart';
 import '../../domain/entities/laundry_type.dart';
 import '../../domain/entities/pending_drop_off_payment.dart';
 import '../models/drop_off_model.dart';
@@ -44,6 +45,24 @@ class DropOffApiDataSource {
     return ((data['handoffs'] as List?) ?? const [])
         .map((e) => DropOffModel.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  /// `GET /drop-offs/history` — tous les dépôts, du plus récent au plus ancien.
+  ///
+  /// Paginé : un historique grandit indéfiniment, et une page qui s'arrêterait
+  /// silencieusement mentirait sur ce qu'elle montre.
+  Future<DropOffHistoryPage> getHistory({int? limit, int? offset}) async {
+    final resp = await _dio.get<Map<String, dynamic>>(
+      ApiEndpoints.dropOffHistory,
+      queryParameters: {'limit': ?limit, 'offset': ?offset},
+    );
+    final data = (resp.data?['data'] as Map<String, dynamic>?) ?? const {};
+    return DropOffHistoryPage(
+      dropOffs: ((data['dropOffs'] as List?) ?? const [])
+          .map((e) => DropOffModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: data['hasMore'] as bool? ?? false,
+    );
   }
 
   /// `GET /drop-offs/pending-payment` — dépôts saisis dont le paiement n'est

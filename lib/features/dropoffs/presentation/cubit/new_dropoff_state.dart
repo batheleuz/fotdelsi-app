@@ -47,8 +47,8 @@ final class NewDropOffState extends Equatable {
   final String? draftId;
 
   ServiceFormula? get selectedFormula {
-    for (final f in formulas) {
-      if (f.code == formulaCode) return f;
+    for (final formula in formulas) {
+      if (formula.code == formulaCode) return formula;
     }
     return null;
   }

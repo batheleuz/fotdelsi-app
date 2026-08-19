@@ -9,6 +9,7 @@ import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/features/client_auth/presentation/cubit/client_session_cubit.dart';
 import '../../domain/entities/wash_cycle.dart';
 import '../cubit/wash_cycles_cubit.dart';
+import 'confirm_start_sheet.dart';
 import 'pick_dryer_sheet.dart';
 
 /// Bandeau de cycle en cours, en tête de l'accueil.
@@ -79,7 +80,17 @@ class ActiveSessionCard extends StatelessWidget {
               cycle,
               cycles: context.read<MyCyclesCubit>(),
             )
-          : () => context.read<MyCyclesCubit>().start(cycle),
+          : () async {
+              // Confirmation avant tout démarrage physique : un appui
+              // involontaire consommerait le cycle payé sur un tambour vide.
+              final cubit = context.read<MyCyclesCubit>();
+              if (await confirmMachineStart(
+                context,
+                machineName: cycle.machineName,
+              )) {
+                await cubit.start(cycle);
+              }
+            },
       onOpen: () => context.push(AppRoutes.myCycles),
       others: state.onHome.length - 1,
     );

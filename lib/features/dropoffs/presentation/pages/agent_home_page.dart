@@ -157,16 +157,41 @@ class _AgentHomeView extends StatelessWidget {
                       },
                     ),
                   ),
-                  // Ces commandes sont payées mais leur linge est encore chez
-                  // le client : hors de la file par conception, invisibles
-                  // pour l'agent sans cette entrée.
-                  const _HandoffsAction(),
                   // Linge au comptoir, argent pas encore encaissé : ces dépôts
                   // n'existent pas encore dans la file, qui ne liste que du payé.
                   const _PendingPaymentsAction(),
                   // Argent encaissé, machine jamais lancée : c'est le seul
                   // endroit qui rattrape une vente dont on a quitté l'écran.
                   const _CounterSaleCyclesAction(),
+
+                  // Hors de « En cours », et c'est tout l'objet de cette
+                  // section : rien n'y est en cours. Le linge est encore chez
+                  // le client, aucune machine ne tourne, l'agent n'a rien à
+                  // faire tant qu'il n'est pas passé. Rangée parmi son propre
+                  // travail, cette entrée se lisait comme une consigne sur le
+                  // dépôt qu'il venait de lancer — « à réceptionner » alors
+                  // que c'est lui qui gère ce linge.
+                  const _WaitingSection(),
+
+                  const SizedBox(height: AppSpacing.lg),
+                  const EntranceFade(
+                    index: 7,
+                    child: _SectionLabel('Consulter'),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  // Toujours visible, sans compteur : la file ne montre que le
+                  // jour et les statuts actifs, donc un dépôt rendu la veille
+                  // n'était joignable nulle part. Un badge n'aurait aucun sens
+                  // ici — rien n'y réclame de geste.
+                  EntranceFade(
+                    index: 8,
+                    child: _Action(
+                      icon: Icons.history_rounded,
+                      title: 'Historique des dépôts',
+                      subtitle: 'Tous les dépôts, avec le numéro du client',
+                      onTap: () => context.push(AppRoutes.agentHistory),
+                    ),
+                  ),
                 ],
               );
             },
@@ -186,12 +211,38 @@ class _AgentHomeView extends StatelessWidget {
   }
 }
 
+/// Section « En attente du client », et son unique entrée.
+///
+/// Le libellé de section suit la visibilité de l'entrée : afficher un titre
+/// au-dessus du vide donnerait une rubrique fantôme.
+class _WaitingSection extends StatelessWidget {
+  const _WaitingSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final count = context.select<AgentHandoffsCubit, int>((c) => c.state.count);
+
+    return AnimatedReveal(
+      visible: count > 0,
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: AppSpacing.lg),
+          _SectionLabel('En attente du client'),
+          SizedBox(height: AppSpacing.sm),
+          _HandoffsAction(),
+        ],
+      ),
+    );
+  }
+}
+
 /// Entrée « À réceptionner ».
 ///
-/// Masquée tant qu'il n'y a rien : ces commandes sont payées mais leur linge
-/// est encore chez le client, elles ne réclament aucune action de l'agent. On
-/// ne montre l'entrée que lorsqu'elle a un sens — et on la masque aussi si le
-/// chargement échoue, plutôt que d'annoncer un « 0 » qu'on ne sait pas vrai.
+/// Masquée avec sa section tant qu'il n'y a rien : ces commandes sont payées
+/// mais leur linge est encore chez le client. On ne la montre que lorsqu'elle a
+/// un sens — et on la masque aussi si le chargement échoue, plutôt que
+/// d'annoncer un « 0 » qu'on ne sait pas vrai.
 class _HandoffsAction extends StatelessWidget {
   const _HandoffsAction();
 
@@ -199,26 +250,20 @@ class _HandoffsAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final count = context.select<AgentHandoffsCubit, int>((c) => c.state.count);
 
-    // Se replie au lieu de disparaître : une entrée qui s'évapore entre deux
-    // images laisse croire à un bug, alors qu'elle signale une bonne nouvelle
-    // — le client est passé prendre son linge.
-    return AnimatedReveal(
-      visible: count > 0,
-      child: _Action(
-        icon: Icons.schedule_rounded,
-        accent: AppColors.secondary,
-        title: 'À réceptionner',
-        subtitle: count == 1
-            ? '1 client doit apporter son linge'
-            : '$count clients doivent apporter leur linge',
-        badge: count,
-        onTap: () async {
-          await context.push(AppRoutes.agentHandoffs);
-          if (context.mounted) {
-            context.read<AgentHandoffsCubit>().refresh();
-          }
-        },
-      ),
+    return _Action(
+      icon: Icons.schedule_rounded,
+      accent: AppColors.secondary,
+      title: 'À réceptionner',
+      subtitle: count == 1
+          ? '1 client doit apporter son linge'
+          : '$count clients doivent apporter leur linge',
+      badge: count,
+      onTap: () async {
+        await context.push(AppRoutes.agentHandoffs);
+        if (context.mounted) {
+          context.read<AgentHandoffsCubit>().refresh();
+        }
+      },
     );
   }
 }

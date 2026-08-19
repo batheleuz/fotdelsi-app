@@ -43,6 +43,7 @@ abstract final class ApiEndpoints {
 
   /// Cycles du client authentifié (jeton de session client).
   static const String myCycles = '/me/cycles';
+  static const String myPendingPayments = '/me/payments/pending';
 
   // Auth
   static const String login = '/auth/login';
@@ -68,6 +69,7 @@ abstract final class ApiEndpoints {
   static const String dropOffDraft = '/drop-offs/draft';
   static const String dropOffQueue = '/drop-offs/queue';
   static const String dropOffHandoffs = '/drop-offs/handoffs';
+  static const String dropOffHistory = '/drop-offs/history';
   static const String dropOffPendingPayment = '/drop-offs/pending-payment';
   static String dropOffByCode(String code) => '/drop-offs/by-code/$code';
   static String dropOff(String id) => '/drop-offs/$id';

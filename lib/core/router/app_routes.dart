@@ -37,6 +37,9 @@ abstract final class AppRoutes {
 
   /// Remises libre-service dont le linge n'est pas encore arrivé.
   static const agentHandoffs = '/agent/handoffs';
+
+  /// Historique complet des dépôts — tous les jours, tous les statuts.
+  static const agentHistory = '/agent/history';
   static const agentPendingPayments = '/agent/pending-payments';
   static const agentCycles = '/agent/cycles';
   static const myCycles = '/my-cycles';

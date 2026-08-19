@@ -6,6 +6,7 @@ import 'package:fotdelsi/core/network/exceptions.dart';
 import 'package:fotdelsi/core/network/failures.dart';
 import '../../domain/entities/agent_queue.dart';
 import '../../domain/entities/drop_off.dart';
+import '../../domain/entities/drop_off_history_page.dart';
 import '../../domain/entities/pending_drop_off_payment.dart';
 import '../../domain/entities/laundry_type.dart';
 import '../../domain/repositories/drop_off_repository.dart';
@@ -93,6 +94,12 @@ class DropOffRepositoryImpl implements DropOffRepository {
   @override
   Future<Either<Failure, DropOff>> getByCode(String code, {String? day}) =>
       _guard(() => _api.getByCode(code, day: day));
+
+  @override
+  Future<Either<Failure, DropOffHistoryPage>> getHistory({
+    int? limit,
+    int? offset,
+  }) => _guard(() => _api.getHistory(limit: limit, offset: offset));
 
   @override
   Future<Either<Failure, void>> assignMachine(String id, String machineId) =>
