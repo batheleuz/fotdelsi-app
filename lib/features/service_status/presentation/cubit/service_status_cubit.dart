@@ -23,8 +23,7 @@ class ServiceStatusCubit extends Cubit<ServiceStatusState> {
     try {
       final status = await _dataSource.fetch();
       emit(state.copyWith(warnings: status.warnings));
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   /// Démarre le rafraîchissement immédiat + périodique (une seule fois).

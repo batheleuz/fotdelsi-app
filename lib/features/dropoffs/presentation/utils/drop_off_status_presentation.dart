@@ -6,6 +6,7 @@ import '../../domain/entities/drop_off_status.dart';
 /// Garde la couche domaine indépendante de Flutter.
 extension DropOffStatusX on DropOffStatus {
   String get label => switch (this) {
+    DropOffStatus.awaitingHandoff => 'À apporter',
     DropOffStatus.received => 'Reçu',
     DropOffStatus.inProgress => 'En cours',
     DropOffStatus.ready => 'Prêt',
@@ -16,6 +17,8 @@ extension DropOffStatusX on DropOffStatus {
 
   /// Couleur de la pastille / accent.
   Color get dotColor => switch (this) {
+    // Violet : ni en attente d'action agent, ni en cours de traitement.
+    DropOffStatus.awaitingHandoff => const Color(0xFF7C5CD6),
     DropOffStatus.received => const Color(0xFFEF9F27),
     DropOffStatus.inProgress => const Color(0xFF3FA9F5),
     DropOffStatus.ready => const Color(0xFF1D9E75),
@@ -26,6 +29,7 @@ extension DropOffStatusX on DropOffStatus {
 
   /// Fond doux du badge.
   Color get softColor => switch (this) {
+    DropOffStatus.awaitingHandoff => const Color(0xFFF0EBFB),
     DropOffStatus.received => const Color(0xFFFDF3E2),
     DropOffStatus.inProgress => const Color(0xFFE7F1FF),
     DropOffStatus.ready => const Color(0xFFE1F6EF),
@@ -36,6 +40,7 @@ extension DropOffStatusX on DropOffStatus {
 
   /// Couleur du texte du badge (lisible sur [softColor]).
   Color get textColor => switch (this) {
+    DropOffStatus.awaitingHandoff => const Color(0xFF4B3392),
     DropOffStatus.received => const Color(0xFF8A5A0E),
     DropOffStatus.inProgress => const Color(0xFF155A9E),
     DropOffStatus.ready => const Color(0xFF0F6E56),

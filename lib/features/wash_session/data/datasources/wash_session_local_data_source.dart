@@ -6,19 +6,26 @@ import '../../domain/entities/pending_wash_session.dart';
 import '../../domain/entities/session_payment_status.dart';
 
 /// Clés de stockage SharedPreferences.
+///
+/// Les liens de paiement (`redirectUrl`, `maxitUrl`, `omUrl`, `qrCodeUrl`) ne
+/// sont volontairement PAS conservés. Ils ne servent qu'une fois, juste après
+/// l'initiation, pour ouvrir Wave ou Orange Money — `PaymentLauncher` les lit
+/// dans la session en mémoire. Les persister revenait à garder sur l'appareil
+/// des URLs de transaction qui ne seraient jamais relues.
 abstract final class _Keys {
   static const token = 'wash_session_token';
   static const machineId = 'wash_session_machine_id';
   static const provider = 'wash_session_provider';
   static const sessionPaymentStatus = 'wash_session_payment_status';
   static const machineStartStatus = 'wash_session_machine_start_status';
-  static const redirectUrl = 'wash_session_redirect_url';
-  static const maxitUrl = 'wash_session_maxit_url';
-  static const omUrl = 'wash_session_om_url';
-  static const qrCodeUrl = 'wash_session_qr_code_url';
 }
 
-/// Persiste la session de lavage en attente sur le device.
+/// Persiste le strict nécessaire au suivi d'un paiement en cours.
+///
+/// L'état du CYCLE — statut, temps restant, fin — ne vit plus ici : il vient
+/// du serveur via `GET /me/cycles`, rattaché au numéro lié. Ce qui reste sert
+/// uniquement à retrouver le paiement en attente au retour de l'application
+/// mobile money, avant que le webhook ne soit arrivé.
 class WashSessionLocalDataSource {
   const WashSessionLocalDataSource(this._prefs);
 
@@ -30,25 +37,13 @@ class WashSessionLocalDataSource {
       _prefs.setString(_Keys.machineId, session.machineId),
       _prefs.setString(_Keys.provider, session.provider.apiValue),
       _prefs.setString(
-          _Keys.sessionPaymentStatus, session.sessionPaymentStatus.name),
+        _Keys.sessionPaymentStatus,
+        session.sessionPaymentStatus.name,
+      ),
       _prefs.setString(
-          _Keys.machineStartStatus, session.machineStartStatus.name),
-      if (session.redirectUrl != null)
-        _prefs.setString(_Keys.redirectUrl, session.redirectUrl!)
-      else
-        _prefs.remove(_Keys.redirectUrl),
-      if (session.maxitUrl != null)
-        _prefs.setString(_Keys.maxitUrl, session.maxitUrl!)
-      else
-        _prefs.remove(_Keys.maxitUrl),
-      if (session.omUrl != null)
-        _prefs.setString(_Keys.omUrl, session.omUrl!)
-      else
-        _prefs.remove(_Keys.omUrl),
-      if (session.qrCodeUrl != null)
-        _prefs.setString(_Keys.qrCodeUrl, session.qrCodeUrl!)
-      else
-        _prefs.remove(_Keys.qrCodeUrl),
+        _Keys.machineStartStatus,
+        session.machineStartStatus.name,
+      ),
     ]);
   }
 
@@ -78,16 +73,14 @@ class WashSessionLocalDataSource {
       orElse: () => MachineStartStatus.pending,
     );
 
+    // Les liens de paiement sont absents d'une session RESTAURÉE : elle ne
+    // sert qu'au suivi, jamais à relancer une redirection.
     return PendingWashSession(
       washSessionToken: token,
       machineId: _prefs.getString(_Keys.machineId) ?? '',
       provider: provider,
       sessionPaymentStatus: sessionPaymentStatus,
       machineStartStatus: machineStartStatus,
-      redirectUrl: _prefs.getString(_Keys.redirectUrl),
-      maxitUrl: _prefs.getString(_Keys.maxitUrl),
-      omUrl: _prefs.getString(_Keys.omUrl),
-      qrCodeUrl: _prefs.getString(_Keys.qrCodeUrl),
     );
   }
 
@@ -98,10 +91,13 @@ class WashSessionLocalDataSource {
       _prefs.remove(_Keys.provider),
       _prefs.remove(_Keys.sessionPaymentStatus),
       _prefs.remove(_Keys.machineStartStatus),
-      _prefs.remove(_Keys.redirectUrl),
-      _prefs.remove(_Keys.maxitUrl),
-      _prefs.remove(_Keys.omUrl),
-      _prefs.remove(_Keys.qrCodeUrl),
+      // Purge des clés d'une version antérieure, qui stockait aussi les liens
+      // de paiement. Sans ça, elles resteraient indéfiniment sur les appareils
+      // déjà installés.
+      _prefs.remove('wash_session_redirect_url'),
+      _prefs.remove('wash_session_maxit_url'),
+      _prefs.remove('wash_session_om_url'),
+      _prefs.remove('wash_session_qr_code_url'),
     ]);
   }
 }

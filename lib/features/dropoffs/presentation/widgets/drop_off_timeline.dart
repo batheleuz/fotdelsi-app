@@ -4,8 +4,22 @@ import 'package:fotdelsi/core/theme/app_colors.dart';
 import '../../domain/entities/drop_off.dart';
 import '../../domain/entities/drop_off_status.dart';
 
-/// Timeline verticale des étapes d'un dépôt :
-/// Reçu → Lavage → Prêt → Remis.
+/// Une étape du parcours : son intitulé et l'instant où elle a été franchie.
+typedef _Stage = (String, DateTime?);
+
+/// Timeline verticale des étapes d'un dépôt.
+///
+/// ─── Deux parcours, pas un ───
+///
+/// Un dépôt confié au comptoir passe par : Reçu → Lavage lancé → Prêt → Remis.
+/// Un dépôt né d'un libre-service, non : le client a lavé et séché lui-même, et
+/// [DropOff.assignMachine] lui INTERDIT tout cycle machine. Son `startedAt` ne
+/// marque donc pas un lavage mais la prise en charge au comptoir.
+///
+/// Leur imposer le parcours agent affichait « Lavage lancé » jamais coché sur un
+/// linge pourtant lavé — l'étape ne pouvait structurellement pas se franchir —
+/// et « Reçu » coché alors que le linge était encore chez le client, `receivedAt`
+/// étant posé dès le paiement.
 class DropOffTimeline extends StatelessWidget {
   const DropOffTimeline({super.key, required this.dropOff});
 
@@ -14,7 +28,32 @@ class DropOffTimeline extends StatelessWidget {
   static const _green = Color(0xFF1D9E75);
   static const _future = Color(0xFFD7E0EE);
 
+  /// Étapes du parcours suivi par CE dépôt.
+  List<_Stage> get _stages => dropOff.isSelfService
+      ? [
+          // Les machines sont derrière : elles ont tourné sur la session de
+          // lavage du client, pas sur ce dépôt. L'étape est acquise par
+          // construction — un dépôt libre-service n'existe qu'une fois payé,
+          // et le code de remise ne lui parvient qu'en fin de cycle.
+          ('Lavé par le client', dropOff.receivedAt),
+          ('Apporté au comptoir', dropOff.startedAt),
+          ('Prêt', dropOff.readyAt),
+          ('Remis au client', dropOff.collectedAt),
+        ]
+      : [
+          ('Reçu', dropOff.receivedAt),
+          ('Lavage lancé', dropOff.startedAt),
+          ('Prêt', dropOff.readyAt),
+          ('Remis au client', dropOff.collectedAt),
+        ];
+
+  /// Étape en cours — celle qui attend un geste.
+  ///
+  /// `awaitingHandoff` manquait à ce filtrage et retombait sur le repli, qui
+  /// désignait la DERNIÈRE étape : un linge pas encore apporté s'affichait au
+  /// stade « Remis au client ».
   int get _activeIndex => switch (dropOff.status) {
+    DropOffStatus.awaitingHandoff => 1,
     DropOffStatus.received => 0,
     DropOffStatus.inProgress => 1,
     DropOffStatus.ready => 2,
@@ -24,12 +63,7 @@ class DropOffTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stages = <(String, DateTime?)>[
-      ('Reçu', dropOff.receivedAt),
-      ('Lavage lancé', dropOff.startedAt),
-      ('Prêt', dropOff.readyAt),
-      ('Remis au client', dropOff.collectedAt),
-    ];
+    final stages = _stages;
 
     return Column(
       children: [

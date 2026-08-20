@@ -19,10 +19,10 @@ class OnboardingIllustrationView extends StatelessWidget {
   final OnboardingIllustration illustration;
 
   String get _asset => switch (illustration) {
-        OnboardingIllustration.wash => AppImages.onboardingWash,
-        OnboardingIllustration.pay => AppImages.onboardingPay,
-        OnboardingIllustration.track => AppImages.onboardingTrack,
-      };
+    OnboardingIllustration.wash => AppImages.onboardingWash,
+    OnboardingIllustration.pay => AppImages.onboardingPay,
+    OnboardingIllustration.track => AppImages.onboardingTrack,
+  };
 
   @override
   Widget build(BuildContext context) {

@@ -15,11 +15,7 @@ final class ScanState extends Equatable {
   final Machine? machine;
   final String? error;
 
-  ScanState copyWith({
-    ScanStatus? status,
-    Machine? machine,
-    String? error,
-  }) {
+  ScanState copyWith({ScanStatus? status, Machine? machine, String? error}) {
     return ScanState(
       status: status ?? this.status,
       machine: machine ?? this.machine,

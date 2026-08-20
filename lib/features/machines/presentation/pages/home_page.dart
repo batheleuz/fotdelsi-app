@@ -1,34 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:fotdelsi/core/di/service_locator.dart';
 import 'package:fotdelsi/features/service_status/presentation/widgets/service_status_banner.dart';
-import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/features/client_auth/presentation/cubit/client_session_cubit.dart';
 import 'package:fotdelsi/features/client_auth/presentation/widgets/link_phone_prompt.dart';
-import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:fotdelsi/features/wash_session/presentation/cubit/wash_session_cubit.dart';
-import 'package:fotdelsi/features/wash_session/presentation/widgets/wash_running_sheet.dart';
-import 'package:fotdelsi/features/wash_session/presentation/widgets/wash_session_sheet.dart';
 import '../bloc/machines_bloc.dart';
 import '../bloc/machines_event.dart';
 import '../bloc/machines_state.dart';
 import '../widgets/home_app_bar.dart';
-import '../widgets/machines_content.dart';
-import '../widgets/machines_status_views.dart';
+import '../widgets/home_fabs.dart';
+import 'package:fotdelsi/features/catalog/presentation/cubit/service_catalog_cubit.dart';
+import 'package:fotdelsi/features/catalog/presentation/widgets/service_catalog_content.dart';
+import 'package:fotdelsi/features/payment/presentation/cubit/pending_payments_cubit.dart';
+import 'package:fotdelsi/features/payment/presentation/widgets/pending_payment_banner.dart';
+import 'package:fotdelsi/features/wash_session/presentation/widgets/active_session_card.dart';
+import 'package:fotdelsi/features/wash_session/presentation/cubit/wash_cycles_cubit.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) =>
-          serviceLocator<MachinesBloc>()
+    return MultiBlocProvider(
+      providers: [
+        // Toujours nécessaire : alimente le temps réel et permet de retrouver
+        // la machine ciblée par une session en cours.
+        // `.value` et non `create` : le bloc est partagé, le fermer en
+        // quittant l'accueil couperait le flux des autres écrans.
+        BlocProvider.value(
+          value: serviceLocator<MachinesBloc>()
             ..add(const MachinesSubscriptionRequested()),
+        ),
+        BlocProvider(
+          create: (_) => serviceLocator<ServiceCatalogCubit>()..load(),
+        ),
+        // Alimente le bandeau de cycle. Le battement fait avancer le temps
+        // écoulé et resynchronise sur le serveur toutes les 10 s, au rythme
+        // du relevé des machines.
+        // Rattrapage d'un paiement laissé en plan — solde insuffisant,
+        // application fermée. Le lien reste honorable une trentaine de minutes.
+        BlocProvider(
+          create: (_) => serviceLocator<ClientPendingPaymentsCubit>()..load(),
+        ),
+        BlocProvider(
+          create: (_) => serviceLocator<MyCyclesCubit>()
+            ..load()
+            ..startTicking(),
+        ),
+      ],
       child: const _HomeView(),
     );
   }
@@ -69,45 +92,99 @@ class _HomeViewState extends State<_HomeView> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && mounted) {
-      // Vérifie si le paiement a été confirmé pendant l'absence de l'utilisateur.
-      context.read<WashSessionCubit>().onAppResumed();
-    }
+    if (state != AppLifecycleState.resumed || !mounted) return;
+
+    // Vérifie si le paiement a été confirmé pendant l'absence de l'utilisateur.
+    context.read<WashSessionCubit>().onAppResumed();
+
+    // Payer se fait DEHORS — dans Wave, dans Maxit. L'accueil ne chargeait ces
+    // paiements qu'à sa création : revenir sans avoir confirmé laissait donc
+    // l'écran muet, et il fallait fermer puis rouvrir l'application pour voir
+    // le bandeau. C'est précisément au retour qu'il a quelque chose à dire —
+    // que le paiement ait abouti, auquel cas le bandeau disparaît, ou non.
+    context.read<ClientPendingPaymentsCubit>().load();
+
+    // Même raison pour les cycles : un paiement confirmé pendant l'absence en
+    // crée un, et l'attendre au prochain battement le ferait apparaître avec
+    // dix secondes de retard sur le bandeau.
+    context.read<MyCyclesCubit>().load(silent: true);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            const HomeAppBar(),
-            Expanded(
-              child: BlocBuilder<MachinesBloc, MachinesState>(
-                builder: (context, state) => _body(context, state),
+    // Retour d'info du seul « Démarrer » de cet écran : celui du bandeau de
+    // cycle en cours, qui passe par `MyCyclesCubit`.
+    //
+    // Cet écouteur guettait auparavant `WashSessionCubit.startStatus`, hérité
+    // du temps où le démarrage partait de la carte machine. Plus personne ne
+    // fait sortir ce statut de `idle` : l'accueil écoutait donc un canal muet,
+    // et un refus du serveur — machine occupée, hors-ligne — n'y produisait
+    // rien, alors que « Mes lavages », branché sur le bon cubit, affichait
+    // bien le message.
+    //
+    // `startError` et non `error` : le second couvre les CHARGEMENTS, qui ont
+    // leur propre place dans l'écran de liste. Les confondre faisait surgir
+    // ici « Votre session a expiré » à chaque ouverture sur un appareil
+    // anonyme, alors que rien n'avait été tenté.
+    //
+    // `start()` vide ce champ avant chaque tentative : deux échecs identiques
+    // d'affilée restent deux transitions distinctes, et le second geste obtient
+    // bien son message.
+    return BlocListener<MyCyclesCubit, WashCyclesState>(
+      listenWhen: (p, c) => p.startError != c.startError && c.startError != null,
+      listener: (context, state) => _signalerEchec(context, state.startError!),
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              const HomeAppBar(),
+              Expanded(
+                child: BlocBuilder<MachinesBloc, MachinesState>(
+                  builder: (context, state) => _body(context, state),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+        floatingActionButton: const HomeFabs(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        bottomNavigationBar: const ServiceStatusBanner(),
       ),
-      floatingActionButton: const _HomeFabs(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      bottomNavigationBar: const ServiceStatusBanner(),
     );
   }
 
+  /// Annonce un échec de démarrage, d'où qu'il vienne.
+  ///
+  /// `hideCurrentSnackBar` d'abord : sans cela, un second essai fait la queue
+  /// derrière le message du premier, et la réponse paraît ne pas venir.
+  void _signalerEchec(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: AppColors.danger),
+      );
+  }
+
+  /// L'accueil présente les services ; les machines ne servent plus qu'à
+  /// afficher la session en cours et sont choisies à l'étape suivante. Un échec
+  /// de chargement des machines n'empêche donc plus de consulter l'offre.
   Widget _body(BuildContext context, MachinesState state) {
-    return switch (state.status) {
-      MachinesStatus.initial ||
-      MachinesStatus.loading => const MachinesLoading(),
-      MachinesStatus.failure => MachinesError(
-        message: state.error ?? 'Connexion au temps réel impossible.',
-        onRetry: () => context.read<MachinesBloc>().add(
-          const MachinesSubscriptionRequested(),
-        ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.xl,
       ),
-      MachinesStatus.success => MachinesContent(machines: state.machines),
-    };
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const PendingPaymentBanner(),
+          const ActiveSessionCard(),
+          const ServiceCatalogContent(),
+        ],
+      ),
+    );
   }
 }
 
@@ -117,90 +194,3 @@ class _HomeViewState extends State<_HomeView> with WidgetsBindingObserver {
 ///   • FAB scan — toujours visible.
 ///   • FAB session — visible si paiement confirmé ET machine pas encore démarrée.
 ///   • FAB running — visible si machine en cours.
-class _HomeFabs extends StatelessWidget {
-  const _HomeFabs();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<WashSessionCubit, WashSessionState>(
-      buildWhen: (prev, curr) =>
-          prev.hasConfirmedPendingSession != curr.hasConfirmedPendingSession ||
-          prev.isRunning != curr.isRunning,
-      builder: (context, sessionState) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            // FAB session en attente OU session en cours
-            if (sessionState.hasConfirmedPendingSession ||
-                sessionState.isRunning) ...[
-              _SessionFab(state: sessionState),
-              const SizedBox(height: AppSpacing.sm),
-            ],
-            // FAB scan — toujours présent
-            _ScanFab(),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _SessionFab extends StatelessWidget {
-  const _SessionFab({required this.state});
-
-  final WashSessionState state;
-
-  /// Retrouve la machine de la session dans la liste temps réel.
-  ///
-  /// Priorité au `machineId` de la session ; repli sur `startedMachine`.
-  Machine? _resolveMachine(BuildContext context) {
-    final session = state.pendingSession;
-    print("Session State => $state");
-    if (session == null) return state.startedMachine;
-
-    final machines = context.read<MachinesBloc>().state.machines;
-    for (final m in machines) {
-      if (m.id == session.machineId) return m;
-    }
-    return state.startedMachine;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isRunning = state.isRunning;
-
-    return FloatingActionButton.extended(
-      heroTag: 'session_fab',
-      onPressed: () {
-        final machine = _resolveMachine(context);
-        if (machine == null) return;
-        if (isRunning) {
-          WashRunningSheet.show(context, machine);
-        } else if (state.hasConfirmedPendingSession) {
-          WashSessionSheet.show(context, machine);
-        }
-      },
-      backgroundColor: isRunning ? AppColors.success : AppColors.secondary,
-      foregroundColor: Colors.white,
-      icon: const Icon(Icons.local_laundry_service_rounded),
-      label: Text(
-        isRunning ? 'En cours' : 'Démarrer',
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-}
-
-class _ScanFab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return FloatingActionButton(
-      heroTag: 'scan_fab',
-      onPressed: () => context.push(AppRoutes.scan),
-      backgroundColor: AppColors.primary,
-      foregroundColor: Colors.white,
-      child: const Icon(Icons.qr_code_scanner_rounded),
-    );
-  }
-}

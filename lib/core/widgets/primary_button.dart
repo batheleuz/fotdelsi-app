@@ -78,14 +78,17 @@ class _PrimaryButtonState extends State<PrimaryButton> {
                   children: [
                     Text(
                       widget.label,
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelLarge
-                          ?.copyWith(color: widget.foregroundColor),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: widget.foregroundColor,
+                      ),
                     ),
                     if (widget.icon != null) ...[
                       const SizedBox(width: 8),
-                      Icon(widget.icon, color: widget.foregroundColor, size: 20),
+                      Icon(
+                        widget.icon,
+                        color: widget.foregroundColor,
+                        size: 20,
+                      ),
                     ],
                   ],
                 ),

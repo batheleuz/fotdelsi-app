@@ -27,8 +27,9 @@ class MachineSocketDataSource implements MachineRealtimeDataSource {
     _machinesController ??= StreamController<List<Machine>>.broadcast(
       onListen: () {
         _socket.acquire();
-        _machineSub =
-            _socket.on(_eventMachinesUpdate).listen(_onMachinesUpdate);
+        _machineSub = _socket
+            .on(_eventMachinesUpdate)
+            .listen(_onMachinesUpdate);
       },
       onCancel: () {
         _machineSub?.cancel();
@@ -41,8 +42,9 @@ class MachineSocketDataSource implements MachineRealtimeDataSource {
 
   void _onMachinesUpdate(dynamic data) {
     try {
-      final machine =
-          MachineModel.fromJson(data as Map<String, dynamic>).toEntity();
+      final machine = MachineModel.fromJson(
+        data as Map<String, dynamic>,
+      ).toEntity();
       _machinesController?.add([machine]);
     } catch (e) {
       _machinesController?.addError(e);

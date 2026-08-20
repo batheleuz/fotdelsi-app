@@ -3,7 +3,11 @@ part of 'drop_off_search_cubit.dart';
 enum SearchStatus { idle, loading, found, notFound, failure }
 
 final class DropOffSearchState extends Equatable {
-  const DropOffSearchState({this.status = SearchStatus.idle, this.result, this.error});
+  const DropOffSearchState({
+    this.status = SearchStatus.idle,
+    this.result,
+    this.error,
+  });
 
   final SearchStatus status;
   final DropOff? result;

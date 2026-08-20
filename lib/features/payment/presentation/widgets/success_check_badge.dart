@@ -29,7 +29,10 @@ class _SuccessCheckBadgeState extends State<SuccessCheckBadge>
 
   @override
   Widget build(BuildContext context) {
-    final pop = CurvedAnimation(parent: _controller, curve: AppCurves.emphasized);
+    final pop = CurvedAnimation(
+      parent: _controller,
+      curve: AppCurves.emphasized,
+    );
     return SizedBox(
       width: widget.size + 28,
       height: widget.size + 28,
@@ -56,8 +59,11 @@ class _SuccessCheckBadgeState extends State<SuccessCheckBadge>
                 color: AppColors.success,
                 shape: BoxShape.circle,
               ),
-              child: Icon(AppIcons.check,
-                  size: widget.size * 0.5, color: AppColors.onPrimary),
+              child: Icon(
+                AppIcons.check,
+                size: widget.size * 0.5,
+                color: AppColors.onPrimary,
+              ),
             ),
           ),
         ],

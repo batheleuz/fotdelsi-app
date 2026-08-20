@@ -9,6 +9,7 @@ import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/widgets/app_confirmation_dialog.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
 import '../cubit/client_session_cubit.dart';
+import '../widgets/edit_name_sheet.dart';
 
 /// Écran « Mon compte » : affiche le numéro lié et permet de le déconnecter.
 class ClientAccountPage extends StatefulWidget {
@@ -122,10 +123,27 @@ class _ClientAccountPageState extends State<ClientAccountPage> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
+                  // Le nom vit côté serveur, rattaché au numéro : le client le
+                  // retrouve après une réinstallation, et il pré-remplit le
+                  // paiement sans qu'il ait à le retaper.
+                  _AccountTile(
+                    icon: Icons.badge_outlined,
+                    label: session.fullName ?? 'Ajouter mon nom',
+                    onTap: () => showEditNameSheet(context),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
                   _AccountTile(
                     icon: Icons.local_laundry_service_outlined,
                     label: 'Mes dépôts',
                     onTap: () => context.push(AppRoutes.myDropOffs),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  // Accessible uniquement ici : les cycles sont retrouvés par
+                  // le numéro lié, donc réservés aux clients identifiés.
+                  _AccountTile(
+                    icon: Icons.timelapse_rounded,
+                    label: 'Mes lavages',
+                    onTap: () => context.push(AppRoutes.myCycles),
                   ),
                   const Spacer(),
                   PrimaryButton(

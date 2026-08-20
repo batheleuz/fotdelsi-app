@@ -8,6 +8,7 @@ import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
+import 'package:fotdelsi/features/payment/presentation/widgets/payment_qr_view.dart';
 import '../../cubit/new_dropoff_cubit.dart';
 
 /// Étape 4 — confirmation d'envoi de la demande de paiement. **Non bloquante** :
@@ -69,7 +70,13 @@ class _NewDropOffAwaitingStepState extends State<NewDropOffAwaitingStep> {
 
   @override
   Widget build(BuildContext context) {
-    final phone = context.select((NewDropOffCubit c) => c.state.contactPhone);
+    final state = context.watch<NewDropOffCubit>().state;
+
+    // Le client est devant l'agent : il n'y a rien à attendre ni à renvoyer,
+    // seulement un code à lui montrer.
+    if (state.showsQr) return _QrToShow(state: state);
+
+    final phone = state.contactPhone;
     final canResend = _cooldown <= 0;
 
     return Padding(
@@ -157,6 +164,69 @@ class _Ring extends StatelessWidget {
         Icons.send_rounded,
         size: 38,
         color: AppColors.primaryLight,
+      ),
+    );
+  }
+}
+
+/// Le code à scanner, quand le client est là.
+///
+/// Même parti pris que l'écran de vente au comptoir : c'est le seul contenu
+/// destiné à être lu par quelqu'un d'AUTRE que le porteur du téléphone. Pas de
+/// bouton à côté du code, rien qui puisse être touché par mégarde pendant que
+/// le client scanne.
+class _QrToShow extends StatelessWidget {
+  const _QrToShow({required this.state});
+
+  final NewDropOffState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: AppColors.surfaceTint,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Scannez pour payer',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Avec l\'appareil photo de votre téléphone',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 28),
+
+          PaymentQrView(
+            payload: state.session!.qrPayload!,
+            provider: state.provider!,
+            amount: state.total,
+            size: 240,
+          ),
+
+          const SizedBox(height: 32),
+          const Text(
+            'Le dépôt rejoindra la file dès le paiement confirmé.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12.5, color: AppColors.textTertiary),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          PrimaryButton(
+            label: 'Terminer',
+            icon: Icons.check_rounded,
+            backgroundColor: AppColors.primaryLight,
+            onPressed: () => context.pop(),
+          ),
+        ],
       ),
     );
   }

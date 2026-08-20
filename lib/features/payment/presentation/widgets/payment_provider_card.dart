@@ -66,8 +66,11 @@ class PaymentProviderCard extends StatelessWidget {
             AnimatedOpacity(
               duration: AppDurations.fast,
               opacity: selected ? 1 : 0,
-              child: const Icon(AppIcons.check,
-                  size: 20, color: AppColors.primary),
+              child: const Icon(
+                AppIcons.check,
+                size: 20,
+                color: AppColors.primary,
+              ),
             ),
           ],
         ),

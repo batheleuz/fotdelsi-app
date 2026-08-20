@@ -16,6 +16,7 @@ abstract final class DropOffModel {
       contactPhone: json['contactPhone'] as String? ?? '',
       laundry: _laundry(laundryJson),
       status: DropOffStatus.fromApi(json['status'] as String? ?? 'RECEIVED'),
+      origin: json['origin'] as String? ?? 'AGENT',
       machineId: json['machineId'] as String?,
       washSessionId: json['washSessionId'] as String?,
       withDrying: json['withDrying'] as bool? ?? false,

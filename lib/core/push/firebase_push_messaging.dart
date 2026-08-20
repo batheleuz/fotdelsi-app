@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -29,8 +30,8 @@ class FirebasePushMessaging implements PushMessaging {
   FirebasePushMessaging({
     FirebaseMessaging? messaging,
     FlutterLocalNotificationsPlugin? localNotifications,
-  })  : _localNotifications =
-            localNotifications ?? FlutterLocalNotificationsPlugin();
+  }) : _localNotifications =
+           localNotifications ?? FlutterLocalNotificationsPlugin();
 
   // Récupéré paresseusement : `FirebaseMessaging.instance` exige que
   // `Firebase.initializeApp` ait déjà tourné.
@@ -60,13 +61,17 @@ class FirebasePushMessaging implements PushMessaging {
       requestSoundPermission: false,
     );
     await _localNotifications.initialize(
-      settings: const InitializationSettings(android: androidInit, iOS: iosInit),
+      settings: const InitializationSettings(
+        android: androidInit,
+        iOS: iosInit,
+      ),
       onDidReceiveNotificationResponse: _onLocalTap,
     );
 
     await _localNotifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(_channel);
 
     // iOS : afficher la bannière même au premier plan.
@@ -119,15 +124,56 @@ class FirebasePushMessaging implements PushMessaging {
     final settings = await _fm.requestPermission();
     return switch (settings.authorizationStatus) {
       AuthorizationStatus.authorized ||
-      AuthorizationStatus.provisional =>
-        PushPermissionStatus.granted,
+      AuthorizationStatus.provisional => PushPermissionStatus.granted,
       AuthorizationStatus.denied => PushPermissionStatus.denied,
       AuthorizationStatus.notDetermined => PushPermissionStatus.notDetermined,
     };
   }
 
+  /// Combien de temps attendre le jeton APNs avant d'abandonner.
+  ///
+  /// iOS l'obtient auprès d'Apple par le réseau : il n'est pas disponible
+  /// immédiatement après l'accord de l'utilisateur. Quelques secondes suffisent
+  /// en conditions normales ; au-delà, c'est qu'il ne viendra pas.
+  static const _apnsTimeout = Duration(seconds: 10);
+  static const _apnsRetryDelay = Duration(milliseconds: 500);
+
   @override
-  Future<String?> getToken() => _fm.getToken();
+  Future<String?> getToken() async {
+    // Sur iOS, le jeton FCM ne peut être émis qu'une fois le jeton APNs reçu.
+    // L'appeler trop tôt renvoie `null` — sans erreur, sans trace : c'est la
+    // cause classique d'un push qui « marche sur Android et pas sur iOS ».
+    //
+    // Android n'a pas d'APNs : `getAPNSToken` y renvoie `null` d'emblée, on
+    // n'attend donc rien.
+    if (Platform.isIOS || Platform.isMacOS) {
+      final apns = await _awaitApnsToken();
+      if (apns == null) {
+        // Sans jeton APNs, demander le jeton FCM ne peut que retourner `null`
+        // ou lever. On le dit, plutôt que de laisser un enregistrement de
+        // device échouer en silence.
+        throw StateError(
+          'Jeton APNs indisponible après ${_apnsTimeout.inSeconds} s. '
+          'Vérifiez la capacité « Push Notifications » du projet Xcode et la '
+          'clé APNs dans la console Firebase.',
+        );
+      }
+    }
+
+    return _fm.getToken();
+  }
+
+  /// Interroge le jeton APNs jusqu'à ce qu'il arrive, ou expiration.
+  Future<String?> _awaitApnsToken() async {
+    final deadline = DateTime.now().add(_apnsTimeout);
+
+    while (DateTime.now().isBefore(deadline)) {
+      final token = await _fm.getAPNSToken();
+      if (token != null) return token;
+      await Future<void>.delayed(_apnsRetryDelay);
+    }
+    return null;
+  }
 
   @override
   Stream<String> get onTokenRefresh => _fm.onTokenRefresh;

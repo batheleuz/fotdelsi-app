@@ -60,11 +60,11 @@ final class PaymentState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        provider,
-        phone,
-        customerFullName,
-        session,
-        errorMessage,
-      ];
+    status,
+    provider,
+    phone,
+    customerFullName,
+    session,
+    errorMessage,
+  ];
 }

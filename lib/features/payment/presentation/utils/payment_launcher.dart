@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:fotdelsi/features/wash_session/domain/entities/pending_wash_session.dart';
 import '../../domain/entities/payment_provider.dart';
+import '../widgets/payment_qr_view.dart';
 
 /// Gère le lancement de l'application de paiement après initiation.
 ///
@@ -66,40 +67,51 @@ abstract final class PaymentLauncher {
       }
     }
 
-    // 3. QR code de secours
+    // 3. QR de secours — l'app OM n'est pas installée sur CET appareil, mais
+    //    le client peut scanner depuis un autre téléphone.
     if (context.mounted) {
-      if (session.qrCodeUrl != null) {
-        _showQrDialog(context, session.qrCodeUrl!);
+      final payload = session.qrPayload;
+      if (payload != null) {
+        _showQrDialog(context, payload, session);
       } else {
-        _showError(context, 'Orange Money n\'est pas disponible sur cet appareil.');
+        _showError(
+          context,
+          'Orange Money n\'est pas disponible sur cet appareil.',
+        );
       }
     }
   }
 
   // ── Helpers UI ──────────────────────────────────────────────────────────────
 
-  static void _showQrDialog(BuildContext context, String qrCodeUrl) {
+  /// Le QR est généré sur l'appareil à partir du lien de paiement.
+  ///
+  /// L'ancienne version chargeait `qrCodeUrl` via `Image.network` : malgré son
+  /// nom, cette URL est une page HTML PayDunya (le PNG y est encodé en base64
+  /// dans la query string), pas une image. Le chargement échouait toujours,
+  /// masqué par l'`errorBuilder`.
+  static void _showQrDialog(
+    BuildContext context,
+    String payload,
+    PendingWashSession session,
+  ) {
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Scanner le QR Orange Money'),
+        title: const Text('Scanner pour payer'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'Ouvrez votre app Orange Money et scannez ce QR pour finaliser le paiement.',
+              'Scannez ce code avec l\'appareil photo de votre téléphone pour '
+              'finaliser le paiement.',
               style: TextStyle(fontSize: 13),
             ),
             const SizedBox(height: 16),
-            Image.network(
-              qrCodeUrl,
-              width: 200,
-              height: 200,
-              errorBuilder: (context, error, stack) => const Icon(
-                Icons.qr_code_2_rounded,
-                size: 80,
-                color: Colors.orange,
-              ),
+            PaymentQrView(
+              payload: payload,
+              provider: session.provider,
+              size: 200,
             ),
           ],
         ),
@@ -114,8 +126,8 @@ abstract final class PaymentLauncher {
   }
 
   static void _showError(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

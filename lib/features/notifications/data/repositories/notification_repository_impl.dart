@@ -17,22 +17,22 @@ class NotificationRepositoryImpl implements NotificationRepository {
     required String phone,
     required String fcmToken,
     required String platform,
-  }) =>
-      _guard(() => _api.registerDevice(
-            phone: phone,
-            fcmToken: fcmToken,
-            platform: platform,
-          ));
+  }) => _guard(
+    () => _api.registerDevice(
+      phone: phone,
+      fcmToken: fcmToken,
+      platform: platform,
+    ),
+  );
 
   @override
   Future<Either<Failure, void>> ack({
     required String notificationId,
     String? smsFallbackId,
-  }) =>
-      _guard(() => _api.ack(
-            notificationId: notificationId,
-            smsFallbackId: smsFallbackId,
-          ));
+  }) => _guard(
+    () =>
+        _api.ack(notificationId: notificationId, smsFallbackId: smsFallbackId),
+  );
 
   Future<Either<Failure, void>> _guard(Future<void> Function() op) async {
     try {

@@ -65,11 +65,13 @@ class AuthTokenStore {
     _access = accessToken;
     _refresh = refreshToken;
     _loaded = true;
-    await _bestEffort(Future.wait([
-      _storage.write(key: _kAccess, value: accessToken),
-      _storage.write(key: _kRefresh, value: refreshToken),
-      _storage.write(key: _kUser, value: jsonEncode(user)),
-    ]));
+    await _bestEffort(
+      Future.wait([
+        _storage.write(key: _kAccess, value: accessToken),
+        _storage.write(key: _kRefresh, value: refreshToken),
+        _storage.write(key: _kUser, value: jsonEncode(user)),
+      ]),
+    );
   }
 
   /// Met à jour uniquement les jetons (après un refresh réussi).
@@ -82,10 +84,12 @@ class AuthTokenStore {
     _access = accessToken;
     _refresh = refreshToken;
     _loaded = true;
-    await _bestEffort(Future.wait([
-      _storage.write(key: _kAccess, value: accessToken),
-      _storage.write(key: _kRefresh, value: refreshToken),
-    ]));
+    await _bestEffort(
+      Future.wait([
+        _storage.write(key: _kAccess, value: accessToken),
+        _storage.write(key: _kRefresh, value: refreshToken),
+      ]),
+    );
   }
 
   Future<String?> accessToken() async {
@@ -108,11 +112,13 @@ class AuthTokenStore {
     _access = null;
     _refresh = null;
     _loaded = true;
-    await _bestEffort(Future.wait([
-      _storage.delete(key: _kAccess),
-      _storage.delete(key: _kRefresh),
-      _storage.delete(key: _kUser),
-    ]));
+    await _bestEffort(
+      Future.wait([
+        _storage.delete(key: _kAccess),
+        _storage.delete(key: _kRefresh),
+        _storage.delete(key: _kUser),
+      ]),
+    );
   }
 
   /// Persistance Keychain qui ne peut ni bloquer ni faire échouer l'appelant :

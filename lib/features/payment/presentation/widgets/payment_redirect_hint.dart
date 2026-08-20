@@ -19,8 +19,11 @@ class PaymentRedirectHint extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline_rounded,
-              size: 16, color: AppColors.textSecondary),
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 16,
+            color: AppColors.textSecondary,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

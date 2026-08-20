@@ -6,6 +6,7 @@ import 'laundry.dart';
 /// Dépôt de linge géré par un agent.
 class DropOff extends Equatable {
   const DropOff({
+    this.origin = 'AGENT',
     required this.id,
     required this.code,
     required this.customerName,
@@ -34,6 +35,11 @@ class DropOff extends Equatable {
   final String contactPhone;
   final Laundry laundry;
   final DropOffStatus status;
+
+  /// `SELF_SERVICE` : le client a lavé lui-même et apporte son linge pour la
+  /// finition payée. Détermine ce qu'il reste à faire — et surtout ce qu'il ne
+  /// faut PAS refaire (relancer un lavage).
+  final String origin;
 
   final String? machineId;
   final String? washSessionId;
@@ -64,14 +70,23 @@ class DropOff extends Equatable {
 
   bool get _inProgress => status == DropOffStatus.inProgress;
 
+  /// Linge lavé en libre-service : les cycles machine sont déjà faits.
+  bool get isSelfService => origin == 'SELF_SERVICE';
+
+  /// En attente que le client apporte son linge au comptoir.
+  bool get isAwaitingHandoff => status == DropOffStatus.awaitingHandoff;
+
+  /// L'agent peut prendre en charge le linge qu'on vient de lui apporter.
+  bool get canReceiveHandoff => isAwaitingHandoff && isSelfService;
+
   /// Un cycle (lavage ou séchage) tourne encore : aucune action agent possible,
   /// on attend la fin détectée automatiquement (polling).
-  bool get isCycleRunning =>
-      _inProgress && !canStartDrying && !canMarkReady;
+  bool get isCycleRunning => _inProgress && !canStartDrying && !canMarkReady;
 
   /// Lavage terminé + séchage payé mais pas encore lancé → « Lancer le séchage ».
   bool get canStartDrying =>
       _inProgress &&
+      !isSelfService &&
       withDrying &&
       washCompletedAt != null &&
       dryStartedAt == null;
@@ -79,9 +94,13 @@ class DropOff extends Equatable {
   /// Le cycle requis est terminé → « Marquer prêt » :
   ///  - sans séchage : dès que le lavage est fini ;
   ///  - avec séchage : dès que le séchage est fini.
+  ///  - libre-service : dès la prise en charge — le travail est manuel, il n'y
+  ///    a aucun cycle machine à attendre (`washCompletedAt` reste nul, le
+  ///    lavage ayant été tracé sur la session du client).
   bool get canMarkReady =>
       _inProgress &&
-      (withDrying ? dryCompletedAt != null : washCompletedAt != null);
+      (isSelfService ||
+          (withDrying ? dryCompletedAt != null : washCompletedAt != null));
 
   // Toutes les valeurs affichables entrent dans l'égalité : sinon une
   // modification d'un champ absent (nom du client, linge, instructions…) rend
@@ -89,25 +108,26 @@ class DropOff extends Equatable {
   // figée alors que les données rechargées sont pourtant à jour.
   @override
   List<Object?> get props => [
-        id,
-        code,
-        customerName,
-        contactPhone,
-        laundry,
-        status,
-        machineId,
-        washSessionId,
-        withDrying,
-        dryerMachineId,
-        dryStartedAt,
-        washCompletedAt,
-        dryCompletedAt,
-        paymentId,
-        creationDay,
-        receivedAt,
-        startedAt,
-        readyAt,
-        collectedAt,
-        terminalReason,
-      ];
+    id,
+    origin,
+    code,
+    customerName,
+    contactPhone,
+    laundry,
+    status,
+    machineId,
+    washSessionId,
+    withDrying,
+    dryerMachineId,
+    dryStartedAt,
+    washCompletedAt,
+    dryCompletedAt,
+    paymentId,
+    creationDay,
+    receivedAt,
+    startedAt,
+    readyAt,
+    collectedAt,
+    terminalReason,
+  ];
 }

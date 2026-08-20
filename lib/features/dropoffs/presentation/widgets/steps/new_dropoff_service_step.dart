@@ -5,13 +5,18 @@ import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart';
+// Fournit l'extension `label` sur PaymentProvider.
 import 'package:fotdelsi/features/payment/presentation/utils/payment_provider_presentation.dart';
 import 'package:fotdelsi/features/payment/presentation/widgets/payment_provider_logo.dart';
-import '../../../domain/entities/prestation.dart';
 import '../../cubit/new_dropoff_cubit.dart';
 
-/// Étape 3 — prestation (montant) et opérateur de paiement.
+/// Étape 3 — formule de service, capacité, puis opérateur de paiement.
+///
+/// Les tarifs affichés viennent du catalogue serveur : l'agent choisit une
+/// prestation, jamais un prix. Le montant définitif est recalculé côté serveur
+/// à partir du couple (formule, capacité).
 class NewDropOffServiceStep extends StatelessWidget {
   const NewDropOffServiceStep({super.key});
 
@@ -19,46 +24,27 @@ class NewDropOffServiceStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<NewDropOffCubit>();
     final state = context.watch<NewDropOffCubit>().state;
+    final formula = state.selectedFormula;
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         const _Title('Prestation'),
         const SizedBox(height: AppSpacing.sm),
-        _prestations(context, state, cubit),
-        if (state.dryingPrice != null) ...[
-          const SizedBox(height: AppSpacing.md),
-          _DryingToggle(
-            price: state.dryingPrice!,
-            enabled: state.withDrying,
-            onChanged: cubit.toggleDrying,
+        _formulas(state, cubit),
+        if (formula != null) ...[
+          const SizedBox(height: AppSpacing.lg),
+          const _Title('Capacité'),
+          const SizedBox(height: AppSpacing.sm),
+          _SizePicker(
+            formula: formula,
+            selected: state.sizeKg,
+            onSelect: cubit.selectSize,
           ),
         ],
-        if (state.total != null) ...[
-          const SizedBox(height: AppSpacing.md),
-          Center(
-            child: Column(
-              children: [
-                const Text(
-                  'Total à payer',
-                  style: TextStyle(
-                    fontSize: 11,
-                    letterSpacing: 0.4,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  formatFcfa(state.total!),
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        if (state.total != null && formula != null) ...[
+          const SizedBox(height: AppSpacing.lg),
+          _TotalBanner(total: state.total!, formula: formula),
         ],
         const SizedBox(height: AppSpacing.lg),
         const _Title('Opérateur'),
@@ -86,24 +72,24 @@ class NewDropOffServiceStep extends StatelessWidget {
     );
   }
 
-  Widget _prestations(
-    BuildContext context,
-    NewDropOffState state,
-    NewDropOffCubit cubit,
-  ) {
-    return switch (state.prestationsStatus) {
+  Widget _formulas(NewDropOffState state, NewDropOffCubit cubit) {
+    return switch (state.formulasStatus) {
       LoadStatus.loading || LoadStatus.initial => const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
         child: Center(child: CircularProgressIndicator()),
       ),
-      LoadStatus.failure => _PrestationError(onRetry: cubit.retryPrestations),
+      LoadStatus.failure => _CatalogError(onRetry: cubit.retryFormulas),
       LoadStatus.success => Column(
-        children: state.prestations
+        children: state.formulas
             .map(
-              (p) => _PrestationCard(
-                prestation: p,
-                selected: state.amount == p.amount,
-                onTap: () => cubit.selectPrestation(p.amount),
+              (f) => _FormulaCard(
+                formula: f,
+                selected: state.formulaCode == f.code,
+                // Règle du dépôt et non du libre-service : le linge est
+                // confié maintenant, il n'a pas à attendre la fin d'un cycle.
+                onTap: f.availability.dropOff
+                    ? () => cubit.selectFormula(f)
+                    : null,
               ),
             )
             .toList(),
@@ -127,118 +113,211 @@ class _Title extends StatelessWidget {
   );
 }
 
-/// Option séchage : payée d'avance avec le dépôt, prix unique.
-class _DryingToggle extends StatelessWidget {
-  const _DryingToggle({
-    required this.price,
-    required this.enabled,
-    required this.onChanged,
+class _FormulaCard extends StatelessWidget {
+  const _FormulaCard({
+    required this.formula,
+    required this.selected,
+    required this.onTap,
   });
 
-  final int price;
-  final bool enabled;
-  final ValueChanged<bool> onChanged;
+  final ServiceFormula formula;
+  final bool selected;
+
+  /// `null` hors des heures de présence : la carte reste visible pour que
+  /// l'agent puisse expliquer, mais ne se sélectionne plus.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onChanged(!enabled),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: enabled ? AppColors.surfaceTint : AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: enabled ? AppColors.primaryLight : AppColors.border,
-            width: enabled ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.dry_cleaning_outlined,
-                size: 20, color: AppColors.primary),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Ajouter le séchage',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    '+ ${formatFcfa(price, withSuffix: false)}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
+    final from = formula.lowestPrice;
+    final available = onTap != null;
+
+    return Opacity(
+      opacity: available ? 1 : 0.5,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.surfaceTint : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: selected ? AppColors.primaryLight : AppColors.border,
+              width: selected ? 2 : 1,
             ),
-            Switch.adaptive(value: enabled, onChanged: onChanged),
-          ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      formula.label,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    // Le nom commercial dit le résultat ; l'agent a besoin du
+                    // détail pour confirmer la commande au client.
+                    Text(
+                      available
+                          ? formula.composition
+                          : (formula.availability.message ??
+                                formula.composition),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    // Prévient l'agent que le linge ne repart pas tout de suite.
+                    if (formula.requiresAgent) ...[
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Traitement au comptoir',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.secondary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (selected)
+                const Icon(
+                  Icons.check_circle_rounded,
+                  size: 20,
+                  color: AppColors.primaryLight,
+                )
+              else if (from != null)
+                Text(
+                  'dès ${formatFcfa(from, withSuffix: false)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _PrestationCard extends StatelessWidget {
-  const _PrestationCard({
-    required this.prestation,
+/// Capacités tarifées pour la formule choisie, avec leur prix.
+class _SizePicker extends StatelessWidget {
+  const _SizePicker({
+    required this.formula,
     required this.selected,
-    required this.onTap,
+    required this.onSelect,
   });
 
-  final Prestation prestation;
-  final bool selected;
-  final VoidCallback onTap;
+  final ServiceFormula formula;
+  final int? selected;
+  final ValueChanged<int> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    final label = prestation.sizeKg != null
-        ? 'Lavage ${prestation.sizeKg} kg'
-        : 'Lavage';
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.surfaceTint : AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: selected ? AppColors.primaryLight : AppColors.border,
-            width: selected ? 2 : 1,
+    final sizes = formula.sizes;
+
+    return Row(
+      children: List.generate(sizes.length, (index) {
+        final size = sizes[index];
+        final price = formula.priceFor(size)!;
+        final isSelected = selected == size;
+        final isLast = index == sizes.length - 1;
+
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: isLast ? 0 : 8),
+            child: GestureDetector(
+              onTap: () => onSelect(size),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.surfaceTint : AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primaryLight
+                        : AppColors.border,
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '$size kg',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      formatFcfa(price, withSuffix: false),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _TotalBanner extends StatelessWidget {
+  const _TotalBanner({required this.total, required this.formula});
+
+  final int total;
+  final ServiceFormula formula;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const Text(
+          'Total à payer',
+          style: TextStyle(
+            fontSize: 11,
+            letterSpacing: 0.4,
+            color: AppColors.textSecondary,
           ),
         ),
-        child: Row(
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              formatFcfa(prestation.amount, withSuffix: false),
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
-              ),
-            ),
-          ],
+        const SizedBox(height: 2),
+        Text(
+          formatFcfa(total),
+          style: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
         ),
-      ),
+        if (formula.includesDrying) ...[
+          const SizedBox(height: 4),
+          const Text(
+            'Séchage compris',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -287,8 +366,8 @@ class _Operator extends StatelessWidget {
   }
 }
 
-class _PrestationError extends StatelessWidget {
-  const _PrestationError({required this.onRetry});
+class _CatalogError extends StatelessWidget {
+  const _CatalogError({required this.onRetry});
   final VoidCallback onRetry;
 
   @override

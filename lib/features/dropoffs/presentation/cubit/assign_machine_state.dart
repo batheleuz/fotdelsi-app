@@ -39,6 +39,11 @@ final class AssignMachineState extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [status, machines, selectedId, assignStatus, error];
+  List<Object?> get props => [
+    status,
+    machines,
+    selectedId,
+    assignStatus,
+    error,
+  ];
 }

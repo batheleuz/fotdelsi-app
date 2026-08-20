@@ -26,8 +26,13 @@ import 'package:fotdelsi/features/dropoffs/data/datasources/agent_realtime_data_
 import 'package:fotdelsi/features/dropoffs/data/datasources/drop_off_api_data_source.dart';
 import 'package:fotdelsi/features/dropoffs/data/repositories/drop_off_repository_impl.dart';
 import 'package:fotdelsi/features/dropoffs/domain/repositories/drop_off_repository.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/agent_handoffs_cubit.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_history_cubit.dart';
+import 'package:fotdelsi/features/payment/presentation/cubit/pending_payments_cubit.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/pending_payments_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_queue_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/assign_machine_cubit.dart';
+import 'package:fotdelsi/features/counter_sale/presentation/cubit/counter_sale_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_detail_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_search_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/my_dropoffs_cubit.dart';
@@ -59,9 +64,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/machines/data/datasources/machine_api_data_source.dart';
 import '../../features/machines/data/datasources/machine_remote_data_source.dart';
 import '../../features/machines/data/repositories/machine_repository_impl.dart';
+import '../../features/catalog/data/datasources/catalog_api_data_source.dart';
+import '../../features/catalog/data/repositories/service_formula_repository_impl.dart';
+import '../../features/catalog/domain/repositories/service_formula_repository.dart';
+import '../../features/catalog/presentation/cubit/service_catalog_cubit.dart';
 import '../../features/machines/domain/repositories/machine_repository.dart';
 import '../../features/machines/presentation/bloc/machines_bloc.dart';
 import '../network/dio_client.dart';
+import 'package:fotdelsi/features/wash_session/presentation/cubit/wash_cycles_cubit.dart';
 
 /// Conteneur d'injection de dépendances unique de l'application.
 final GetIt serviceLocator = GetIt.instance;
@@ -165,7 +175,14 @@ void _registerClientAuth() {
   );
   // Singleton global : état « numéro lié » observé par l'accueil.
   serviceLocator.registerLazySingleton<ClientSessionCubit>(
-    () => ClientSessionCubit(serviceLocator()),
+    () => ClientSessionCubit(
+      serviceLocator(), // ClientAuthRepository
+      serviceLocator(), // ClientSessionStore — purges hors écran
+      // Se délier efface le cycle gardé sur l'appareil : sur un téléphone
+      // partagé, le client suivant ne doit pas hériter de la commande du
+      // précédent. Le cycle lui-même survit côté serveur.
+      onUnlinked: () => serviceLocator<WashSessionRepository>().clear(),
+    ),
   );
   // Factory : une instance par parcours de liaison.
   serviceLocator.registerFactory<LinkPhoneCubit>(
@@ -188,12 +205,42 @@ void _registerDropOffs() {
   serviceLocator.registerFactory<DropOffQueueCubit>(
     () => DropOffQueueCubit(serviceLocator(), serviceLocator()),
   );
+  // Deux périmètres, une seule base : l'agent voit les ventes au comptoir,
+  // le client voit les siennes. Une factory chacun — un cubit par ouverture.
+  serviceLocator.registerFactory<CounterSaleCyclesCubit>(
+    () => CounterSaleCyclesCubit(serviceLocator()),
+  );
+  serviceLocator.registerFactory<MyCyclesCubit>(
+    () => MyCyclesCubit(serviceLocator(), serviceLocator()),
+  );
+  // Factory : un cubit par ouverture de l'écran des remises en attente.
+  serviceLocator.registerFactory<ClientPendingPaymentsCubit>(
+    () => ClientPendingPaymentsCubit(serviceLocator(), serviceLocator()),
+  );
+  serviceLocator.registerFactory<DropOffHistoryCubit>(
+    () => DropOffHistoryCubit(serviceLocator()),
+  );
+  serviceLocator.registerFactory<AgentHandoffsCubit>(
+    () => AgentHandoffsCubit(serviceLocator(), serviceLocator()),
+  );
+  // Factory : un cubit par ouverture de la liste des paiements en attente.
+  serviceLocator.registerFactory<PendingPaymentsCubit>(
+    () => PendingPaymentsCubit(serviceLocator(), serviceLocator()),
+  );
   // Factory : un cubit par ouverture de l'assistant nouveau dépôt.
   serviceLocator.registerFactory<NewDropOffCubit>(
     () => NewDropOffCubit(
       serviceLocator(), // DropOffRepository
       serviceLocator(), // PaymentRepository
+      serviceLocator(), // ServiceFormulaRepository
+    ),
+  );
+  serviceLocator.registerFactory<CounterSaleCubit>(
+    () => CounterSaleCubit(
+      serviceLocator(), // ServiceFormulaRepository
       serviceLocator(), // MachineRepository
+      serviceLocator(), // PaymentRepository
+      serviceLocator(), // WashSessionRepository
     ),
   );
   serviceLocator.registerFactory<DropOffDetailCubit>(
@@ -240,7 +287,22 @@ void _registerMachines() {
     () => MachineRepositoryImpl(serviceLocator(), serviceLocator()),
   );
 
-  serviceLocator.registerFactory<MachinesBloc>(
+  // Catalogue de services — source unique des tarifs affichés.
+  serviceLocator.registerLazySingleton<CatalogApiDataSource>(
+    () => CatalogApiDataSource(serviceLocator()),
+  );
+  serviceLocator.registerLazySingleton<ServiceFormulaRepository>(
+    () => ServiceFormulaRepositoryImpl(serviceLocator()),
+  );
+  serviceLocator.registerFactory<ServiceCatalogCubit>(
+    () => ServiceCatalogCubit(serviceLocator()),
+  );
+
+  // Singleton : chaque instance s'abonne au flux temps réel via la socket
+  // partagée (comptée par références). Deux instances — l'accueil et la page
+  // machines — provoquaient un cycle déconnexion/reconnexion à chaque
+  // navigation. Une seule instance, un seul abonnement.
+  serviceLocator.registerLazySingleton<MachinesBloc>(
     () => MachinesBloc(serviceLocator(), serviceLocator()),
   );
   serviceLocator.registerFactory<ScanBloc>(() => ScanBloc(serviceLocator()));
@@ -257,7 +319,10 @@ void _registerPayment() {
     () => CustomerProfileLocalDataSource(serviceLocator()),
   );
   serviceLocator.registerLazySingleton<CustomerProfileRepository>(
-    () => CustomerProfileRepositoryImpl(serviceLocator()),
+    () => CustomerProfileRepositoryImpl(
+      serviceLocator(), // stockage local — repli avant chargement du profil
+      serviceLocator<ClientSessionCubit>(), // profil serveur, source de vérité
+    ),
   );
   serviceLocator.registerFactory<PaymentBloc>(
     () => PaymentBloc(

@@ -42,11 +42,13 @@ abstract final class DioClient {
     }
 
     if (kDebugMode) {
-      dio.interceptors.add(LogInterceptor(
-        requestBody: true,
-        responseBody: true,
-        logPrint: (object) => debugPrint(object.toString()),
-      ));
+      dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          logPrint: (object) => debugPrint(object.toString()),
+        ),
+      );
     }
 
     return dio;

@@ -44,6 +44,12 @@ class NotificationPayload extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [kind, notificationId, smsFallbackId, primaryUrl, fallbackUrl, dropOffId];
+  List<Object?> get props => [
+    kind,
+    notificationId,
+    smsFallbackId,
+    primaryUrl,
+    fallbackUrl,
+    dropOffId,
+  ];
 }

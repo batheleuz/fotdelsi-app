@@ -14,13 +14,14 @@ final class NewDropOffState extends Equatable {
     this.pieces = 1,
     this.types = const {},
     this.instructions = '',
-    this.prestations = const [],
-    this.prestationsStatus = LoadStatus.initial,
-    this.amount,
-    this.withDrying = false,
-    this.dryingPrice,
+    this.formulas = const [],
+    this.formulasStatus = LoadStatus.initial,
+    this.formulaCode,
+    this.sizeKg,
     this.provider,
     this.draftId,
+    this.delivery = PaymentDelivery.notify,
+    this.session,
     this.submitStatus = SubmitStatus.idle,
     this.error,
   });
@@ -34,26 +35,50 @@ final class NewDropOffState extends Equatable {
   final Set<LaundryType> types;
   final String instructions;
 
-  final List<Prestation> prestations;
-  final LoadStatus prestationsStatus;
+  /// Catalogue officiel, chargé depuis le serveur.
+  final List<ServiceFormula> formulas;
+  final LoadStatus formulasStatus;
 
-  /// Prix du lavage choisi (base). Le total facturé ajoute le séchage.
-  final int? amount;
-
-  /// Séchage inclus (option cochée à l'étape 3).
-  final bool withDrying;
-
-  /// Prix unique du séchage (dérivé des sécheuses). Null si aucune sécheuse.
-  final int? dryingPrice;
+  /// Formule et capacité choisies — le seul couple transmis au serveur.
+  final String? formulaCode;
+  final int? sizeKg;
 
   final PaymentProvider? provider;
 
   /// Brouillon créé à la soumission (réutilisé par le renvoi de paiement).
   final String? draftId;
 
-  /// Total facturé = lavage + séchage (si coché).
-  int? get total =>
-      amount == null ? null : amount! + (withDrying ? (dryingPrice ?? 0) : 0);
+  /// Comment la demande atteint le payeur, choisi par l'agent au moment de la
+  /// demande. Le client est-il devant lui, ou a-t-il envoyé quelqu'un ?
+  final PaymentDelivery delivery;
+
+  /// Session de paiement rendue par le serveur.
+  ///
+  /// Elle porte le lien à encoder en QR. Elle était jetée, ce qui interdisait
+  /// tout canal autre que la notification.
+  final PaymentSession? session;
+
+  /// Y a-t-il un code à montrer au client ?
+  bool get showsQr =>
+      delivery == PaymentDelivery.onSite && session?.qrPayload != null;
+
+  ServiceFormula? get selectedFormula {
+    for (final formula in formulas) {
+      if (formula.code == formulaCode) return formula;
+    }
+    return null;
+  }
+
+  /// Montant affiché, lu dans la grille. Purement indicatif : le serveur
+  /// retarifie de son côté et c'est son prix qui fait foi.
+  int? get total {
+    final formula = selectedFormula;
+    if (formula == null || sizeKg == null) return null;
+    return formula.priceFor(sizeKg!);
+  }
+
+  /// Capacités proposées pour la formule choisie.
+  List<int> get availableSizes => selectedFormula?.sizes ?? const [];
 
   final SubmitStatus submitStatus;
   final String? error;
@@ -63,7 +88,8 @@ final class NewDropOffState extends Equatable {
   bool get isPhoneValid => _phoneRegex.hasMatch(contactPhone);
   bool get canLeaveClient => isPhoneValid && customerName.trim().isNotEmpty;
   bool get canLeaveLaundry => pieces >= 1 && types.isNotEmpty;
-  bool get canSubmit => amount != null && provider != null;
+  bool get canSubmit =>
+      formulaCode != null && sizeKg != null && provider != null;
   bool get isSubmitting => submitStatus == SubmitStatus.loading;
 
   NewDropOffState copyWith({
@@ -73,16 +99,18 @@ final class NewDropOffState extends Equatable {
     int? pieces,
     Set<LaundryType>? types,
     String? instructions,
-    List<Prestation>? prestations,
-    LoadStatus? prestationsStatus,
-    int? amount,
-    bool? withDrying,
-    int? dryingPrice,
+    List<ServiceFormula>? formulas,
+    LoadStatus? formulasStatus,
+    String? formulaCode,
+    int? sizeKg,
     PaymentProvider? provider,
     String? draftId,
+    PaymentDelivery? delivery,
+    PaymentSession? session,
     SubmitStatus? submitStatus,
     String? error,
     bool clearError = false,
+    bool clearSize = false,
   }) {
     return NewDropOffState(
       step: step ?? this.step,
@@ -91,13 +119,14 @@ final class NewDropOffState extends Equatable {
       pieces: pieces ?? this.pieces,
       types: types ?? this.types,
       instructions: instructions ?? this.instructions,
-      prestations: prestations ?? this.prestations,
-      prestationsStatus: prestationsStatus ?? this.prestationsStatus,
-      amount: amount ?? this.amount,
-      withDrying: withDrying ?? this.withDrying,
-      dryingPrice: dryingPrice ?? this.dryingPrice,
+      formulas: formulas ?? this.formulas,
+      formulasStatus: formulasStatus ?? this.formulasStatus,
+      formulaCode: formulaCode ?? this.formulaCode,
+      sizeKg: clearSize ? null : (sizeKg ?? this.sizeKg),
       provider: provider ?? this.provider,
       draftId: draftId ?? this.draftId,
+      delivery: delivery ?? this.delivery,
+      session: session ?? this.session,
       submitStatus: submitStatus ?? this.submitStatus,
       error: clearError ? null : (error ?? this.error),
     );
@@ -111,13 +140,14 @@ final class NewDropOffState extends Equatable {
     pieces,
     types,
     instructions,
-    prestations,
-    prestationsStatus,
-    amount,
-    withDrying,
-    dryingPrice,
+    formulas,
+    formulasStatus,
+    formulaCode,
+    sizeKg,
     provider,
     draftId,
+    delivery,
+    session?.qrPayload,
     submitStatus,
     error,
   ];

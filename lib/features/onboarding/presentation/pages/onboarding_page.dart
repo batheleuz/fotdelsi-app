@@ -26,8 +26,7 @@ class OnboardingPage extends StatefulWidget {
 
 class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _controller = PageController();
-  final List<OnboardingSlide> _slides =
-      const OnboardingContent().getSlides();
+  final List<OnboardingSlide> _slides = const OnboardingContent().getSlides();
 
   int _index = 0;
 
@@ -45,10 +44,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _onSkip() => _controller.animateToPage(
-        _slides.length - 1,
-        duration: AppDurations.slow,
-        curve: AppCurves.standard,
-      );
+    _slides.length - 1,
+    duration: AppDurations.slow,
+    curve: AppCurves.standard,
+  );
 
   Future<void> _onFinish() async {
     // Onboarding vu → ne plus l'afficher aux prochaines ouvertures.

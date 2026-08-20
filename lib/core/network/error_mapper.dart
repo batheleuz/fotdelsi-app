@@ -21,8 +21,7 @@ Failure mapExceptionToFailure(Object error) {
       TimeoutException() => TimeoutFailure(error.message),
       UnauthorizedException() => UnauthorizedFailure(error.message),
       NotFoundException() => NotFoundFailure(error.message),
-      ServiceUnavailableException() =>
-        ServiceUnavailableFailure(error.message),
+      ServiceUnavailableException() => ServiceUnavailableFailure(error.message),
       UnknownException() => UnknownFailure(error.message),
     };
   }

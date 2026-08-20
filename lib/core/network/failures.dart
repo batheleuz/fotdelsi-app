@@ -22,8 +22,9 @@ final class NetworkFailure extends Failure {
 }
 
 final class TimeoutFailure extends Failure {
-  const TimeoutFailure(
-      [super.message = 'Le serveur met trop de temps à répondre.']);
+  const TimeoutFailure([
+    super.message = 'Le serveur met trop de temps à répondre.',
+  ]);
 }
 
 final class UnauthorizedFailure extends Failure {
@@ -35,12 +36,12 @@ final class NotFoundFailure extends Failure {
 }
 
 final class ServiceUnavailableFailure extends Failure {
-  const ServiceUnavailableFailure(
-      [super.message =
-          'Service temporairement indisponible. Réessayez dans un instant.']);
+  const ServiceUnavailableFailure([
+    super.message =
+        'Service temporairement indisponible. Réessayez dans un instant.',
+  ]);
 }
 
 final class UnknownFailure extends Failure {
-  const UnknownFailure(
-      [super.message = 'Une erreur inattendue est survenue.']);
+  const UnknownFailure([super.message = 'Une erreur inattendue est survenue.']);
 }

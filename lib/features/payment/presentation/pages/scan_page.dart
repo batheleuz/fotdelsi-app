@@ -70,8 +70,9 @@ class _ScanViewState extends State<_ScanView> {
       // au pop — cela évite qu'un second scan soit déclenché pendant la
       // navigation et provoque un conflit de GlobalKey sur le Navigator GoRouter.
       final machine = state.machine!;
-      final PaymentArgs args = (machine: machine);
-      context.push(AppRoutes.payment, extra: args).then((_) {
+      // La machine est identifiée par le scan : reste à choisir la prestation.
+      final PickFormulaArgs args = (machine: machine);
+      context.push(AppRoutes.pickFormula, extra: args).then((_) {
         if (mounted) _resumeScanning();
       });
     }
@@ -146,9 +147,9 @@ class _ScanViewState extends State<_ScanView> {
               builder: (context, state) => switch (state.status) {
                 ScanStatus.processing => const _ProcessingOverlay(),
                 ScanStatus.error => _ErrorOverlay(
-                    message: state.error ?? 'Code QR invalide.',
-                    onRetry: _resumeScanning,
-                  ),
+                  message: state.error ?? 'Code QR invalide.',
+                  onRetry: _resumeScanning,
+                ),
                 _ => const SizedBox.shrink(),
               },
             ),

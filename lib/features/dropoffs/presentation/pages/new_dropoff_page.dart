@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:fotdelsi/core/di/service_locator.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
+import 'package:fotdelsi/features/payment/presentation/widgets/payment_delivery_sheet.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/new_dropoff_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/steps/new_dropoff_client_step.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/steps/new_dropoff_laundry_step.dart';
@@ -27,61 +28,41 @@ class NewDropOffPage extends StatelessWidget {
 class _NewDropOffView extends StatelessWidget {
   const _NewDropOffView();
 
-  static const _subtitles = [
+  static const _subTitles = [
     'Étape 1 / 4 · Le client',
     'Étape 2 / 4 · Le linge',
     'Étape 3 / 4 · Prestation',
-    'Demande envoyée',
   ];
+
+  /// La dernière étape n'annonce pas la même chose selon le canal choisi :
+  /// « Demande envoyée » serait faux devant un client qui va scanner.
+  static String _lastStepTitle(NewDropOffState state) =>
+      state.showsQr ? 'Paiement sur place' : 'Demande envoyée';
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<NewDropOffCubit, NewDropOffState>(
-      listenWhen: (p, c) => p.submitStatus != c.submitStatus,
+      listenWhen: (prevState, currentState) =>
+          prevState.submitStatus != currentState.submitStatus,
       listener: (context, state) {
-        if (state.submitStatus == SubmitStatus.failure && state.error != null) {
+        final canShowError =
+            state.submitStatus == SubmitStatus.failure && state.error != null;
+        if (canShowError) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(
-              content: Text(state.error!),
-              backgroundColor: AppColors.danger,
-            ));
+            ..showSnackBar(
+              SnackBar(
+                content: Text(state.error!),
+                backgroundColor: AppColors.danger,
+              ),
+            );
         }
       },
       child: BlocBuilder<NewDropOffCubit, NewDropOffState>(
         builder: (context, state) {
-          final cubit = context.read<NewDropOffCubit>();
-
           return Scaffold(
             backgroundColor: const Color(0xFFF5F8FC),
-            appBar: AppBar(
-              backgroundColor: AppColors.background,
-              foregroundColor: AppColors.textPrimary,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () {
-                  if (state.step > 0 && state.step < 3) {
-                    cubit.back();
-                  } else {
-                    context.pop();
-                  }
-                },
-              ),
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Nouveau dépôt',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                  Text(
-                    _subtitles[state.step],
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-            ),
+            appBar: _appBar(context, state),
             body: SafeArea(
               top: false,
               // Tap n'importe où hors d'un champ → ferme le clavier. Nécessaire
@@ -101,10 +82,49 @@ class _NewDropOffView extends StatelessWidget {
                 ),
               ),
             ),
-            bottomNavigationBar:
-                state.step >= 3 ? null : _BottomBar(state: state),
+            bottomNavigationBar: state.step >= 3
+                ? null
+                : _BottomBar(state: state),
           );
         },
+      ),
+    );
+  }
+
+  PreferredSizeWidget? _appBar(BuildContext context, NewDropOffState state) {
+    final cubit = context.read<NewDropOffCubit>();
+
+    return AppBar(
+      backgroundColor: AppColors.background,
+      foregroundColor: AppColors.textPrimary,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () {
+          if (state.step > 0 && state.step < 3) {
+            cubit.back();
+          } else {
+            context.pop();
+          }
+        },
+      ),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Nouveau dépôt',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          Text(
+            state.step >= _subTitles.length
+                ? _lastStepTitle(state)
+                : _subTitles[state.step],
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -134,7 +154,21 @@ class _BottomBar extends StatelessWidget {
         enabled: enabled && !state.isSubmitting,
         loading: state.isSubmitting,
         backgroundColor: AppColors.primaryLight,
-        onPressed: () => isService ? cubit.submit() : cubit.next(),
+        onPressed: () async {
+          if (!isService) {
+            cubit.next();
+            return;
+          }
+
+          // Le canal se choisit AVANT d'envoyer : une demande partie par le
+          // mauvais canal se rattrape mal — le client attend une notification
+          // qu'il ne verra pas, ou un QR que personne ne lui montre.
+          final delivery = await askPaymentDelivery(context);
+          if (delivery == null) return;
+
+          cubit.chooseDelivery(delivery);
+          await cubit.submit();
+        },
       ),
     );
   }

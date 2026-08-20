@@ -20,7 +20,11 @@ class MyDropOffDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => serviceLocator<MyDropOffDetailCubit>()..load(dropOffId),
+      // Le suivi bat pendant que le client attend : c'est précisément l'écran
+      // qu'il garde ouvert. Le battement s'arrête seul une fois le linge remis.
+      create: (_) => serviceLocator<MyDropOffDetailCubit>()
+        ..load(dropOffId)
+        ..startWatching(),
       child: const _DetailView(),
     );
   }
@@ -37,21 +41,24 @@ class _DetailView extends StatelessWidget {
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        title: const Text('Mon dépôt',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Mon dépôt',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
       ),
       body: SafeArea(
         top: false,
         child: BlocBuilder<MyDropOffDetailCubit, MyDropOffDetailState>(
           builder: (context, state) {
             return switch (state.status) {
-              MyDropOffDetailStatus.success =>
-                _content(context, state.dropOff!),
+              MyDropOffDetailStatus.success => _content(
+                context,
+                state.dropOff!,
+              ),
               MyDropOffDetailStatus.failure => _Failure(
-                  message: state.error ?? 'Chargement impossible.',
-                  onRetry: () =>
-                      context.read<MyDropOffDetailCubit>().refresh(),
-                ),
+                message: state.error ?? 'Chargement impossible.',
+                onRetry: () => context.read<MyDropOffDetailCubit>().refresh(),
+              ),
               _ => const Center(child: CircularProgressIndicator()),
             };
           },
@@ -80,8 +87,12 @@ class _DetailView extends StatelessWidget {
           if (d.terminalReason != null && d.terminalReason!.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.md),
-              child: _banner(d.terminalReason!, const Color(0xFFFCEBEB),
-                  const Color(0xFFA32D2D), Icons.info_outline),
+              child: _banner(
+                d.terminalReason!,
+                const Color(0xFFFCEBEB),
+                const Color(0xFFA32D2D),
+                Icons.info_outline,
+              ),
             ),
           const SizedBox(height: AppSpacing.lg),
           _sectionTitle('Suivi'),
@@ -97,28 +108,37 @@ class _DetailView extends StatelessWidget {
   }
 
   Widget _header(DropOff d) => Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.border),
+    padding: const EdgeInsets.all(AppSpacing.md),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      border: Border.all(color: AppColors.border),
+    ),
+    child: Column(
+      children: [
+        const Text(
+          'Votre code de retrait',
+          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
-        child: Column(
-          children: [
-            const Text('Votre code de retrait',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-            const SizedBox(height: 6),
-            Text(d.code,
-                style: const TextStyle(
-                    fontSize: 38,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 3,
-                    color: AppColors.textPrimary)),
-            const SizedBox(height: 8),
-            DropOffStatusBadge(status: d.status),
-          ],
+        const SizedBox(height: 6),
+        Text(
+          d.code,
+          style: const TextStyle(
+            fontSize: 38,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 3,
+            color: AppColors.textPrimary,
+          ),
         ),
-      );
+        const SizedBox(height: 8),
+        DropOffStatusBadge(
+          status: d.status,
+          // Une machine tourne : la pastille respire.
+          pulse: d.status.isInProgress,
+        ),
+      ],
+    ),
+  );
 
   Widget _laundryCard(DropOff d) {
     final laundry = d.laundry.types.isEmpty
@@ -143,53 +163,75 @@ class _DetailView extends StatelessWidget {
   }
 
   Widget _sectionTitle(String text) => Text(
-        text,
-        style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary),
-      );
+    text,
+    style: const TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: AppColors.textSecondary,
+    ),
+  );
 
   Widget _kv(String k, String v) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-                width: 90,
-                child: Text(k,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary))),
-            Expanded(
-              child: Text(v,
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary)),
+    padding: const EdgeInsets.symmetric(vertical: 9),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 90,
+          child: Text(
+            k,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
             ),
-          ],
+          ),
         ),
-      );
+        Expanded(
+          child: Text(
+            v,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _banner(String text, Color bg, Color fg, IconData icon) => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-            color: bg, borderRadius: BorderRadius.circular(AppRadius.md)),
-        child: Row(
-          children: [
-            Icon(icon, color: fg, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-                child: Text(text, style: TextStyle(fontSize: 12.5, color: fg))),
-          ],
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, color: fg, size: 20),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(text, style: TextStyle(fontSize: 12.5, color: fg)),
         ),
-      );
+      ],
+    ),
+  );
 
   String _dateFr(DateTime d) {
     const months = [
-      'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
-      'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
+      'janv.',
+      'févr.',
+      'mars',
+      'avr.',
+      'mai',
+      'juin',
+      'juil.',
+      'août',
+      'sept.',
+      'oct.',
+      'nov.',
+      'déc.',
     ];
     final hh = d.hour.toString().padLeft(2, '0');
     final mm = d.minute.toString().padLeft(2, '0');
@@ -211,15 +253,19 @@ class _Failure extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off_rounded,
-                size: 44, color: AppColors.textTertiary),
+            const Icon(
+              Icons.cloud_off_rounded,
+              size: 44,
+              color: AppColors.textTertiary,
+            ),
             const SizedBox(height: AppSpacing.md),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: AppSpacing.md),
             FilledButton(
               onPressed: onRetry,
               style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primaryLight),
+                backgroundColor: AppColors.primaryLight,
+              ),
               child: const Text('Réessayer'),
             ),
           ],

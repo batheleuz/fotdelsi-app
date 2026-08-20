@@ -71,9 +71,11 @@ class _ScanViewfinderState extends State<ScanViewfinder>
 
     return [
       Positioned(
-        top: 0, left: 0,
+        top: 0,
+        left: 0,
         child: Container(
-          width: length, height: length,
+          width: length,
+          height: length,
           decoration: BoxDecoration(
             border: Border(top: side(), left: side()),
             borderRadius: const BorderRadius.only(topLeft: radius),
@@ -81,9 +83,11 @@ class _ScanViewfinderState extends State<ScanViewfinder>
         ),
       ),
       Positioned(
-        top: 0, right: 0,
+        top: 0,
+        right: 0,
         child: Container(
-          width: length, height: length,
+          width: length,
+          height: length,
           decoration: BoxDecoration(
             border: Border(top: side(), right: side()),
             borderRadius: const BorderRadius.only(topRight: radius),
@@ -91,9 +95,11 @@ class _ScanViewfinderState extends State<ScanViewfinder>
         ),
       ),
       Positioned(
-        bottom: 0, left: 0,
+        bottom: 0,
+        left: 0,
         child: Container(
-          width: length, height: length,
+          width: length,
+          height: length,
           decoration: BoxDecoration(
             border: Border(bottom: side(), left: side()),
             borderRadius: const BorderRadius.only(bottomLeft: radius),
@@ -101,9 +107,11 @@ class _ScanViewfinderState extends State<ScanViewfinder>
         ),
       ),
       Positioned(
-        bottom: 0, right: 0,
+        bottom: 0,
+        right: 0,
         child: Container(
-          width: length, height: length,
+          width: length,
+          height: length,
           decoration: BoxDecoration(
             border: Border(bottom: side(), right: side()),
             borderRadius: const BorderRadius.only(bottomRight: radius),

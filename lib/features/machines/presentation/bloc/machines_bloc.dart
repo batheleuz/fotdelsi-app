@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+// `meta` arrive via flutter/foundation : on évite d'ajouter une dépendance
+// directe au pubspec pour une seule annotation.
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import 'package:fotdelsi/core/websocket/ws_connection_cubit.dart';
 import 'package:fotdelsi/core/websocket/ws_connection_status.dart';
@@ -21,7 +24,7 @@ import 'machines_state.dart';
 /// basculement vers l'état failure).
 class MachinesBloc extends Bloc<MachinesEvent, MachinesState> {
   MachinesBloc(this._repository, this._connectionCubit)
-      : super(const MachinesState()) {
+    : super(const MachinesState()) {
     on<MachinesSubscriptionRequested>(_onSubscriptionRequested);
   }
 
@@ -52,15 +55,13 @@ class MachinesBloc extends Bloc<MachinesEvent, MachinesState> {
 
     await result.fold(
       // Échec du chargement initial (HTTP) → état failure.
-      (failure) async => emit(state.copyWith(
-        status: MachinesStatus.failure,
-        error: failure.message,
-      )),
+      (failure) async => emit(
+        state.copyWith(status: MachinesStatus.failure, error: failure.message),
+      ),
       (machines) async {
-        emit(state.copyWith(
-          status: MachinesStatus.success,
-          machines: machines,
-        ));
+        emit(
+          state.copyWith(status: MachinesStatus.success, machines: machines),
+        );
 
         // Mises à jour temps réel — en cas d'erreur on conserve
         // les données existantes ; le cubit reflète la déconnexion.
@@ -68,7 +69,7 @@ class MachinesBloc extends Bloc<MachinesEvent, MachinesState> {
           _repository.watchMachines(),
           onData: (updated) => state.copyWith(
             status: MachinesStatus.success,
-            machines: updated,
+            machines: _merge(state.machines, updated),
           ),
           // ignore: avoid_types_on_closure_parameters
           onError: (Object e, StackTrace st) => state.copyWith(
@@ -78,5 +79,40 @@ class MachinesBloc extends Bloc<MachinesEvent, MachinesState> {
         );
       },
     );
+  }
+
+  /// Applique une mise à jour temps réel SANS remplacer la liste.
+  ///
+  /// Le backend pousse `machine.state` **machine par machine** : chaque
+  /// événement ne décrit qu'un seul équipement. L'ancien code affectait ce
+  /// message directement à `state.machines`, ce qui effaçait toutes les
+  /// autres — la liste tombait à un élément à chaque mouvement, et la machine
+  /// d'une session en cours disparaissait de l'écran sans raison visible.
+  ///
+  /// On fusionne donc par identifiant : une machine connue voit son état
+  /// remplacé, une machine inconnue est ajoutée, et **aucune n'est jamais
+  /// retirée**. Seul un rechargement complet (`GET /machines`) fait autorité
+  /// sur la composition du parc.
+  /// Exposé pour les tests : la règle est trop coûteuse à casser pour n'être
+  /// vérifiable qu'à travers un bloc complet et une socket simulée.
+  @visibleForTesting
+  static List<Machine> mergeForTest(
+    List<Machine> current,
+    List<Machine> incoming,
+  ) => _merge(current, incoming);
+
+  static List<Machine> _merge(List<Machine> current, List<Machine> incoming) {
+    if (incoming.isEmpty) return current;
+
+    final merged = [...current];
+    for (final machine in incoming) {
+      final index = merged.indexWhere((m) => m.id == machine.id);
+      if (index == -1) {
+        merged.add(machine);
+      } else {
+        merged[index] = machine;
+      }
+    }
+    return merged;
   }
 }

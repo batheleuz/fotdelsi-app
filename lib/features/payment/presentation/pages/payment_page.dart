@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:go_router/go_router.dart';
 
@@ -22,29 +23,35 @@ import '../widgets/payment_provider_card.dart';
 import 'package:fotdelsi/features/service_status/presentation/widgets/service_status_banner.dart';
 import '../widgets/payment_redirect_hint.dart';
 import '../widgets/phone_number_field.dart';
+import 'package:fotdelsi/features/client_auth/presentation/widgets/link_phone_sheet.dart';
+import 'package:fotdelsi/features/client_auth/presentation/cubit/client_session_cubit.dart';
 
 class PaymentPage extends StatelessWidget {
-  const PaymentPage({super.key, required this.machine});
+  const PaymentPage({super.key, required this.formula, required this.machine});
 
+  /// Prestation choisie — détermine le prix côté serveur.
+  final ServiceFormula formula;
   final Machine machine;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => serviceLocator<PaymentBloc>(),
-      child: _PaymentView(machine: machine),
+      child: _PaymentView(formula: formula, machine: machine),
     );
   }
 }
 
 class _PaymentView extends StatelessWidget {
-  const _PaymentView({required this.machine});
+  const _PaymentView({required this.formula, required this.machine});
 
+  final ServiceFormula formula;
   final Machine machine;
 
   @override
   Widget build(BuildContext context) {
     final bloc = context.read<PaymentBloc>();
+    final machineSize = machine.size;
 
     return Scaffold(
       bottomNavigationBar: const ServiceStatusBanner(),
@@ -94,20 +101,19 @@ class _PaymentView extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          OrderRecapCard(machine: machine),
+                          OrderRecapCard(formula: formula, machine: machine),
                           const SizedBox(height: AppSpacing.lg),
 
                           const _SectionLabel('Votre nom complet'),
                           const SizedBox(height: AppSpacing.sm + 2),
-                          
+
                           _NameField(
                             initialValue: state.customerFullName,
-                            onChanged: (v) =>
-                                bloc.add(PaymentNameChanged(v)),
+                            onChanged: (v) => bloc.add(PaymentNameChanged(v)),
                           ),
                           const SizedBox(height: AppSpacing.lg),
                           const _SectionLabel('Moyen de paiement'),
-                          
+
                           const SizedBox(height: AppSpacing.sm + 2),
                           for (final provider in PaymentProvider.values) ...[
                             PaymentProviderCard(
@@ -119,10 +125,10 @@ class _PaymentView extends StatelessWidget {
                             const SizedBox(height: AppSpacing.sm + 2),
                           ],
                           const SizedBox(height: AppSpacing.xs),
-                          
+
                           const _SectionLabel('Numéro mobile money'),
                           const SizedBox(height: AppSpacing.sm + 2),
-                          
+
                           PhoneNumberField(
                             initialValue: state.phone,
                             onChanged: (v) => bloc.add(PaymentPhoneChanged(v)),
@@ -141,11 +147,33 @@ class _PaymentView extends StatelessWidget {
               ),
               BlocBuilder<PaymentBloc, PaymentState>(
                 builder: (context, state) => _PayBar(
-                  total: machine.price.toInt(),
+                  // Prix de la GRILLE (formule x capacité), plus celui porté
+                  // par la machine. Depuis le passage au catalogue, c'est la
+                  // formule qui fixe le tarif : `machine.price` décrivait un
+                  // cycle simple et affichait donc un montant que le serveur
+                  // n'aurait pas facturé.
+                  //
+                  // `null` si la capacité est inconnue ou non tarifée — la
+                  // barre l'annonce alors comme telle plutôt que d'inventer.
+                  total: machineSize == null
+                      ? null
+                      : formula.priceFor(machineSize),
                   state: state,
-                  onPay: () => bloc.add(
-                    PaymentSubmitted(machineId: machine.id),
-                  ),
+                  onPay: () async {
+                    // Le numéro est exigé AVANT de payer, pas après : une fois
+                    // la transaction partie, plus rien ne rattache le cycle à
+                    // son client — le serveur ne connaît que le numéro, et il
+                    // n'existe pas de compte à retrouver ensuite.
+                    if (!await _ensurePhoneLinked(context)) return;
+                    if (!context.mounted) return;
+
+                    bloc.add(
+                      PaymentSubmitted(
+                        machineId: machine.id,
+                        formulaCode: formula.code,
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -154,6 +182,19 @@ class _PaymentView extends StatelessWidget {
       ),
     );
   }
+}
+
+/// S'assure que le client a lié son numéro, en le lui demandant si besoin.
+///
+/// Le numéro EST l'identité côté serveur : il n'existe pas de table clients.
+/// Payer sans l'avoir lié produit un cycle que son propre acheteur ne pourra
+/// jamais retrouver — ni pour le démarrer, ni pour en suivre la fin.
+///
+/// Renvoie `false` si le client renonce : on n'engage alors aucun paiement,
+/// plutôt que de créer une commande orpheline.
+Future<bool> _ensurePhoneLinked(BuildContext context) async {
+  if (context.read<ClientSessionCubit>().state.isLinked) return true;
+  return showLinkPhoneSheet(context);
 }
 
 // ── Champ nom ─────────────────────────────────────────────────────────────────
@@ -169,8 +210,9 @@ class _NameField extends StatefulWidget {
 }
 
 class _NameFieldState extends State<_NameField> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initialValue);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialValue,
+  );
 
   @override
   void dispose() {
@@ -186,10 +228,7 @@ class _NameFieldState extends State<_NameField> {
       textCapitalization: TextCapitalization.words,
       decoration: InputDecoration(
         hintText: 'Prénom et nom',
-        hintStyle: const TextStyle(
-          color: AppColors.textTertiary,
-          fontSize: 14,
-        ),
+        hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 14),
         filled: true,
         fillColor: AppColors.surface,
         contentPadding: const EdgeInsets.symmetric(
@@ -206,8 +245,7 @@ class _NameFieldState extends State<_NameField> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
     );
@@ -223,24 +261,31 @@ class _PayBar extends StatelessWidget {
     required this.onPay,
   });
 
-  final int total;
+  /// Montant lu dans la grille, ou `null` si cette capacite n'y est pas
+  /// tarifee. Le cas ne devrait pas se produire — l'ecran precedent ne propose
+  /// que des machines vendables pour la formule — mais il vaut mieux ne rien
+  /// annoncer que d'annoncer un prix invente.
+  final int? total;
   final PaymentState state;
   final VoidCallback onPay;
 
   @override
   Widget build(BuildContext context) {
+    final amount = total;
     final label = state.provider == null
         ? 'Payer'
         : 'Payer via ${state.provider!.label}';
-    
+
     return Container(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.lg,
       ),
       decoration: const BoxDecoration(
         color: AppColors.background,
-        border:
-            Border(top: BorderSide(color: Color(0xFFEEF1F6), width: 0.5)),
+        border: Border(top: BorderSide(color: Color(0xFFEEF1F6), width: 0.5)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -251,11 +296,10 @@ class _PayBar extends StatelessWidget {
             children: [
               const Text(
                 'Total à payer',
-                style:
-                    TextStyle(fontSize: 12, color: AppColors.textTertiary),
+                style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
               ),
               Text(
-                formatFcfa(total),
+                amount == null ? '—' : formatFcfa(amount),
                 style: const TextStyle(
                   fontSize: 19,
                   fontWeight: FontWeight.w500,
@@ -268,7 +312,10 @@ class _PayBar extends StatelessWidget {
           PrimaryButton(
             label: label,
             icon: AppIcons.lock,
-            enabled: state.canPay,
+            // Sans montant connu, on ne lance rien : le serveur refuserait la
+            // capacite non tarifee, et un paiement engage sur un prix qu'on ne
+            // sait pas afficher n'a aucun sens.
+            enabled: state.canPay && amount != null,
             loading: state.isProcessing,
             onPressed: onPay,
           ),
@@ -307,7 +354,10 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.xs,
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.xs,
       ),
       child: Row(
         children: [

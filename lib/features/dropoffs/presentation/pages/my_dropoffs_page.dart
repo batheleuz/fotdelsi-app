@@ -6,6 +6,7 @@ import 'package:fotdelsi/core/di/service_locator.dart';
 import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
+import 'package:fotdelsi/core/motion/entrance.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import '../../domain/entities/drop_off.dart';
 import '../cubit/my_dropoffs_cubit.dart';
@@ -62,7 +63,11 @@ class _MyDropOffsView extends StatelessWidget {
                   : ListView.builder(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       itemCount: items.length,
-                      itemBuilder: (_, i) => _MyDropOffCard(dropOff: items[i]),
+                      itemBuilder: (_, i) => EntranceFade(
+                        key: ValueKey(items[i].id),
+                        index: i,
+                        child: _MyDropOffCard(dropOff: items[i]),
+                      ),
                     ),
             );
           },
@@ -72,17 +77,22 @@ class _MyDropOffsView extends StatelessWidget {
   }
 
   Widget _emptyList() => ListView(
-        children: const [
-          SizedBox(height: 140),
-          Icon(Icons.local_laundry_service_outlined,
-              size: 48, color: AppColors.textTertiary),
-          SizedBox(height: AppSpacing.md),
-          Center(
-            child: Text('Aucun dépôt pour le moment',
-                style: TextStyle(color: AppColors.textSecondary)),
-          ),
-        ],
-      );
+    children: const [
+      SizedBox(height: 140),
+      Icon(
+        Icons.local_laundry_service_outlined,
+        size: 48,
+        color: AppColors.textTertiary,
+      ),
+      SizedBox(height: AppSpacing.md),
+      Center(
+        child: Text(
+          'Aucun dépôt pour le moment',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+      ),
+    ],
+  );
 }
 
 class _MyDropOffCard extends StatelessWidget {
@@ -103,8 +113,7 @@ class _MyDropOffCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadius.md),
-          onTap: () =>
-              context.push(AppRoutes.myDropOffDetail(dropOff.id)),
+          onTap: () => context.push(AppRoutes.myDropOffDetail(dropOff.id)),
           child: Container(
             padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
@@ -119,26 +128,42 @@ class _MyDropOffCard extends StatelessWidget {
                     Text(
                       dropOff.code,
                       style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1,
-                          color: AppColors.textPrimary),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                     const Spacer(),
-                    DropOffStatusBadge(status: dropOff.status),
+                    DropOffStatusBadge(
+                      status: dropOff.status,
+                      // Une machine tourne : la pastille respire.
+                      pulse: dropOff.status.isInProgress,
+                    ),
                     const SizedBox(width: 4),
-                    const Icon(Icons.chevron_right_rounded,
-                        size: 20, color: AppColors.textTertiary),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: AppColors.textTertiary,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(laundry,
-                    style: const TextStyle(
-                        fontSize: 12.5, color: AppColors.textSecondary)),
+                Text(
+                  laundry,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
                 const SizedBox(height: 1),
-                Text('déposé ${relativeTimeFr(dropOff.receivedAt)}',
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textTertiary)),
+                Text(
+                  'déposé ${relativeTimeFr(dropOff.receivedAt)}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -173,8 +198,9 @@ class _Centered extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             FilledButton(
               onPressed: onRetry,
-              style:
-                  FilledButton.styleFrom(backgroundColor: AppColors.primaryLight),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primaryLight,
+              ),
               child: const Text('Réessayer'),
             ),
           ],

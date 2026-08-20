@@ -8,6 +8,7 @@ import '../datasources/wash_session_api_data_source.dart';
 import '../datasources/wash_session_local_data_source.dart';
 import '../datasources/wash_session_socket_data_source.dart';
 import '../models/wash_session_status_model.dart';
+import '../../domain/entities/wash_cycle.dart';
 
 class WashSessionRepositoryImpl implements WashSessionRepository {
   const WashSessionRepositoryImpl(this._local, this._api, this._socket);
@@ -38,9 +39,43 @@ class WashSessionRepositoryImpl implements WashSessionRepository {
   }
 
   @override
+  Future<Either<Failure, List<WashCycle>>> getCounterSaleCycles() async {
+    try {
+      return Right(await _api.getCounterSaleCycles());
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<WashCycle>>> getMyCycles() async {
+    try {
+      return Right(await _api.getMyCycles());
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> startMachine(String washSessionToken) async {
     try {
       await _api.startMachine(washSessionToken);
+      return const Right(null);
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> startDrying({
+    required String washSessionToken,
+    required String dryerMachineId,
+  }) async {
+    try {
+      await _api.startDrying(
+        token: washSessionToken,
+        dryerMachineId: dryerMachineId,
+      );
       return const Right(null);
     } catch (e) {
       return Left(mapExceptionToFailure(e));
@@ -57,6 +92,10 @@ class WashSessionRepositoryImpl implements WashSessionRepository {
     remainingSeconds: model.remainTimeSeconds,
     canRetry: model.canRetry,
     isFinished: model.isFinished,
+    withDrying: model.withDrying,
+    canStartDrying: model.canStartDrying,
+    isDrying: model.isDrying,
+    handoffCode: model.handoffCode,
     failureReason: model.failureReason,
   );
 }

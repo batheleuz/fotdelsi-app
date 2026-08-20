@@ -14,6 +14,7 @@ import 'package:fotdelsi/features/dropoffs/domain/entities/drop_off_status.dart'
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_detail_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/drop_off_status_badge.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/drop_off_timeline.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/widgets/client_phone_row.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/edit_laundry_sheet.dart';
 
 /// Détail d'un dépôt côté agent + actions contextuelles selon le statut.
@@ -39,7 +40,8 @@ class _DetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<DropOffDetailCubit, DropOffDetailState>(
-      listenWhen: (p, c) => p.actionStatus != c.actionStatus,
+      listenWhen: (prevState, currentState) =>
+          prevState.actionStatus != currentState.actionStatus,
       listener: (context, state) {
         if (state.actionStatus == ActionStatus.failure &&
             state.actionError != null) {
@@ -54,46 +56,51 @@ class _DetailView extends StatelessWidget {
         }
       },
       builder: (context, state) {
-        final d = state.dropOff;
+        final dropOff = state.dropOff;
+
         return Scaffold(
           backgroundColor: const Color(0xFFF5F8FC),
-          appBar: AppBar(
-            backgroundColor: AppColors.background,
-            foregroundColor: AppColors.textPrimary,
-            elevation: 0,
-            title: const Text(
-              'Détail dépôt',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            ),
-            actions: [
-              if (d != null && !d.status.isTerminal)
-                AppPopupMenu(
-                  entries: [
-                    AppMenuEntry(
-                      icon: Icons.edit_outlined,
-                      label: 'Modifier le linge',
-                      onSelected: () => _editLaundry(context, d),
-                    ),
-                  ],
-                ),
-            ],
-          ),
+          appBar: _appBar(context, dropOff),
           body: switch (state.status) {
-            DetailStatus.success => _content(context, d!),
+            DetailStatus.success => _content(context, dropOff!),
             DetailStatus.failure => Center(
               child: Text(state.error ?? 'Chargement impossible.'),
             ),
             _ => const Center(child: CircularProgressIndicator()),
           },
-          bottomNavigationBar: d == null
+          bottomNavigationBar: dropOff == null
               ? null
-              : _actionBar(context, d, state.isActing),
+              : _actionBar(context, dropOff, state.isActing),
         );
       },
     );
   }
 
-  Widget _content(BuildContext context, DropOff d) {
+  PreferredSizeWidget? _appBar(BuildContext context, DropOff? dropOff) {
+    return AppBar(
+      backgroundColor: AppColors.background,
+      foregroundColor: AppColors.textPrimary,
+      elevation: 0,
+      title: const Text(
+        'Détail dépôt',
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+      ),
+      actions: [
+        if (dropOff != null && !dropOff.status.isTerminal)
+          AppPopupMenu(
+            entries: [
+              AppMenuEntry(
+                icon: Icons.edit_outlined,
+                label: 'Modifier le linge',
+                onSelected: () => _editLaundry(context, dropOff),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _content(BuildContext context, DropOff dropOff) {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
@@ -107,7 +114,7 @@ class _DetailView extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                d.code,
+                dropOff.code,
                 style: const TextStyle(
                   fontSize: 38,
                   fontWeight: FontWeight.w700,
@@ -116,19 +123,23 @@ class _DetailView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              DropOffStatusBadge(status: d.status),
+              DropOffStatusBadge(
+                status: dropOff.status,
+                // Une machine tourne : la pastille respire.
+                pulse: dropOff.status.isInProgress,
+              ),
             ],
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
 
-        DropOffTimeline(dropOff: d),
+        DropOffTimeline(dropOff: dropOff),
 
         const SizedBox(height: AppSpacing.sm),
 
-        _infoCard(d),
+        _infoCard(dropOff),
 
-        if (d.status == DropOffStatus.ready)
+        if (dropOff.status == DropOffStatus.ready)
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.md),
             child: _banner(
@@ -139,11 +150,11 @@ class _DetailView extends StatelessWidget {
             ),
           ),
 
-        if (d.terminalReason != null && d.terminalReason!.isNotEmpty)
+        if (dropOff.terminalReason != null && dropOff.terminalReason!.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.md),
             child: _banner(
-              d.terminalReason!,
+              dropOff.terminalReason!,
               const Color(0xFFFCEBEB),
               const Color(0xFFA32D2D),
               Icons.info_outline,
@@ -168,7 +179,14 @@ class _DetailView extends StatelessWidget {
       child: Column(
         children: [
           _kv('Client', d.customerName),
-          _kv('Téléphone', '+221 ${d.contactPhone.replaceFirst("+221", "")}'),
+          // Composable d'un geste : c'est depuis cette fiche que l'agent
+          // décide de joindre le client pour convenir d'une remise. Le format
+          // était par ailleurs bricolé à la main — « +221 » recollé devant une
+          // valeur dont on retirait « +221 », ce qui ne groupait rien.
+          _kvWidget(
+            'Téléphone',
+            ClientPhoneRow(phone: d.contactPhone),
+          ),
           _kv('Linge', laundry),
           if (d.laundry.instructions.isNotEmpty)
             _kv('Instructions', d.laundry.instructions),
@@ -176,6 +194,27 @@ class _DetailView extends StatelessWidget {
       ),
     );
   }
+
+  /// Même ligne que [_kv], mais avec un contenu interactif à droite.
+  Widget _kvWidget(String k, Widget v) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      children: [
+        SizedBox(
+          width: 90,
+          child: Text(
+            k,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+        const Spacer(),
+        v,
+      ],
+    ),
+  );
 
   Widget _kv(String k, String v) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 9),
@@ -228,6 +267,19 @@ class _DetailView extends StatelessWidget {
     final cubit = context.read<DropOffDetailCubit>();
 
     return switch (dropOff.status) {
+      // Libre-service : le client a lavé lui-même, il apporte son linge pour
+      // la finition payée. Aucun lavage à lancer — seulement à prendre en
+      // charge, ce que le backend refuserait autrement.
+      DropOffStatus.awaitingHandoff => _bar(
+        PrimaryButton(
+          label: 'Prendre en charge',
+          icon: Icons.inventory_2_outlined,
+          loading: isActing,
+          backgroundColor: AppColors.primaryLight,
+          onPressed: () => cubit.receiveHandoff(),
+        ),
+      ),
+
       DropOffStatus.received => _bar(
         PrimaryButton(
           label: 'Lancer le lavage',
@@ -267,6 +319,8 @@ class _DetailView extends StatelessWidget {
       ),
 
       // Un cycle tourne encore : on attend sa fin (détectée automatiquement).
+      // Sans objet en libre-service, où le travail restant est manuel :
+      // `canMarkReady` y est vrai dès la prise en charge.
       DropOffStatus.inProgress => _bar(
         _CycleRunningBar(
           label: dropOff.dryStartedAt != null
