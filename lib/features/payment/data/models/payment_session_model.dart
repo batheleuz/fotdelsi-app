@@ -6,12 +6,12 @@ import '../../domain/entities/payment_session.dart';
 class PaymentSessionModel {
   const PaymentSessionModel({
     required this.provider,
-    required this.machineId,
     required this.paymentId,
     required this.externalRef,
     required this.amount,
-    required this.reservedUntil,
-    required this.washSessionToken,
+    this.machineId,
+    this.reservedUntil,
+    this.washSessionToken,
 
     // Wave URL
     this.redirectUrl,
@@ -23,12 +23,13 @@ class PaymentSessionModel {
   });
 
   final String provider;
-  final String machineId;
+  /// `null` pour un dépôt : aucune machine n'est choisie à cet instant.
+  final String? machineId;
   final String paymentId;
   final String externalRef;
   final int amount;
-  final String reservedUntil;
-  final String washSessionToken;
+  final String? reservedUntil;
+  final String? washSessionToken;
 
   final String? redirectUrl;
 

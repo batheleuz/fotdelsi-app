@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:fotdelsi/core/di/service_locator.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
+import 'package:fotdelsi/features/payment/presentation/widgets/payment_delivery_sheet.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/new_dropoff_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/steps/new_dropoff_client_step.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/steps/new_dropoff_laundry_step.dart';
@@ -31,8 +32,12 @@ class _NewDropOffView extends StatelessWidget {
     'Étape 1 / 4 · Le client',
     'Étape 2 / 4 · Le linge',
     'Étape 3 / 4 · Prestation',
-    'Demande envoyée',
   ];
+
+  /// La dernière étape n'annonce pas la même chose selon le canal choisi :
+  /// « Demande envoyée » serait faux devant un client qui va scanner.
+  static String _lastStepTitle(NewDropOffState state) =>
+      state.showsQr ? 'Paiement sur place' : 'Demande envoyée';
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +116,9 @@ class _NewDropOffView extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           Text(
-            _subTitles[state.step],
+            state.step >= _subTitles.length
+                ? _lastStepTitle(state)
+                : _subTitles[state.step],
             style: const TextStyle(
               fontSize: 12,
               color: AppColors.textSecondary,
@@ -147,7 +154,21 @@ class _BottomBar extends StatelessWidget {
         enabled: enabled && !state.isSubmitting,
         loading: state.isSubmitting,
         backgroundColor: AppColors.primaryLight,
-        onPressed: () => isService ? cubit.submit() : cubit.next(),
+        onPressed: () async {
+          if (!isService) {
+            cubit.next();
+            return;
+          }
+
+          // Le canal se choisit AVANT d'envoyer : une demande partie par le
+          // mauvais canal se rattrape mal — le client attend une notification
+          // qu'il ne verra pas, ou un QR que personne ne lui montre.
+          final delivery = await askPaymentDelivery(context);
+          if (delivery == null) return;
+
+          cubit.chooseDelivery(delivery);
+          await cubit.submit();
+        },
       ),
     );
   }

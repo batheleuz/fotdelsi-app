@@ -4,6 +4,7 @@ import 'package:fotdelsi/core/network/api_endpoints.dart';
 import 'package:fotdelsi/core/utils/phone_number.dart';
 import 'package:fotdelsi/core/network/api_response.dart';
 import 'package:fotdelsi/core/network/exceptions.dart';
+import 'package:fotdelsi/features/payment/domain/entities/payment_delivery.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart';
 import '../../domain/entities/pending_payment.dart';
 import '../models/payment_session_model.dart';
@@ -51,8 +52,6 @@ class PaymentApiDataSource {
     }
   }
 
-  /// Initie un paiement de dépôt (`purpose: DROP_OFF`). Le prompt SOFTPAY est
-  /// poussé vers le téléphone du client — l'agent n'a besoin que du succès.
   /// `GET /me/payments/pending` — paiements que le client peut encore honorer.
   Future<List<PendingPayment>> pendingPayments() async {
     final resp = await _dio.get<Map<String, dynamic>>(
@@ -77,14 +76,20 @@ class PaymentApiDataSource {
     fallbackUrl: json['fallbackUrl'] as String?,
   );
 
-  Future<void> initiateDropOffPayment({
+  /// Initie un paiement de dépôt (`purpose: DROP_OFF`).
+  ///
+  /// [delivery] dit si le serveur doit pousser la demande au client, ou se
+  /// taire parce que l'agent va lui montrer le QR. Le lien revient dans les
+  /// deux cas.
+  Future<PaymentSessionModel> initiateDropOffPayment({
     required String draftId,
     required PaymentProvider provider,
     required String customerFullName,
     required String customerPhone,
+    required PaymentDelivery delivery,
   }) async {
     try {
-      await _dio.post<dynamic>(
+      final response = await _dio.post<dynamic>(
         ApiEndpoints.paymentsInitiate,
         data: {
           'purpose': 'DROP_OFF',
@@ -92,7 +97,19 @@ class PaymentApiDataSource {
           'provider': provider.apiValue,
           'customerFullName': customerFullName,
           'customerPhone': normalizePhone(customerPhone),
+          'paymentDelivery': delivery.apiValue,
         },
+      );
+
+      // La session revient désormais à l'appelant : elle porte le lien de
+      // paiement, que l'agent encode en QR quand le client est devant lui.
+      // Elle était jetée, ce qui interdisait tout autre canal que la
+      // notification.
+      final json = response.data as Map<String, dynamic>;
+      final apiResponse = ApiResponse<dynamic>.fromJson(json);
+
+      return PaymentSessionModel.fromJson(
+        apiResponse.data as Map<String, dynamic>,
       );
     } on DioException catch (e) {
       throw AppException.fromDio(e);

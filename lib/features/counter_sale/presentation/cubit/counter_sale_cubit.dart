@@ -172,7 +172,8 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
             session: session,
           ),
         );
-        _startPolling(session.washSessionToken);
+        // Vente au comptoir : c'est un libre-service, le jeton existe toujours.
+        _startPolling(session.washSessionToken!);
       },
     );
   }
@@ -218,7 +219,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
 
     emit(state.copyWith(saleStatus: SaleStatus.starting, clearError: true));
 
-    final result = await _sessions.startMachine(session.washSessionToken);
+    final result = await _sessions.startMachine(session.washSessionToken!);
 
     result.fold(
       (failure) => emit(

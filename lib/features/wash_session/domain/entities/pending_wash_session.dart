@@ -74,10 +74,13 @@ class PendingWashSession {
     );
   }
 
+  /// Ne s'applique qu'à un paiement LIBRE-SERVICE : lui seul cible une machine
+  /// et porte un jeton de démarrage. Un dépôt n'en a aucun — son linge est
+  /// confié à l'agent, qui choisira la machine plus tard.
   factory PendingWashSession.fromPaymentSession(PaymentSession session) {
     return PendingWashSession(
-      washSessionToken: session.washSessionToken,
-      machineId: session.machineId,
+      washSessionToken: session.washSessionToken!,
+      machineId: session.machineId!,
       provider: session.provider,
       // Juste après initiation : paiement pas encore confirmé.
       sessionPaymentStatus: SessionPaymentStatus.pendingPayment,

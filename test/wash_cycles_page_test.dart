@@ -803,6 +803,24 @@ void main() {
       expect(cubit.state.error, isNull);
     });
   });
+
+  group('durée d\'un cycle qui vient de démarrer', () {
+    test('revient la chercher au lieu d\'attendre le battement', () async {
+      // EQLink ne rend aucune durée à l'ordre de démarrage, et un relevé lancé
+      // dans la foulée répond encore `remain_time: 0`. Attendre la
+      // resynchronisation ordinaire — toutes les 10 s — laissait le client
+      // devant un « — » pendant une demi-minute.
+      final repo = _SlowRemainingRepo();
+      final cubit = _SlowRemaining(repo);
+
+      await cubit.start(cycleToStart());
+      // Laisse passer le premier délai de rattrapage.
+      await Future<void>.delayed(const Duration(seconds: 3));
+
+      expect(repo.lectures, greaterThan(1));
+      expect(cubit.state.running.first.remainingSeconds, 1800);
+    });
+  });
 }
 
 /// Aucune session cliente sur l'appareil.
@@ -845,4 +863,41 @@ class _RefusingStart extends WashCyclesCubit {
 
   @override
   Future<Either<Failure, List<WashCycle>>> fetch() async => const Right([]);
+}
+
+/// Démarrage accepté, mais durée inconnue au premier relevé.
+///
+/// C'est la réalité d'EQLink : l'ordre de démarrage ne porte aucune durée, et
+/// un relevé lancé dans la foulée répond encore `remain_time: 0`.
+class _SlowRemainingRepo implements WashSessionRepository {
+  int lectures = 0;
+
+  /// Durée connue à partir du deuxième relevé seulement.
+  @override
+  Future<Either<Failure, List<WashCycle>>> getMyCycles() async {
+    lectures++;
+    return Right([
+      WashCycle(
+        token: 'jeton-2',
+        machineId: 'machine-2',
+        amount: 4800,
+        paidAt: DateTime.now(),
+        state: CycleState.running,
+        startedAt: DateTime.now(),
+        remainingSeconds: lectures >= 2 ? 1800 : null,
+      ),
+    ]);
+  }
+
+  @override
+  Future<Either<Failure, void>> startMachine(String token) async =>
+      const Right(null);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _SlowRemaining extends MyCyclesCubit {
+  _SlowRemaining(WashSessionRepository repository)
+    : super(repository, _LinkedSession());
 }

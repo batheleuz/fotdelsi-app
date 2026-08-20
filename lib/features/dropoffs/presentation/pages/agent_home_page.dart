@@ -188,7 +188,7 @@ class _AgentHomeView extends StatelessWidget {
                     child: _Action(
                       icon: Icons.history_rounded,
                       title: 'Historique des dépôts',
-                      subtitle: 'Tous les dépôts, avec le numéro du client',
+                      subtitle: 'Tous les dépôts éffectués',
                       onTap: () => context.push(AppRoutes.agentHistory),
                     ),
                   ),

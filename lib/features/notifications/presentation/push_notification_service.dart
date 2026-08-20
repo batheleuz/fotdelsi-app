@@ -138,7 +138,15 @@ class PushNotificationService {
         await _openPaymentUrl(payload);
       case NotificationKind.dropoffRegistered:
       case NotificationKind.washReady:
-        _router?.go(AppRoutes.myDropOffs);
+        // Droit sur le suivi du dépôt concerné, quand il est connu.
+        //
+        // « Mes dépôts » ne liste QUE ce qui a été confié au comptoir : une
+        // finition de libre-service n'y figure pas, et y renvoyer laissait le
+        // client devant une liste où son linge n'était pas.
+        final id = payload.dropOffId;
+        _router?.go(
+          id == null ? AppRoutes.myDropOffs : AppRoutes.myDropOffDetail(id),
+        );
       case NotificationKind.unknown:
         break;
     }

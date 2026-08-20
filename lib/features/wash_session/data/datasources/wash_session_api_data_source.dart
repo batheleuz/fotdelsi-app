@@ -78,6 +78,7 @@ class WashSessionApiDataSource {
         json['washCompletedAt'] as String? ?? '',
       )?.toLocal(),
       handoffCode: json['handoffCode'] as String?,
+      dropOffId: json['dropOffId'] as String?,
     );
   }
 

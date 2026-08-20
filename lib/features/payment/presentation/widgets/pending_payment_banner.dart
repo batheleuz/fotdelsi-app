@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -33,10 +35,43 @@ class PendingPaymentBanner extends StatelessWidget {
   }
 }
 
-class _Banner extends StatelessWidget {
+/// Bandeau dont le décompte avance vraiment.
+///
+/// Le temps restant se calcule au rendu : sans horloge, il gardait la valeur
+/// qu'il avait à l'ouverture de l'écran. Un client resté dix minutes sur
+/// l'accueil lisait toujours « il vous reste 28 min », et découvrait le lien
+/// mort sans avoir vu le compte s'écouler.
+///
+/// Un battement d'une minute, pas d'une seconde : l'affichage est en minutes,
+/// et reconstruire soixante fois plus souvent ne changerait rien à ce qui est
+/// écrit.
+class _Banner extends StatefulWidget {
   const _Banner({required this.paiement});
 
   final PendingPayment paiement;
+
+  @override
+  State<_Banner> createState() => _BannerState();
+}
+
+class _BannerState extends State<_Banner> {
+  Timer? _horloge;
+
+  @override
+  void initState() {
+    super.initState();
+    _horloge = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _horloge?.cancel();
+    super.dispose();
+  }
+
+  PendingPayment get paiement => widget.paiement;
 
   Future<void> _payer(BuildContext context) async {
     final cubit = context.read<ClientPendingPaymentsCubit>();

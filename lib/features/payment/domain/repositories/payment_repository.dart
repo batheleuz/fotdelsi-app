@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import 'package:fotdelsi/core/network/failures.dart';
+import '../entities/payment_delivery.dart';
 import '../entities/payment_provider.dart';
 import '../entities/payment_session.dart';
 import '../entities/pending_payment.dart';
@@ -36,10 +37,16 @@ abstract interface class PaymentRepository {
   /// application fermée — tant que le lien reste valable.
   Future<Either<Failure, List<PendingPayment>>> pendingPayments();
 
-  Future<Either<Failure, void>> initiateDropOffPayment({
+  /// Demande le paiement d'un dépôt.
+  ///
+  /// Rend la session, et non plus `void` : elle porte le lien de paiement, que
+  /// l'agent encode en QR quand le client est devant lui. La jeter interdisait
+  /// tout canal autre que la notification.
+  Future<Either<Failure, PaymentSession>> initiateDropOffPayment({
     required String draftId,
     required PaymentProvider provider,
     required String customerFullName,
     required String customerPhone,
+    required PaymentDelivery delivery,
   });
 }

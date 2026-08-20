@@ -20,6 +20,8 @@ final class NewDropOffState extends Equatable {
     this.sizeKg,
     this.provider,
     this.draftId,
+    this.delivery = PaymentDelivery.notify,
+    this.session,
     this.submitStatus = SubmitStatus.idle,
     this.error,
   });
@@ -45,6 +47,20 @@ final class NewDropOffState extends Equatable {
 
   /// Brouillon créé à la soumission (réutilisé par le renvoi de paiement).
   final String? draftId;
+
+  /// Comment la demande atteint le payeur, choisi par l'agent au moment de la
+  /// demande. Le client est-il devant lui, ou a-t-il envoyé quelqu'un ?
+  final PaymentDelivery delivery;
+
+  /// Session de paiement rendue par le serveur.
+  ///
+  /// Elle porte le lien à encoder en QR. Elle était jetée, ce qui interdisait
+  /// tout canal autre que la notification.
+  final PaymentSession? session;
+
+  /// Y a-t-il un code à montrer au client ?
+  bool get showsQr =>
+      delivery == PaymentDelivery.onSite && session?.qrPayload != null;
 
   ServiceFormula? get selectedFormula {
     for (final formula in formulas) {
@@ -89,6 +105,8 @@ final class NewDropOffState extends Equatable {
     int? sizeKg,
     PaymentProvider? provider,
     String? draftId,
+    PaymentDelivery? delivery,
+    PaymentSession? session,
     SubmitStatus? submitStatus,
     String? error,
     bool clearError = false,
@@ -107,6 +125,8 @@ final class NewDropOffState extends Equatable {
       sizeKg: clearSize ? null : (sizeKg ?? this.sizeKg),
       provider: provider ?? this.provider,
       draftId: draftId ?? this.draftId,
+      delivery: delivery ?? this.delivery,
+      session: session ?? this.session,
       submitStatus: submitStatus ?? this.submitStatus,
       error: clearError ? null : (error ?? this.error),
     );
@@ -126,6 +146,8 @@ final class NewDropOffState extends Equatable {
     sizeKg,
     provider,
     draftId,
+    delivery,
+    session?.qrPayload,
     submitStatus,
     error,
   ];

@@ -20,7 +20,11 @@ class MyDropOffDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => serviceLocator<MyDropOffDetailCubit>()..load(dropOffId),
+      // Le suivi bat pendant que le client attend : c'est précisément l'écran
+      // qu'il garde ouvert. Le battement s'arrête seul une fois le linge remis.
+      create: (_) => serviceLocator<MyDropOffDetailCubit>()
+        ..load(dropOffId)
+        ..startWatching(),
       child: const _DetailView(),
     );
   }

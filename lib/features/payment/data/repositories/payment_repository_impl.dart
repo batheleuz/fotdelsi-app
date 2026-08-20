@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import 'package:fotdelsi/core/network/error_mapper.dart';
 import 'package:fotdelsi/core/network/failures.dart';
+import 'package:fotdelsi/features/payment/domain/entities/payment_delivery.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_session.dart';
 import 'package:fotdelsi/features/payment/domain/entities/pending_payment.dart';
@@ -47,20 +48,22 @@ class PaymentRepositoryImpl implements PaymentRepository {
   }
 
   @override
-  Future<Either<Failure, void>> initiateDropOffPayment({
+  Future<Either<Failure, PaymentSession>> initiateDropOffPayment({
     required String draftId,
     required PaymentProvider provider,
     required String customerFullName,
     required String customerPhone,
+    required PaymentDelivery delivery,
   }) async {
     try {
-      await _api.initiateDropOffPayment(
+      final model = await _api.initiateDropOffPayment(
         draftId: draftId,
         provider: provider,
         customerFullName: customerFullName,
         customerPhone: customerPhone,
+        delivery: delivery,
       );
-      return const Right(null);
+      return Right(model.toEntity());
     } catch (e) {
       return Left(mapExceptionToFailure(e));
     }

@@ -80,6 +80,7 @@ class WashCycle extends Equatable {
     this.isDrying = false,
     this.washCompletedAt,
     this.handoffCode,
+    this.dropOffId,
     this.machineName,
     this.dryerMachineName,
     this.sizeKg,
@@ -146,6 +147,17 @@ class WashCycle extends Equatable {
   /// enfermé dans le tambour.
   final String? handoffCode;
 
+  /// Remise rattachée à ce cycle, `null` s'il n'y en a pas.
+  ///
+  /// Distinct de [handoffCode], qui disparaît dès que l'agent prend le linge en
+  /// charge : cet identifiant, lui, reste. C'est par lui que le client ouvre le
+  /// suivi de sa finition — sans quoi il perdrait la trace de son linge au
+  /// moment précis où le travail commence.
+  final String? dropOffId;
+
+  /// Y a-t-il une finition à suivre ?
+  bool get hasFinishing => dropOffId != null;
+
   /// Machine que le client a sous les yeux à cet instant.
   ///
   /// La laveuse identifie la commande ; pendant le séchage, c'est pourtant la
@@ -172,5 +184,6 @@ class WashCycle extends Equatable {
     endedAt,
     washCompletedAt,
     handoffCode,
+    dropOffId,
   ];
 }

@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:fotdelsi/core/motion/entrance.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
@@ -746,7 +749,62 @@ class _FinishedCard extends StatelessWidget {
             const SizedBox(height: 10),
             _HandoffStrip(code: remise),
           ],
+
+          // Une fois le linge remis, le code disparaît — mais la finition, elle,
+          // commence. Sans ce lien le client perdait la trace de son linge au
+          // moment précis où le travail démarrait.
+          if (remise == null && cycle.hasFinishing) ...[
+            const SizedBox(height: 10),
+            _FinishingLink(dropOffId: cycle.dropOffId!),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+/// Accès au suivi de la finition, pour un linge déjà remis au comptoir.
+class _FinishingLink extends StatelessWidget {
+  const _FinishingLink({required this.dropOffId});
+
+  final String dropOffId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceTint,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        onTap: () => context.push(AppRoutes.myDropOffDetail(dropOffId)),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(
+                Icons.local_laundry_service_rounded,
+                size: 17,
+                color: AppColors.primary,
+              ),
+              SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  'Suivre la préparation de votre linge',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: AppColors.textTertiary,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

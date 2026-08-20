@@ -92,10 +92,22 @@ class _HomeViewState extends State<_HomeView> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && mounted) {
-      // Vérifie si le paiement a été confirmé pendant l'absence de l'utilisateur.
-      context.read<WashSessionCubit>().onAppResumed();
-    }
+    if (state != AppLifecycleState.resumed || !mounted) return;
+
+    // Vérifie si le paiement a été confirmé pendant l'absence de l'utilisateur.
+    context.read<WashSessionCubit>().onAppResumed();
+
+    // Payer se fait DEHORS — dans Wave, dans Maxit. L'accueil ne chargeait ces
+    // paiements qu'à sa création : revenir sans avoir confirmé laissait donc
+    // l'écran muet, et il fallait fermer puis rouvrir l'application pour voir
+    // le bandeau. C'est précisément au retour qu'il a quelque chose à dire —
+    // que le paiement ait abouti, auquel cas le bandeau disparaît, ou non.
+    context.read<ClientPendingPaymentsCubit>().load();
+
+    // Même raison pour les cycles : un paiement confirmé pendant l'absence en
+    // crée un, et l'attendre au prochain battement le ferait apparaître avec
+    // dix secondes de retard sur le bandeau.
+    context.read<MyCyclesCubit>().load(silent: true);
   }
 
   @override

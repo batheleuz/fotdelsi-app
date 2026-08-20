@@ -5,7 +5,9 @@ import 'package:equatable/equatable.dart';
 import 'package:fotdelsi/core/network/failures.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
 import 'package:fotdelsi/features/catalog/domain/repositories/service_formula_repository.dart';
+import 'package:fotdelsi/features/payment/domain/entities/payment_delivery.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart';
+import 'package:fotdelsi/features/payment/domain/entities/payment_session.dart';
 import 'package:fotdelsi/features/payment/domain/repositories/payment_repository.dart';
 import '../../domain/entities/laundry_type.dart';
 import '../../domain/repositories/drop_off_repository.dart';
@@ -156,17 +158,32 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
     );
   }
 
+  /// Comment la demande atteindra le payeur. Choisi avant de la lancer.
+  void chooseDelivery(PaymentDelivery delivery) {
+    emit(state.copyWith(delivery: delivery));
+  }
+
   /// Renvoie la demande de paiement au client (étape d'attente).
   Future<bool> resend() async {
     final result = await _initiate();
     return result.isRight();
   }
 
-  Future<Either<Failure, void>> _initiate() =>
-      _paymentRepository.initiateDropOffPayment(
-        draftId: state.draftId!,
-        provider: state.provider!,
-        customerFullName: state.customerName,
-        customerPhone: state.contactPhone,
-      );
+  Future<Either<Failure, PaymentSession>> _initiate() async {
+    final result = await _paymentRepository.initiateDropOffPayment(
+      draftId: state.draftId!,
+      provider: state.provider!,
+      customerFullName: state.customerName,
+      customerPhone: state.contactPhone,
+      delivery: state.delivery,
+    );
+
+    // La session porte le lien de paiement : sans elle, « le client est là »
+    // n'aurait aucun code à montrer.
+    result.fold(
+      (_) => null,
+      (session) => emit(state.copyWith(session: session)),
+    );
+    return result;
+  }
 }

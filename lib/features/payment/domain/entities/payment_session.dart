@@ -7,12 +7,12 @@ import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart'
 class PaymentSession {
   const PaymentSession({
     required this.provider,
-    required this.machineId,
     required this.paymentId,
     required this.externalRef,
     required this.amount,
-    required this.reservedUntil,
-    required this.washSessionToken,
+    this.machineId,
+    this.reservedUntil,
+    this.washSessionToken,
 
     // Wave URL
     this.redirectUrl,
@@ -25,13 +25,20 @@ class PaymentSession {
 
   final PaymentProvider provider;
 
-  /// Machine ciblée par cette session — renvoyée par le backend.
-  final String machineId;
+  /// Machine ciblée, réservation et jeton de démarrage : trois faits propres au
+  /// LIBRE-SERVICE.
+  ///
+  /// `null` pour un dépôt — le linge est confié à l'agent, aucune machine n'est
+  /// choisie ni réservée à cet instant. Le serveur les rend nullables depuis
+  /// toujours ; les typer non-nullables ici ne tenait que parce que seul le
+  /// libre-service lisait cette réponse. Le dépôt s'y est mis, et un `null`
+  /// affecté à un `String` fait tomber le parsing.
+  final String? machineId;
   final String paymentId;
   final String externalRef;
   final int amount;
-  final String reservedUntil;
-  final String washSessionToken;
+  final String? reservedUntil;
+  final String? washSessionToken;
 
   final String? redirectUrl;
 

@@ -122,11 +122,38 @@ abstract class WashCyclesCubit extends Cubit<WashCyclesState> {
       },
       (_) {
         emit(state.copyWith(clearStarting: true, clearStartError: true));
-        // Le serveur renvoie le cycle en RUNNING, avec son temps restant.
-        load(silent: true);
+        // Le serveur renvoie le cycle en RUNNING — mais sans durée : EQLink ne
+        // la connaît pas encore à cet instant. On revient donc la chercher.
+        _chaseRemainingTime();
         return true;
       },
     );
+  }
+
+  /// Délais des rechargements qui suivent un démarrage, en secondes.
+  ///
+  /// La durée d'un cycle n'existe pas à l'instant du démarrage : EQLink ne la
+  /// rend pas dans sa réponse, et le serveur va la chercher dans les secondes
+  /// qui suivent. Attendre la resynchronisation ordinaire — toutes les 10 s —
+  /// ajoutait sa propre latence à celle du serveur, et le client restait
+  /// jusqu'à une demi-minute devant un « — ».
+  ///
+  /// Rapprochés puis espacés, et on s'arrête dès que la durée est là.
+  static const _apresDemarrage = [2, 4, 7, 12];
+
+  /// Recharge plusieurs fois après un démarrage, jusqu'à connaître la durée.
+  Future<void> _chaseRemainingTime() async {
+    await load(silent: true);
+
+    for (final secondes in _apresDemarrage) {
+      if (isClosed) return;
+      // Déjà connue : la resynchronisation ordinaire suffit pour la suite.
+      if (state.running.any((c) => c.remainingSeconds != null)) return;
+
+      await Future<void>.delayed(Duration(seconds: secondes));
+      if (isClosed) return;
+      await load(silent: true);
+    }
   }
 
   /// Lance la sécheuse choisie, pour le second temps d'un cycle déjà payé.
