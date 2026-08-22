@@ -48,6 +48,15 @@ class WashSessionRepositoryImpl implements WashSessionRepository {
   }
 
   @override
+  Future<Either<Failure, List<WashCycle>>> getCounterSaleCyclesHistory() async {
+    try {
+      return Right(await _api.getCounterSaleCyclesHistory());
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
   Future<Either<Failure, List<WashCycle>>> getMyCycles() async {
     try {
       return Right(await _api.getMyCycles());

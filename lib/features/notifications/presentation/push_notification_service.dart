@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:fotdelsi/core/auth/auth_token_store.dart';
 import 'package:fotdelsi/core/auth/client_session_store.dart';
 import 'package:fotdelsi/core/push/push_messaging.dart';
 import 'package:fotdelsi/core/router/app_routes.dart';
@@ -25,11 +26,17 @@ import '../domain/repositories/notification_repository.dart';
 /// L'affichage des notifications en foreground (flutter_local_notifications)
 /// sera ajouté avec l'implémentation Firebase.
 class PushNotificationService {
-  PushNotificationService(this._messaging, this._repository, this._clientStore);
+  PushNotificationService(
+    this._messaging,
+    this._repository,
+    this._clientStore,
+    this._authStore,
+  );
 
   final PushMessaging _messaging;
   final NotificationRepository _repository;
   final ClientSessionStore _clientStore;
+  final AuthTokenStore _authStore;
 
   GoRouter? _router;
   StreamSubscription<String>? _tokenSub;
@@ -67,16 +74,23 @@ class PushNotificationService {
     }
   }
 
-  /// Enregistre le jeton FCM si un numéro est lié (sinon no-op).
+  /// Enregistre le jeton FCM sous l'identité courante, s'il y en a une.
+  ///
+  /// Deux identités possibles, **mutuellement exclusives sur un appareil** :
+  /// un agent connecté (jeton JWT) ou un client lié (numéro). L'agent passe
+  /// en premier : quand il est connecté, c'est lui qui manipule le linge, et
+  /// c'est lui que les fins de cycle concernent.
   ///
   /// Chaque condition de sortie est journalisée (en debug) pour diagnostiquer
-  /// les cas « aucun token en base » : numéro non lié, jeton FCM indisponible
-  /// (typique iOS simulateur / sans APNs), ou échec de l'appel `/me/devices`.
+  /// les cas « aucun token en base » : aucune identité, jeton FCM indisponible
+  /// (typique iOS simulateur / sans APNs), ou échec de l'appel.
   Future<void> registerDeviceIfLinked() async {
+    final agentConnecte = await _authStore.accessToken() != null;
     final phone = await _clientStore.phone();
-    if (phone == null) {
+
+    if (!agentConnecte && phone == null) {
       if (kDebugMode) {
-        debugPrint('[push] device non enregistré : aucun numéro lié.');
+        debugPrint('[push] device non enregistré : aucune identité.');
       }
       return;
     }
@@ -99,11 +113,16 @@ class PushNotificationService {
     }
 
     final platform = Platform.isIOS ? 'IOS' : 'ANDROID';
-    final result = await _repository.registerDevice(
-      phone: phone,
-      fcmToken: token,
-      platform: platform,
-    );
+    final result = agentConnecte
+        ? await _repository.registerAgentDevice(
+            fcmToken: token,
+            platform: platform,
+          )
+        : await _repository.registerDevice(
+            phone: phone!,
+            fcmToken: token,
+            platform: platform,
+          );
     result.fold(
       (failure) {
         if (kDebugMode) {
@@ -147,6 +166,14 @@ class PushNotificationService {
         _router?.go(
           id == null ? AppRoutes.myDropOffs : AppRoutes.myDropOffDetail(id),
         );
+      case NotificationKind.washToDry:
+      case NotificationKind.washCycleDone:
+        // Le même événement s'adresse au client ou à l'agent selon qui gère le
+        // linge — et ils n'ont pas le même écran. Router les deux vers « Mes
+        // lavages » enverrait l'agent sur une liste vide, la sienne étant
+        // rangée ailleurs.
+        final estAgent = await _authStore.accessToken() != null;
+        _router?.go(estAgent ? AppRoutes.agentHome : AppRoutes.myCycles);
       case NotificationKind.unknown:
         break;
     }

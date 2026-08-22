@@ -32,26 +32,47 @@ enum PendingPaymentState {
   bool get needsAction => this != PendingPaymentState.awaitingPayment;
 }
 
-/// Un dépôt saisi mais pas encore payé.
+enum PendingPaymentKind {
+  dropOff,
+  directCycle;
+
+  static PendingPaymentKind fromApi(String? value) => switch (value) {
+    'DIRECT_CYCLE' => PendingPaymentKind.directCycle,
+    _ => PendingPaymentKind.dropOff,
+  };
+}
+
+/// Un dépôt ou cycle direct saisi mais pas encore payé.
 ///
-/// Entre la saisie et le paiement, un dépôt n'existait nulle part : la file
-/// d'attente ne liste que des dépôts déjà payés. L'agent envoyait la demande
-/// de paiement, servait le client suivant, et perdait la commande de vue.
+/// Entre la saisie et le paiement, la commande n'existe nulle part dans la file
+/// d'attente (qui ne liste que des commandes payées).
 class PendingDropOffPayment extends Equatable {
   const PendingDropOffPayment({
-    required this.draftId,
+    this.kind = PendingPaymentKind.dropOff,
+    this.draftId,
+    this.paymentId,
     required this.customerName,
     required this.contactPhone,
     required this.amount,
     required this.createdAt,
     required this.state,
     this.formulaCode,
+    this.formulaLabel,
     this.sizeKg,
+    this.machineId,
+    this.machineName,
+    this.washSessionToken,
+    this.provider,
+    this.redirectUrl,
+    this.omUrl,
+    this.maxitUrl,
     this.requestedAt,
     this.expiresAt,
   });
 
-  final String draftId;
+  final PendingPaymentKind kind;
+  final String? draftId;
+  final String? paymentId;
   final String customerName;
 
   /// Forme canonique : 9 chiffres, sans indicatif. Le préfixe est ajouté à
@@ -59,17 +80,34 @@ class PendingDropOffPayment extends Equatable {
   final String contactPhone;
   final int amount;
 
-  /// Saisie du dépôt — c'est depuis ce moment que le client attend.
+  /// Saisie du dépôt ou création du cycle direct.
   final DateTime createdAt;
   final PendingPaymentState state;
   final String? formulaCode;
+  final String? formulaLabel;
   final int? sizeKg;
+  final String? machineId;
+  final String? machineName;
+  final String? washSessionToken;
+  final String? provider;
+  final String? redirectUrl;
+  final String? omUrl;
+  final String? maxitUrl;
 
   /// Envoi de la demande de paiement. `null` si elle n'a jamais été lancée.
   final DateTime? requestedAt;
 
   /// Fin de validité du lien de paiement. `null` si rien n'a été lancé.
   final DateTime? expiresAt;
+
+  bool get isDirectCycle => kind == PendingPaymentKind.directCycle;
+  bool get isDropOff => kind == PendingPaymentKind.dropOff;
+
+  /// Lien utilisable pour afficher le QR code sur terminal agent.
+  String? get qrPayload {
+    if (provider == null) return null;
+    return provider!.toUpperCase() == 'WAVE' ? redirectUrl : omUrl;
+  }
 
   /// Combien de temps le lien reste valable, ou `null` s'il est mort ou absent.
   Duration? get validFor {
@@ -79,19 +117,29 @@ class PendingDropOffPayment extends Equatable {
     return left.isNegative ? null : left;
   }
 
-  /// Depuis combien de temps ce dépôt attend.
+  /// Depuis combien de temps cette commande attend.
   Duration get waiting => DateTime.now().difference(createdAt);
 
   @override
   List<Object?> get props => [
+    kind,
     draftId,
+    paymentId,
     customerName,
     contactPhone,
     amount,
     createdAt,
     state,
     formulaCode,
+    formulaLabel,
     sizeKg,
+    machineId,
+    machineName,
+    washSessionToken,
+    provider,
+    redirectUrl,
+    omUrl,
+    maxitUrl,
     requestedAt,
     expiresAt,
   ];

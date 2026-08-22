@@ -6,7 +6,9 @@ abstract final class PendingDropOffPaymentModel {
 
   static PendingDropOffPayment fromJson(Map<String, dynamic> json) {
     return PendingDropOffPayment(
-      draftId: json['draftId'] as String,
+      kind: PendingPaymentKind.fromApi(json['kind'] as String?),
+      draftId: json['draftId'] as String?,
+      paymentId: json['paymentId'] as String?,
       customerName: json['customerName'] as String? ?? '',
       contactPhone: json['contactPhone'] as String? ?? '',
       amount: (json['amount'] as num?)?.toInt() ?? 0,
@@ -16,7 +18,15 @@ abstract final class PendingDropOffPaymentModel {
       createdAt: _date(json['createdAt']) ?? DateTime.now(),
       state: PendingPaymentState.fromApi(json['state'] as String?),
       formulaCode: json['formulaCode'] as String?,
+      formulaLabel: json['formulaLabel'] as String?,
       sizeKg: (json['sizeKg'] as num?)?.toInt(),
+      machineId: json['machineId'] as String?,
+      machineName: json['machineName'] as String?,
+      washSessionToken: json['washSessionToken'] as String?,
+      provider: json['provider'] as String?,
+      redirectUrl: json['redirectUrl'] as String?,
+      omUrl: json['omUrl'] as String?,
+      maxitUrl: json['maxitUrl'] as String?,
       requestedAt: _date(json['requestedAt']),
       expiresAt: _date(json['expiresAt']),
     );

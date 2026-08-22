@@ -60,6 +60,7 @@ enum CyclesLayout {
   worklist(
     order: [CycleSection.toStart, CycleSection.running, CycleSection.finished],
     finishedLabel: 'Terminés (24 h)',
+    dropOffDetail: AppRoutes.agentDropOffDetail,
   ),
 
   /// Espace client : son historique de lavages.
@@ -71,12 +72,24 @@ enum CyclesLayout {
   history(
     order: [CycleSection.running, CycleSection.toStart, CycleSection.finished],
     finishedLabel: 'Terminés',
+    dropOffDetail: AppRoutes.myDropOffDetail,
   );
 
-  const CyclesLayout({required this.order, required this.finishedLabel});
+  const CyclesLayout({
+    required this.order,
+    required this.finishedLabel,
+    required this.dropOffDetail,
+  });
 
   final List<CycleSection> order;
   final String finishedLabel;
+
+  /// Où mène le suivi d'un dépôt — l'adresse n'est pas la même des deux côtés.
+  ///
+  /// Le routeur verrouille un agent authentifié sur `/agent/*` : l'envoyer sur
+  /// la route client le renvoyait à son accueil, sans un mot. Le lien semblait
+  /// simplement cassé.
+  final String Function(String id) dropOffDetail;
 }
 
 /// Une section : son titre, puis ses cartes en cascade. Vide si aucun cycle —
@@ -285,7 +298,8 @@ class _WashCyclesView extends StatelessWidget {
                               context,
                               label: layout.finishedLabel,
                               cycles: finished,
-                              build: (cycle) => _FinishedCard(cycle: cycle),
+                              build: (cycle) =>
+                                  _FinishedCard(cycle: cycle, layout: layout),
                               gap: 8,
                             ),
                           },
@@ -680,9 +694,10 @@ class _RunningCard extends StatelessWidget {
 /// porte la durée totale et le moment de la fin — de quoi répondre à un client
 /// qui demande si son linge est prêt.
 class _FinishedCard extends StatelessWidget {
-  const _FinishedCard({required this.cycle});
+  const _FinishedCard({required this.cycle, required this.layout});
 
   final WashCycle cycle;
+  final CyclesLayout layout;
 
   @override
   Widget build(BuildContext context) {
@@ -755,7 +770,9 @@ class _FinishedCard extends StatelessWidget {
           // moment précis où le travail démarrait.
           if (remise == null && cycle.hasFinishing) ...[
             const SizedBox(height: 10),
-            _FinishingLink(dropOffId: cycle.dropOffId!),
+            _FinishingLink(
+              destination: layout.dropOffDetail(cycle.dropOffId!),
+            ),
           ],
         ],
       ),
@@ -765,9 +782,11 @@ class _FinishedCard extends StatelessWidget {
 
 /// Accès au suivi de la finition, pour un linge déjà remis au comptoir.
 class _FinishingLink extends StatelessWidget {
-  const _FinishingLink({required this.dropOffId});
+  const _FinishingLink({required this.destination});
 
-  final String dropOffId;
+  /// Résolue par [CyclesLayout] : la même carte ne mène pas au même écran
+  /// selon qu'un agent ou un client la regarde.
+  final String destination;
 
   @override
   Widget build(BuildContext context) {
@@ -775,7 +794,7 @@ class _FinishingLink extends StatelessWidget {
       color: AppColors.surfaceTint,
       borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
-        onTap: () => context.push(AppRoutes.myDropOffDetail(dropOffId)),
+        onTap: () => context.push(destination),
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: const Padding(
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),

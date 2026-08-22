@@ -22,18 +22,31 @@ class ConnectivityCubit extends Cubit<ConnectivityStatus> {
     _init();
   }
 
-  final Connectivity _connectivity;
+  /// Figé « en ligne », sans jamais interroger l'appareil.
+  ///
+  /// Pour le mode vitrine (`lib/main_showcase.dart`) : sur simulateur,
+  /// `connectivity_plus` ne voit aucune interface réseau et le bandeau « hors
+  /// ligne » se pose en travers de chaque capture d'écran. La vitrine n'a de
+  /// toute façon pas de réseau à surveiller — ses réponses sont fabriquées sur
+  /// place.
+  ConnectivityCubit.alwaysOnline()
+    : _connectivity = null,
+      super(ConnectivityStatus.online);
+
+  final Connectivity? _connectivity;
   StreamSubscription<List<ConnectivityResult>>? _sub;
 
   Future<void> _init() async {
+    final connectivity = _connectivity;
+    if (connectivity == null) return;
     try {
-      _apply(await _connectivity.checkConnectivity());
+      _apply(await connectivity.checkConnectivity());
     } catch (_) {
       // Échec de la vérification initiale → on suppose « en ligne » pour ne pas
       // afficher un faux bandeau au démarrage.
       emit(ConnectivityStatus.online);
     }
-    _sub = _connectivity.onConnectivityChanged.listen(_apply);
+    _sub = connectivity.onConnectivityChanged.listen(_apply);
   }
 
   void _apply(List<ConnectivityResult> results) {

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:fotdelsi/core/di/service_locator.dart';
+import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/features/wash_session/presentation/widgets/confirm_start_sheet.dart';
@@ -37,8 +39,15 @@ class _CounterSaleView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<CounterSaleCubit, CounterSaleState>(
-      listenWhen: (p, c) => p.error != c.error && c.error != null,
+      listenWhen: (p, c) =>
+          (p.error != c.error && c.error != null) ||
+          (p.saleStatus != c.saleStatus && c.saleStatus == SaleStatus.started),
       listener: (context, state) {
+        if (state.saleStatus == SaleStatus.started) {
+          _leaveForDirectCycles(context, state.machine?.name);
+          return;
+        }
+
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
@@ -55,7 +64,7 @@ class _CounterSaleView extends StatelessWidget {
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
-            title: const Text('Vente au comptoir'),
+            title: const Text('Cycle Direct'),
             backgroundColor: AppColors.background,
             foregroundColor: AppColors.textPrimary,
             elevation: 0,
@@ -107,6 +116,41 @@ class _CounterSaleView extends StatelessWidget {
   };
 }
 
+/// Une fois la machine lancée, l'agent quitte l'assistant pour la liste des
+/// Cycles Directs.
+///
+/// Deux navigations enchaînées et non une seule : `go` repose la pile sur
+/// l'accueil agent, `push` empile la liste par-dessus. Le bouton retour ramène
+/// donc à l'accueil, jamais dans un assistant dont la vente est consommée —
+/// c'est ce que `go` seul aurait laissé faire.
+///
+/// L'assistant s'arrêtait auparavant sur « Lavage lancé » et proposait
+/// « Nouveau Cycle Direct ». Le cycle qui venait de démarrer n'apparaissait
+/// alors nulle part : pour le suivre, il fallait ressortir et rouvrir la liste
+/// à la main.
+///
+/// La confirmation passe par un SnackBar plutôt que par une pause avant de
+/// naviguer : le `ScaffoldMessenger` est au-dessus du routeur, le message
+/// survit donc au changement d'écran. L'agent voit la confirmation ET le cycle
+/// dans la liste, sans attendre.
+void _leaveForDirectCycles(BuildContext context, String? machineName) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(
+          machineName == null
+              ? 'Machine lancée.'
+              : 'Machine lancée — $machineName.',
+        ),
+        backgroundColor: AppColors.success,
+      ),
+    );
+
+  context.go(AppRoutes.agentHome);
+  context.push(AppRoutes.agentCycles);
+}
+
 /// Barre d'action du bas : le libellé dit ce qui va se passer, pas « Suivant ».
 class _ActionBar extends StatelessWidget {
   const _ActionBar({required this.state});
@@ -125,15 +169,21 @@ class _ActionBar extends StatelessWidget {
         children: [
           if (isStartStep)
             PrimaryButton(
-              label: started ? 'Nouvelle vente' : 'Démarrer la machine',
-              icon: started ? Icons.refresh_rounded : Icons.play_arrow_rounded,
-              enabled: !state.isStarting,
+              // « Machine lancée » n'est visible que le temps d'un frame :
+              // l'écran part aussitôt vers les Cycles Directs. Le bouton reste
+              // rendu, mais inerte — un appui pendant la transition ne doit
+              // rien relancer sur un cycle deja consomme.
+              label: started ? 'Machine lancée' : 'Démarrer la machine',
+              icon: started ? Icons.check_rounded : Icons.play_arrow_rounded,
+              enabled: !state.isStarting && !started,
               loading: state.isStarting,
               backgroundColor: started
                   ? AppColors.primaryLight
                   : AppColors.secondary,
               onPressed: started
-                  ? () => Navigator.of(context).pop()
+                  // `enabled: false` neutralise déjà l'appui ; le rappel doit
+                  // quand même exister, il n'est pas nullable.
+                  ? () {}
                   // Confirmation avant tout démarrage physique : ici le
                   // téléphone est dans la main de l'agent, souvent tendu vers
                   // le client, et un appui involontaire consommerait le cycle

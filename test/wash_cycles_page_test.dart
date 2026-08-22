@@ -114,6 +114,8 @@ WashCycle cycleToStart() => WashCycle(
 );
 
 void main() {
+  _suiviDuDepot();
+
   testWidgets('le bouton Démarrer lance bien le cycle', (tester) async {
     final cubit = _FakeCyclesCubit([cycleToStart()]);
 
@@ -900,4 +902,38 @@ class _SlowRemainingRepo implements WashSessionRepository {
 class _SlowRemaining extends MyCyclesCubit {
   _SlowRemaining(WashSessionRepository repository)
     : super(repository, _LinkedSession());
+}
+
+void _suiviDuDepot() {
+  // Le routeur verrouille un agent authentifié sur `/agent/*` : toute adresse
+  // hors de cette zone le renvoie à son accueil, sans un mot. Le lien « Suivre
+  // la préparation » pointait sur la route CLIENT — pour l'agent, il semblait
+  // simplement mort. Rien ne l'aurait signalé : ni le compilateur, ni un test.
+  group('suivi d\'un dépôt : chaque côté sa destination', () {
+    test('le client va sur sa propre route', () {
+      expect(CyclesLayout.history.dropOffDetail('abc'), '/my-dropoffs/abc');
+    });
+
+    test('l\'agent va sur la route agent', () {
+      expect(
+        CyclesLayout.worklist.dropOffDetail('abc'),
+        '/agent/dropoffs/abc',
+      );
+    });
+
+    test('la destination agent reste dans la zone /agent', () {
+      // La contrainte qui compte vraiment, et la seule que le routeur applique.
+      expect(
+        CyclesLayout.worklist.dropOffDetail('abc').startsWith('/agent'),
+        isTrue,
+      );
+    });
+
+    test('les deux côtés ne partagent pas la même adresse', () {
+      expect(
+        CyclesLayout.worklist.dropOffDetail('abc'),
+        isNot(CyclesLayout.history.dropOffDetail('abc')),
+      );
+    });
+  });
 }

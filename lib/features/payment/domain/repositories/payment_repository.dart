@@ -18,7 +18,7 @@ abstract interface class PaymentRepository {
   /// depuis la grille à partir de (formule, capacité de la machine).
   Future<Either<Failure, PaymentSession>> initiatePayment({
     required String machineId,
-    required String formulaCode,
+    String? formulaCode,
     required PaymentProvider provider,
     required String customerFullName,
     required String customerPhone,

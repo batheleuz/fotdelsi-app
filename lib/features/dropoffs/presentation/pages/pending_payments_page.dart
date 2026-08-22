@@ -83,7 +83,7 @@ class _PendingPaymentsView extends StatelessWidget {
                         // s'animent — les autres restent en place.
                         for (final (i, item) in pending.indexed)
                           EntranceFade(
-                            key: ValueKey(item.draftId),
+                            key: ValueKey(item.draftId ?? item.paymentId ?? '$i'),
                             index: i,
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 10),
@@ -100,7 +100,7 @@ class _PendingPaymentsView extends StatelessWidget {
   }
 }
 
-/// Dit à l'agent ce qu'il regarde : ces lignes ne sont pas encore des dépôts.
+/// Dit à l'agent ce qu'il regarde : ces lignes sont en attente d'encaissement.
 class _Explanation extends StatelessWidget {
   const _Explanation();
 
@@ -119,8 +119,8 @@ class _Explanation extends StatelessWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Ces dépôts entrent dans la file dès que le client paie. '
-              'Ils disparaissent d\'ici tout seuls — inutile de recharger.',
+              'Ces commandes (dépôts et cycles directs) sont validées dès que le client paie. '
+              'Elles disparaissent d\'ici toutes seules — inutile de recharger.',
               style: TextStyle(
                 fontSize: 12,
                 height: 1.45,

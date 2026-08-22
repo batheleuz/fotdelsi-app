@@ -26,6 +26,14 @@ class NotificationRepositoryImpl implements NotificationRepository {
   );
 
   @override
+  Future<Either<Failure, void>> registerAgentDevice({
+    required String fcmToken,
+    required String platform,
+  }) => _guard(
+    () => _api.registerAgentDevice(fcmToken: fcmToken, platform: platform),
+  );
+
+  @override
   Future<Either<Failure, void>> ack({
     required String notificationId,
     String? smsFallbackId,

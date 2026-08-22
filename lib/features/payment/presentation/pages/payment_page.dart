@@ -30,7 +30,10 @@ class PaymentPage extends StatelessWidget {
   const PaymentPage({super.key, required this.formula, required this.machine});
 
   /// Prestation choisie — détermine le prix côté serveur.
-  final ServiceFormula formula;
+  ///
+  /// `null` pour une machine scannée : on achète l'appareil, pas une
+  /// prestation. Le prix est alors celui que porte la machine.
+  final ServiceFormula? formula;
   final Machine machine;
 
   @override
@@ -45,7 +48,7 @@ class PaymentPage extends StatelessWidget {
 class _PaymentView extends StatelessWidget {
   const _PaymentView({required this.formula, required this.machine});
 
-  final ServiceFormula formula;
+  final ServiceFormula? formula;
   final Machine machine;
 
   @override
@@ -155,9 +158,16 @@ class _PaymentView extends StatelessWidget {
                   //
                   // `null` si la capacité est inconnue ou non tarifée — la
                   // barre l'annonce alors comme telle plutôt que d'inventer.
-                  total: machineSize == null
-                      ? null
-                      : formula.priceFor(machineSize),
+                  //
+                  // Vente à la machine : la grille ne s'applique pas, et ne
+                  // pourrait pas — une sécheuse n'a pas de capacité en kg.
+                  // C'est le prix de l'appareil qui fait foi, ici comme sur
+                  // le serveur.
+                  total: formula == null
+                      ? machine.price.round()
+                      : (machineSize == null
+                            ? null
+                            : formula!.priceFor(machineSize)),
                   state: state,
                   onPay: () async {
                     // Le numéro est exigé AVANT de payer, pas après : une fois
@@ -170,7 +180,7 @@ class _PaymentView extends StatelessWidget {
                     bloc.add(
                       PaymentSubmitted(
                         machineId: machine.id,
-                        formulaCode: formula.code,
+                        formulaCode: formula?.code,
                       ),
                     );
                   },

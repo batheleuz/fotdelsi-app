@@ -4,6 +4,7 @@ import 'package:fotdelsi/core/auth/auth_token_store.dart';
 import 'package:fotdelsi/core/auth/client_session_store.dart';
 import 'package:fotdelsi/core/network/api_endpoints.dart';
 import 'package:fotdelsi/core/network/auth_interceptor.dart';
+import 'package:fotdelsi/core/network/dio_client.dart';
 import 'package:fotdelsi/core/onboarding/onboarding_store.dart';
 import 'package:fotdelsi/core/push/firebase_push_messaging.dart';
 import 'package:fotdelsi/core/push/push_messaging.dart';
@@ -70,13 +71,23 @@ import '../../features/catalog/domain/repositories/service_formula_repository.da
 import '../../features/catalog/presentation/cubit/service_catalog_cubit.dart';
 import '../../features/machines/domain/repositories/machine_repository.dart';
 import '../../features/machines/presentation/bloc/machines_bloc.dart';
-import '../network/dio_client.dart';
 import 'package:fotdelsi/features/wash_session/presentation/cubit/wash_cycles_cubit.dart';
+import 'package:fotdelsi/features/wash_session/presentation/cubit/direct_cycles_history_cubit.dart';
 
 /// Conteneur d'injection de dépendances unique de l'application.
 final GetIt serviceLocator = GetIt.instance;
 
-Future<void> setupLocator() async {
+/// Assemble le conteneur.
+///
+/// Les trois paramètres n'existent que pour le mode vitrine
+/// (`lib/main_showcase.dart`, captures d'écran) : ils remplacent la couche
+/// réseau, le push et la surveillance de connectivité sans dupliquer ce
+/// fichier. En production les trois restent nuls, et rien ne change.
+Future<void> setupLocator({
+  HttpClientAdapter? httpAdapter,
+  PushMessaging? pushMessaging,
+  ConnectivityCubit? connectivityCubit,
+}) async {
   // --- Core ---
   serviceLocator.registerLazySingleton<FlutterSecureStorage>(
     () => const FlutterSecureStorage(),
@@ -89,6 +100,7 @@ Future<void> setupLocator() async {
   );
   serviceLocator.registerLazySingleton<Dio>(() {
     final dio = DioClient.create();
+    if (httpAdapter != null) dio.httpClientAdapter = httpAdapter;
     dio.interceptors.add(
       AuthInterceptor(
         serviceLocator<AuthTokenStore>(),
@@ -103,7 +115,7 @@ Future<void> setupLocator() async {
   );
   serviceLocator.registerLazySingleton<Connectivity>(() => Connectivity());
   serviceLocator.registerLazySingleton<ConnectivityCubit>(
-    () => ConnectivityCubit(serviceLocator()),
+    () => connectivityCubit ?? ConnectivityCubit(serviceLocator()),
   );
   // Connexion temps réel partagée — une seule socket pour toute l'app.
   serviceLocator.registerLazySingleton<RealtimeSocket>(() => RealtimeSocket());
@@ -129,17 +141,18 @@ Future<void> setupLocator() async {
   _registerAuth();
   _registerClientAuth();
   _registerServiceStatus();
-  _registerNotifications();
+  _registerNotifications(pushMessaging);
   _registerDropOffs();
   _registerMachines();
   _registerPayment();
   _registerWashSession();
 }
 
-void _registerNotifications() {
-  // FCM en production ; `NoopPushMessaging` reste disponible pour les tests.
+void _registerNotifications(PushMessaging? override) {
+  // FCM en production ; `NoopPushMessaging` reste disponible pour les tests et
+  // pour le mode vitrine, qui ne démarre pas Firebase du tout.
   serviceLocator.registerLazySingleton<PushMessaging>(
-    () => FirebasePushMessaging(),
+    () => override ?? FirebasePushMessaging(),
   );
   serviceLocator.registerLazySingleton<NotificationApiDataSource>(
     () => NotificationApiDataSource(serviceLocator()),
@@ -151,7 +164,8 @@ void _registerNotifications() {
     () => PushNotificationService(
       serviceLocator(), // PushMessaging
       serviceLocator(), // NotificationRepository
-      serviceLocator(), // ClientSessionStore
+      serviceLocator(), // ClientSessionStore — identité client (numéro)
+      serviceLocator(), // AuthTokenStore — identité agent (JWT)
     ),
   );
 }
@@ -219,6 +233,9 @@ void _registerDropOffs() {
   );
   serviceLocator.registerFactory<DropOffHistoryCubit>(
     () => DropOffHistoryCubit(serviceLocator()),
+  );
+  serviceLocator.registerFactory<DirectCyclesHistoryCubit>(
+    () => DirectCyclesHistoryCubit(serviceLocator()),
   );
   serviceLocator.registerFactory<AgentHandoffsCubit>(
     () => AgentHandoffsCubit(serviceLocator(), serviceLocator()),

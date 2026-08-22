@@ -70,9 +70,18 @@ class _ScanViewState extends State<_ScanView> {
       // au pop — cela évite qu'un second scan soit déclenché pendant la
       // navigation et provoque un conflit de GlobalKey sur le Navigator GoRouter.
       final machine = state.machine!;
-      // La machine est identifiée par le scan : reste à choisir la prestation.
-      final PickFormulaArgs args = (machine: machine);
-      context.push(AppRoutes.pickFormula, extra: args).then((_) {
+      // Droit au paiement : il n'y a rien à choisir.
+      //
+      // Le scan passait par l'écran des formules, ce qui n'a pas de sens ici :
+      // on a une MACHINE devant soi, pas un besoin à formuler. Une laveuse ne
+      // sait que laver, une sécheuse que sécher — et ni l'une ni l'autre ne
+      // sait plier ou repasser. Proposer « Prêt à porter » sur une sécheuse
+      // scannée promettait une prestation que l'appareil ne rend pas.
+      //
+      // `formula: null` dit exactement cela au reste de la chaîne, jusqu'au
+      // serveur qui tarife alors sur la machine.
+      final PaymentArgs args = (formula: null, machine: machine);
+      context.push(AppRoutes.payment, extra: args).then((_) {
         if (mounted) _resumeScanning();
       });
     }

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fotdelsi/core/motion/app_motion.dart';
 import 'package:fotdelsi/core/motion/status_transition.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_curves.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
+import 'package:fotdelsi/features/counter_sale/presentation/widgets/direct_cycle_qr_sheet.dart';
+import '../cubit/pending_payments_cubit.dart';
 import '../../domain/entities/pending_drop_off_payment.dart';
 
-/// Un dépôt en attente d'encaissement.
+/// Un dépôt ou cycle direct en attente d'encaissement.
 ///
 /// La carte répond d'abord à « que dois-je faire ? » : attendre, relancer, ou
 /// terminer la vente. Les trois états ne sont donc pas fondus dans un même
@@ -22,6 +24,7 @@ class PendingPaymentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tone = _ToneFor(payment.state);
+    final isDirect = payment.isDirectCycle;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -35,37 +38,82 @@ class PendingPaymentCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: isDirect
+                      ? AppColors.secondary.withValues(alpha: 0.12)
+                      : AppColors.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(6),
+                ),
                 child: Text(
-                  payment.customerName.isEmpty
-                      ? 'Client sans nom'
-                      : payment.customerName,
-                  style: const TextStyle(
-                    fontSize: 15,
+                  isDirect ? 'Cycle Direct' : 'Dépôt',
+                  style: TextStyle(
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: isDirect ? AppColors.secondary : AppColors.primary,
                   ),
                 ),
               ),
+              const Spacer(),
               Text(
                 formatFcfa(payment.amount),
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 14.5,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 8),
           Text(
-            // Préfixe ajouté ici seulement : le numéro est stocké et transmis
-            // sans indicatif.
-            '+221 ${payment.contactPhone}',
+            payment.customerName.isEmpty
+                ? (isDirect ? 'Client au comptoir' : 'Client sans nom')
+                : payment.customerName,
             style: const TextStyle(
-              fontSize: 12.5,
-              color: AppColors.textSecondary,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
             ),
+          ),
+          const SizedBox(height: 3),
+          Row(
+            children: [
+              if (payment.contactPhone.isNotEmpty)
+                Text(
+                  '+221 ${payment.contactPhone}',
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              if (isDirect && payment.machineName != null) ...[
+                if (payment.contactPhone.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  const Text('·', style: TextStyle(color: AppColors.textTertiary)),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  payment.machineName!,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+              if (isDirect && payment.formulaLabel != null) ...[
+                const SizedBox(width: 6),
+                Text(
+                  '(${payment.formulaLabel})',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ],
           ),
 
           const SizedBox(height: 10),
@@ -122,6 +170,43 @@ class PendingPaymentCard extends StatelessWidget {
                 fontSize: 12,
                 height: 1.4,
                 color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+
+          if (isDirect &&
+              payment.state == PendingPaymentState.awaitingPayment &&
+              payment.qrPayload != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  await DirectCycleQrSheet.show(
+                    context,
+                    payment: payment,
+                  );
+                  if (context.mounted) {
+                    context.read<PendingPaymentsCubit>().refresh();
+                  }
+                },
+                icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+                label: const Text(
+                  'Afficher le QR Code',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                ),
               ),
             ),
           ],

@@ -17,7 +17,7 @@ class PaymentApiDataSource {
 
   Future<PaymentSessionModel> initiatePayment({
     required String machineId,
-    required String formulaCode,
+    String? formulaCode,
     required PaymentProvider provider,
     required String customerFullName,
     required String customerPhone,
@@ -28,7 +28,10 @@ class PaymentApiDataSource {
         ApiEndpoints.paymentsInitiate,
         data: {
           'machineId': machineId,
-          'formulaCode': formulaCode,
+          // Absent, et non `null` : c'est la PRÉSENCE de ce champ qui dit au
+          // serveur laquelle des deux tarifications appliquer. Un `null`
+          // explicite serait rejeté par le validateur.
+          'formulaCode': ?formulaCode,
           'provider': provider.apiValue,
           'customerFullName': customerFullName,
           'customerPhone': normalizePhone(customerPhone),
@@ -70,6 +73,9 @@ class PaymentApiDataSource {
         DateTime.tryParse(json['expiresAt'] as String? ?? '')?.toLocal() ??
         DateTime.now(),
     machineStillHeld: json['machineStillHeld'] as bool? ?? false,
+    machineHeldUntil: DateTime.tryParse(
+      json['machineHeldUntil'] as String? ?? '',
+    )?.toLocal(),
     machineName: json['machineName'] as String?,
     formulaLabel: json['formulaLabel'] as String?,
     checkoutUrl: json['checkoutUrl'] as String?,

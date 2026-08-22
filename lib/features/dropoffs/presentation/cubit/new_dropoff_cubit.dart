@@ -46,9 +46,9 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
         final errorState = state.copyWith(formulasStatus: LoadStatus.failure);
         emit(errorState);
       },
-      (formulas) {
+      (catalog) {
         final newState = state.copyWith(
-          formulas: formulas,
+          formulas: catalog.formulas,
           formulasStatus: LoadStatus.success,
         );
         emit(newState);

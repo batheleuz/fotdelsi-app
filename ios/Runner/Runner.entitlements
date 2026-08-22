@@ -4,42 +4,43 @@
 <dict>
 	<!--
 	  ════════════════════════════════════════════════════════════════════
-	  FICHIER VOLONTAIREMENT DÉTACHÉ — aucune configuration ne le référence.
+	  RATTACHÉ À LA SEULE CONFIGURATION RELEASE.
 	  ════════════════════════════════════════════════════════════════════
 
-	  POURQUOI
+	  POURQUOI PAS PARTOUT
 
-	  Le développement se fait sous une équipe Apple PERSONNELLE (gratuite),
-	  qui n'a pas droit à la capacité Push Notifications. Toute configuration
-	  déclarant `aps-environment` devient alors impossible à signer :
+	  Debug et Profile se signent sous une équipe Apple PERSONNELLE
+	  (gratuite), qui n'a pas droit à la capacité Push Notifications :
 
 	      Personal development teams, including "…", do not support
 	      the Push Notifications capability.
 
-	  Les tests sur iPhone se faisant aussi bien en Debug qu'en Release,
-	  AUCUNE configuration ne porte d'entitlements aujourd'hui.
+	  Déclarer `aps-environment` sur ces configurations les rendrait
+	  impossibles à signer, et bloquerait le développement quotidien. Elles
+	  restent donc sans entitlements — le push y est muet, et c'est assumé :
+	  leur bundle (« …app.dev ») ne correspond de toute façon pas à celui du
+	  GoogleService-Info.plist, donc Firebase n'y émettrait aucun jeton.
 
-	  CE QUE ÇA COÛTE
+	  POURQUOI « production » ET NON « development »
 
-	  Un build produit en l'état — y compris une archive TestFlight — n'a pas
-	  d'`aps-environment`, donc iOS ne délivre aucun jeton APNs et le push
-	  reste muet. Le reste de l'application fonctionne normalement : c'est
-	  précisément ce qui rend la panne difficile à repérer.
+	  Cette configuration ne sert qu'à archiver pour TestFlight et l'App
+	  Store, signée par le compte payant. Se tromper de valeur ne casse pas
+	  le build : ça produit une application qui s'installe, s'utilise
+	  normalement, et ne reçoit jamais la moindre notification — précisément
+	  la panne la plus difficile à repérer.
 
-	  COMMENT RÉACTIVER LE PUSH, le jour où l'app est signée par le compte
-	  payant
+	  CE QUI DOIT EXISTER AILLEURS pour que ce fichier serve à quelque chose
 
-	    1. Sur l'App ID, activer la capacité Push Notifications.
-	    2. Dans le bloc de réglages de la configuration voulue (cible Runner),
-	       ajouter :
-	           CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
-	    3. Ajuster la valeur ci-dessous selon la signature :
-	         • `development` pour un build signé en développement ;
-	         • `production`  pour une archive TestFlight / App Store.
-	       Se tromper de valeur ne casse pas le build : ça donne une app qui
-	       s'installe et ne reçoit jamais rien.
+	    1. L'App ID « sn.fotdelsi.app » porte la capacité Push Notifications
+	       sur le portail Apple.
+	    2. Une clé APNs (.p8) du compte payant est déposée dans Firebase,
+	       avec le Key ID et le Team ID.
+
+	  Ces deux points ne se vérifient pas depuis un poste de travail. Le
+	  reste se contrôle par `./tool/check_push_ios.sh Release`. Voir
+	  RESTANT.md § 1.4.
 	-->
 	<key>aps-environment</key>
-	<string>development</string>
+	<string>production</string>
 </dict>
 </plist>

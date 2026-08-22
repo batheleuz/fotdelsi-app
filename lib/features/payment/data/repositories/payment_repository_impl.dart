@@ -17,7 +17,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   @override
   Future<Either<Failure, PaymentSession>> initiatePayment({
     required String machineId,
-    required String formulaCode,
+    String? formulaCode,
     required PaymentProvider provider,
     required String customerFullName,
     required String customerPhone,

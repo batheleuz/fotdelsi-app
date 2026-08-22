@@ -60,10 +60,10 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
       _machines.getMachines(),
     ]);
 
-    final formulas = results[0] as dynamic;
+    final catalog = results[0] as dynamic;
     final machines = results[1] as dynamic;
 
-    if (formulas.isLeft() || machines.isLeft()) {
+    if (catalog.isLeft() || machines.isLeft()) {
       emit(state.copyWith(loadStatus: SaleLoadStatus.failure));
       return;
     }
@@ -71,7 +71,10 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
     emit(
       state.copyWith(
         loadStatus: SaleLoadStatus.success,
-        formulas: formulas.getOrElse(() => <ServiceFormula>[]),
+        formulas: catalog.fold(
+          (_) => <ServiceFormula>[],
+          (c) => c.formulas as List<ServiceFormula>,
+        ),
         machines: machines.getOrElse(() => <Machine>[]),
       ),
     );

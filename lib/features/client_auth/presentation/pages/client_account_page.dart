@@ -142,7 +142,7 @@ class _ClientAccountPageState extends State<ClientAccountPage> {
                   // le numéro lié, donc réservés aux clients identifiés.
                   _AccountTile(
                     icon: Icons.timelapse_rounded,
-                    label: 'Mes lavages',
+                    label: 'Mes cycles',
                     onTap: () => context.push(AppRoutes.myCycles),
                   ),
                   const Spacer(),

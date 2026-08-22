@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
+import '../../domain/entities/business_hours.dart';
 import '../../domain/entities/service_formula.dart';
 import '../../domain/repositories/service_formula_repository.dart';
 
@@ -10,27 +11,35 @@ final class ServiceCatalogState extends Equatable {
   const ServiceCatalogState({
     this.status = CatalogStatus.initial,
     this.formulas = const [],
+    this.businessHours = const BusinessHours(),
     this.error,
   });
 
   final CatalogStatus status;
   final List<ServiceFormula> formulas;
+
+  /// Ouverture de la laverie au moment du chargement. Sert au bandeau : le
+  /// client doit savoir que c'est fermé avant de choisir une prestation, pas
+  /// au moment de payer.
+  final BusinessHours businessHours;
   final String? error;
 
   ServiceCatalogState copyWith({
     CatalogStatus? status,
     List<ServiceFormula>? formulas,
+    BusinessHours? businessHours,
     String? error,
   }) {
     return ServiceCatalogState(
       status: status ?? this.status,
       formulas: formulas ?? this.formulas,
+      businessHours: businessHours ?? this.businessHours,
       error: error ?? this.error,
     );
   }
 
   @override
-  List<Object?> get props => [status, formulas, error];
+  List<Object?> get props => [status, formulas, businessHours, error];
 }
 
 /// Catalogue des prestations vendables en libre-service.
@@ -53,8 +62,12 @@ class ServiceCatalogCubit extends Cubit<ServiceCatalogState> {
       (failure) => emit(
         state.copyWith(status: CatalogStatus.failure, error: failure.message),
       ),
-      (formulas) => emit(
-        state.copyWith(status: CatalogStatus.success, formulas: formulas),
+      (catalog) => emit(
+        state.copyWith(
+          status: CatalogStatus.success,
+          formulas: catalog.formulas,
+          businessHours: catalog.businessHours,
+        ),
       ),
     );
   }

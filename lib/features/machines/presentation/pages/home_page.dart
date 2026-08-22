@@ -182,6 +182,7 @@ class _HomeViewState extends State<_HomeView> with WidgetsBindingObserver {
           const PendingPaymentBanner(),
           const ActiveSessionCard(),
           const ServiceCatalogContent(),
+          const SizedBox(height: 100),
         ],
       ),
     );

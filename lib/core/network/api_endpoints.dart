@@ -63,6 +63,10 @@ abstract final class ApiEndpoints {
 
   // Notifications push
   static const String devices = '/me/devices';
+
+  /// Pendant agent de [devices] : garde JWT, et aucune identité dans le corps
+  /// — le serveur la lit dans le jeton.
+  static const String agentDevices = '/agent/devices';
   static String ackNotification(String id) => '/notifications/$id/ack';
 
   // Drop-offs (agent / admin)

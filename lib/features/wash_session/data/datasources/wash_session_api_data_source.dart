@@ -35,6 +35,10 @@ class WashSessionApiDataSource {
   Future<List<WashCycle>> getCounterSaleCycles() =>
       _cycles(ApiEndpoints.counterSaleCycles);
 
+  /// `GET /wash-sessions/counter-sales?history=true` — historique complet (agent).
+  Future<List<WashCycle>> getCounterSaleCyclesHistory() =>
+      _cycles('${ApiEndpoints.counterSaleCycles}?history=true');
+
   /// `GET /me/cycles` — cycles du client authentifié.
   Future<List<WashCycle>> getMyCycles() => _cycles(ApiEndpoints.myCycles);
 

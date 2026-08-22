@@ -85,12 +85,19 @@ class _SessionFab extends StatelessWidget {
 class _ScanFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton(
+    // Étendu, et non plus un rond muet : une icône seule n'apprend pas qu'on
+    // peut partir de la machine au lieu de la prestation. Le raccourci
+    // existait, personne ne le trouvait.
+    return FloatingActionButton.extended(
       heroTag: 'scan_fab',
       onPressed: () => context.push(AppRoutes.scan),
       backgroundColor: AppColors.primary,
       foregroundColor: Colors.white,
-      child: const Icon(Icons.qr_code_scanner_rounded),
+      icon: const Icon(Icons.qr_code_scanner_rounded),
+      label: const Text(
+        'Scanner une machine',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
     );
   }
 }

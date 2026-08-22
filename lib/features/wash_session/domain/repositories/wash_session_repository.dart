@@ -32,12 +32,15 @@ abstract interface class WashSessionRepository {
     String washSessionToken,
   );
 
-  /// `GET /wash-sessions/counter-sales` — cycles vendus au comptoir : à
+  /// `GET /wash-sessions/counter-sales` — cycles vendus au comptoir (Cycles Directs) : à
   /// démarrer, en cours, ou terminés depuis moins de 24 h.
   ///
   /// Le seul moyen de retrouver un cycle encaissé dont on a quitté l'écran de
   /// vente : le jeton de démarrage ne vit nulle part ailleurs.
   Future<Either<Failure, List<WashCycle>>> getCounterSaleCycles();
+
+  /// `GET /wash-sessions/counter-sales?history=true` — historique complet des Cycles Directs.
+  Future<Either<Failure, List<WashCycle>>> getCounterSaleCyclesHistory();
 
   /// `GET /me/cycles` — cycles du client authentifié : à démarrer, en cours,
   /// ou terminés depuis moins de 24 h.

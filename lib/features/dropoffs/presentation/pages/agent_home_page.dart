@@ -98,8 +98,12 @@ class _AgentHomeView extends StatelessWidget {
                     child: _Action(
                       icon: Icons.qr_code_2_rounded,
                       accent: AppColors.secondary,
-                      title: 'Vendre un cycle',
-                      subtitle: 'Client sans l\'application',
+                      // « Cycle Direct », symétrique de « Dépôt » : les deux
+                      // nomment ce qu'on crée, pas le geste commercial. « Vendre
+                      // un cycle » désignait la même chose sous un troisième
+                      // nom, après « vente au comptoir ».
+                      title: 'Cycle Direct',
+                      subtitle: 'Client sur place sans l\'application',
                       onTap: () => context.push(AppRoutes.agentSale),
                     ),
                   ),
@@ -190,6 +194,20 @@ class _AgentHomeView extends StatelessWidget {
                       title: 'Historique des dépôts',
                       subtitle: 'Tous les dépôts éffectués',
                       onTap: () => context.push(AppRoutes.agentHistory),
+                    ),
+                  ),
+                  // Pendant de l'historique des dépôts : les deux parcours de
+                  // vente se consultent au même endroit, sinon un cycle direct
+                  // vendu l'avant-veille n'était joignable nulle part —
+                  // « Cycles Directs », dans « En cours », s'arrête à 24 h.
+                  EntranceFade(
+                    index: 9,
+                    child: _Action(
+                      icon: Icons.receipt_long_rounded,
+                      title: 'Historique des Cycles Directs',
+                      subtitle: 'Tous les cycles directs vendus',
+                      onTap: () =>
+                          context.push(AppRoutes.agentDirectCyclesHistory),
                     ),
                   ),
                 ],
@@ -359,7 +377,7 @@ class _CounterSaleCyclesAction extends StatelessWidget {
         // encaissé sans contrepartie. Un cycle qui tourne, ou déjà fini, n'a
         // rien d'anormal.
         accent: toStart > 0 ? AppColors.danger : AppColors.primary,
-        title: 'Mes cycles',
+        title: 'Cycles Directs',
         subtitle: _summary(toStart, running, finished),
         badge: toStart,
         onTap: () async {

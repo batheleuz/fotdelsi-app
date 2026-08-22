@@ -44,12 +44,14 @@ final class PaymentPhoneChanged extends PaymentEvent {
 /// Porte le [machineId] car le bloc ne connaît pas la machine —
 /// seule la page la détient via le paramètre de navigation.
 final class PaymentSubmitted extends PaymentEvent {
-  const PaymentSubmitted({required this.machineId, required this.formulaCode});
+  const PaymentSubmitted({required this.machineId, this.formulaCode});
 
   final String machineId;
 
   /// Prestation choisie — le serveur en déduit le prix via la grille.
-  final String formulaCode;
+  /// `null` = vente à la machine : le scan n'offre aucune prestation à
+  /// choisir, et le prix vient de la machine elle-même.
+  final String? formulaCode;
 
   @override
   List<Object?> get props => [machineId, formulaCode];

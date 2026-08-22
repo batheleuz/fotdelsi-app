@@ -5,6 +5,7 @@ import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 
 import 'api_endpoints.dart';
+import 'rate_limit_interceptor.dart';
 
 /// Fabrique le client HTTP `Dio` configuré pour l'API FOTDELSY.
 ///
@@ -40,6 +41,10 @@ abstract final class DioClient {
     if (token != null) {
       dio.options.headers['Authorization'] = 'Bearer $token';
     }
+
+    // Avant le journal de débogage : un refus de débit rattrapé ici ne doit
+    // pas ressortir comme une erreur dans la console.
+    dio.interceptors.add(RateLimitInterceptor(dio));
 
     if (kDebugMode) {
       dio.interceptors.add(

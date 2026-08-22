@@ -40,6 +40,9 @@ abstract final class AppRoutes {
 
   /// Historique complet des dépôts — tous les jours, tous les statuts.
   static const agentHistory = '/agent/history';
+
+  /// Historique complet des Cycles Directs (ventes au comptoir).
+  static const agentDirectCyclesHistory = '/agent/direct-cycles-history';
   static const agentPendingPayments = '/agent/pending-payments';
   static const agentCycles = '/agent/cycles';
   static const myCycles = '/my-cycles';

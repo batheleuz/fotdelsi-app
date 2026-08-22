@@ -18,13 +18,25 @@ class OrderRecapCard extends StatelessWidget {
     required this.machine,
   });
 
-  final ServiceFormula formula;
+  /// `null` pour une machine scannée : il n'y a pas de prestation, seulement
+  /// un appareil. Le récapitulatif décrit alors la machine.
+  final ServiceFormula? formula;
   final Machine machine;
+
+  /// Ce qu'une machine sait faire, et rien d'autre.
+  ///
+  /// Le scan ne vend pas de prestation composée : ni pliage, ni repassage, ni
+  /// lavage+séchage. On achète l'appareil devant soi, donc son unique usage.
+  static String _prestationDe(Machine machine) =>
+      machine.type == MachineType.dryer ? 'Séchage seul' : 'Lavage seul';
 
   @override
   Widget build(BuildContext context) {
     final size = machine.size;
-    final price = size == null ? null : formula.priceFor(size);
+    final f = formula;
+    final price = f == null
+        ? machine.price.round()
+        : (size == null ? null : f.priceFor(size));
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -35,22 +47,28 @@ class OrderRecapCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Machine scannée : c'est l'appareil qu'on récapitule, puisque c'est
+          // lui qu'on achète. Le titre porte donc son nom, et la ligne du
+          // dessous dit la seule prestation possible — celle que la machine
+          // sait faire.
           _Row(
-            label: formula.label,
-            value: size == null ? machine.name : '$size kg',
+            label: f?.label ?? machine.name,
+            value: f == null
+                ? (size == null ? '' : '$size kg')
+                : (size == null ? machine.name : '$size kg'),
           ),
           const SizedBox(height: 3),
           // Le nom est court par choix : le client doit pouvoir vérifier ce
           // qu'il paie avant de valider.
           Text(
-            formula.composition,
+            f?.composition ?? _prestationDe(machine),
             style: const TextStyle(
               fontSize: 11,
               color: AppColors.textSecondary,
             ),
           ),
           // Prévient avant le paiement : le linge ne repartira pas tout de suite.
-          if (formula.requiresAgent) ...[
+          if (f?.requiresAgent ?? false) ...[
             const SizedBox(height: 6),
             const Text(
               'Linge à remettre au comptoir en fin de cycle.',

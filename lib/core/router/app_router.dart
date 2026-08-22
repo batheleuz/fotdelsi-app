@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/agent_handoffs_page.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/drop_off_history_page.dart';
+import 'package:fotdelsi/features/wash_session/presentation/pages/direct_cycles_history_page.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/pending_payments_page.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/agent_home_page.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/drop_off_queue_page.dart';
@@ -21,7 +22,6 @@ import 'package:fotdelsi/features/client_auth/presentation/pages/client_account_
 import 'package:fotdelsi/features/client_auth/presentation/pages/link_phone_page.dart';
 import 'package:fotdelsi/features/client_auth/presentation/pages/otp_verify_page.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
-import 'package:fotdelsi/features/catalog/presentation/pages/pick_formula_page.dart';
 import 'package:fotdelsi/features/catalog/presentation/pages/pick_machine_page.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:fotdelsi/features/machines/presentation/pages/home_page.dart';
@@ -43,13 +43,19 @@ import 'package:fotdelsi/features/wash_session/presentation/pages/wash_cycles_pa
 /// Une commande libre-service, c'est toujours un couple (prestation, machine).
 /// Les deux parcours n'en changent que l'ordre de saisie : depuis l'accueil on
 /// choisit la formule puis la machine, depuis le QR la machine est déjà connue.
-typedef PaymentArgs = ({ServiceFormula formula, Machine machine});
+/// `formula` à `null` : vente à la machine, arrivée par le scan. Aucune
+/// prestation n'a été choisie — il n'y en avait pas à choisir — et le prix
+/// vient de la machine elle-même.
+typedef PaymentArgs = ({ServiceFormula? formula, Machine machine});
 
 /// Choix de la machine pour une formule déjà sélectionnée.
 typedef PickMachineArgs = ({ServiceFormula formula});
 
 /// Choix de la formule pour une machine déjà identifiée (parcours QR).
-typedef PickFormulaArgs = ({Machine machine});
+// `PickFormulaArgs` retiré avec l'écran qu'il servait : le scan menait au
+// choix d'une prestation, et c'était son seul appelant. On part désormais de
+// la prestation (accueil) ou de la machine (scan) — jamais de la machine VERS
+// la prestation, qui promettait un pliage sur une sécheuse.
 
 /// Navigation centralisée de l'application.
 ///
@@ -121,13 +127,6 @@ abstract final class AppRouter {
         },
       ),
       GoRoute(
-        path: AppRoutes.pickFormula,
-        builder: (context, state) {
-          final args = state.extra! as PickFormulaArgs;
-          return PickFormulaPage(machine: args.machine);
-        },
-      ),
-      GoRoute(
         path: AppRoutes.payment,
         builder: (context, state) {
           final args = state.extra! as PaymentArgs;
@@ -196,6 +195,10 @@ abstract final class AppRouter {
         builder: (context, state) => const DropOffHistoryPage(),
       ),
       GoRoute(
+        path: AppRoutes.agentDirectCyclesHistory,
+        builder: (context, state) => const DirectCyclesHistoryPage(),
+      ),
+      GoRoute(
         path: AppRoutes.agentPendingPayments,
         builder: (context, state) => const PendingPaymentsPage(),
       ),
@@ -204,6 +207,10 @@ abstract final class AppRouter {
         builder: (context, state) => WashCyclesPage(
           createCubit: () => serviceLocator<CounterSaleCyclesCubit>(),
           layout: CyclesLayout.worklist,
+          // Le défaut « Mes cycles » est celui de l'écran CLIENT : sur le
+          // poste agent, ces cycles ne sont pas les siens, ce sont ceux qu'il
+          // a vendus. Même nom que partout ailleurs dans l'espace agent.
+          title: 'Cycles Directs',
           explanation:
               'Ces cycles ont été vendus au comptoir et payés. Chargez le '
               'linge, puis lancez la machine ici.',

@@ -99,9 +99,18 @@ class _BannerState extends State<_Banner> {
     cubit.dismiss(paiement.paymentId);
   }
 
+  /// La réservation ne dure que cinq minutes : sous la minute, afficher
+  /// « 0 min » ferait croire que c'est déjà perdu alors qu'il reste du temps.
+  static String? _dureeDeGarde(Duration? reste) {
+    if (reste == null) return null;
+    final minutes = reste.inMinutes;
+    return minutes < 1 ? 'moins d\'une minute' : '$minutes min';
+  }
+
   @override
   Widget build(BuildContext context) {
     final minutes = paiement.remaining.inMinutes;
+    final garde = _dureeDeGarde(paiement.holdRemaining);
 
     return Container(
       width: double.infinity,
@@ -156,20 +165,38 @@ class _BannerState extends State<_Banner> {
             ),
           ),
 
-          const SizedBox(height: 8),
-          // La réservation dure moins longtemps que le lien. Le taire ferait
-          // payer un client pour une machine qu'un autre a pu prendre.
+          const SizedBox(height: 10),
+          // DEUX échéances, jamais dans la même phrase.
+          //
+          // « Votre machine est réservée. Il vous reste 27 min pour payer. »
+          // se lit comme une machine tenue 27 minutes. Elle l'est cinq. Le
+          // client repartait donc tranquille, et retrouvait sa machine prise.
+          //
+          // Chaque durée porte désormais son propre sujet, et la plus courte
+          // — la seule qui contraigne vraiment — passe en premier, en gras.
           Text(
-            paiement.machineStillHeld
-                ? 'Votre machine est réservée. Il vous reste $minutes min pour payer.'
-                : 'La machine n\'est plus réservée : elle peut être prise par '
-                      'quelqu\'un d\'autre. Il vous reste $minutes min pour payer.',
+            garde == null
+                ? 'La machine n\'est plus réservée'
+                : 'Votre machine est réservée pour encore $garde',
             style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: garde == null
+                  ? AppColors.danger
+                  : const Color(0xFF8A5A0E),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            garde == null
+                ? 'Elle a pu être prise par quelqu\'un d\'autre. '
+                      'Le paiement reste possible pendant $minutes min.'
+                : 'Ensuite, elle peut être prise par quelqu\'un d\'autre. '
+                      'Le paiement, lui, reste possible pendant $minutes min.',
+            style: const TextStyle(
               fontSize: 12,
               height: 1.4,
-              color: paiement.machineStillHeld
-                  ? AppColors.textSecondary
-                  : AppColors.danger,
+              color: AppColors.textSecondary,
             ),
           ),
 

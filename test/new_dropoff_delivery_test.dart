@@ -2,7 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fotdelsi/core/network/failures.dart';
-import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/business_hours.dart';
 import 'package:fotdelsi/features/catalog/domain/repositories/service_formula_repository.dart';
 import 'package:fotdelsi/features/dropoffs/domain/entities/laundry_type.dart';
 import 'package:fotdelsi/features/dropoffs/domain/repositories/drop_off_repository.dart';
@@ -60,9 +60,9 @@ class _StubDropOffs implements DropOffRepository {
 /// canal de paiement, pas sur les formules.
 class _StubFormulas implements ServiceFormulaRepository {
   @override
-  Future<Either<Failure, List<ServiceFormula>>> getFormulas({
+  Future<Either<Failure, ServiceCatalog>> getFormulas({
     bool selfServiceOnly = false,
-  }) async => const Right([]);
+  }) async => const Right(ServiceCatalog(formulas: []));
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
