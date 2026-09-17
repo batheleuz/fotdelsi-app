@@ -12,6 +12,39 @@ import '../cubit/wash_cycles_cubit.dart';
 import 'confirm_start_sheet.dart';
 import 'pick_dryer_sheet.dart';
 
+enum HomeBanner { cycle, handoff, none }
+
+/// Détermine ce que le bandeau d'accueil doit afficher en priorité.
+///
+/// ─── Geste avant consigne ───
+///
+/// Pour une formule avec finition (ex. pliage), le serveur pose le code de
+/// remise dès le paiement confirmé, bien avant que le linge soit lavé.
+/// Si le bandeau affichait ce code immédiatement, le client voyait le code
+/// de remise au lieu du bouton « Démarrer » ou « Sécher » et ne pouvait pas
+/// lancer sa machine depuis l'accueil.
+///
+/// Règle : tant qu'une machine réclame un geste (démarrage, séchage), c'est le
+/// cycle qui s'affiche. La remise ne s'affiche qu'une fois le cycle terminé
+/// (ou si aucune machine n'attend de geste).
+HomeBanner homeBannerFor(WashCyclesState state) {
+  final cycles = state.cycles ?? const [];
+  if (cycles.isEmpty) return HomeBanner.none;
+
+  // Un geste prime : tant qu'une machine reste à démarrer ou à sécher,
+  // le client doit agir dessus avant de penser à la remise.
+  final hasActionable = cycles.any((c) => c.state.needsAction);
+  if (hasActionable) return HomeBanner.cycle;
+
+  // S'il y a une remise dont le cycle est fini (linge prêt à apporter) :
+  final hasFinishedHandoff = cycles.any(
+    (c) => c.state == CycleState.finished && c.handoffCode != null,
+  );
+  if (hasFinishedHandoff) return HomeBanner.handoff;
+
+  return HomeBanner.cycle;
+}
+
 /// Bandeau de cycle en cours, en tête de l'accueil.
 ///
 /// Résumé de « Mes lavages » : il montre le cycle le plus urgent et renvoie
@@ -53,47 +86,47 @@ class ActiveSessionCard extends StatelessWidget {
 
   /// Ce que le bandeau doit montrer, ou `null` s'il n'a rien à dire.
   Widget? _banner(BuildContext context, WashCyclesState state) {
-    // Une remise en attente prime : la finition est payée, et c'est ce
-    // bandeau qui porte le code que l'agent va demander.
-    //
-    // Lu sur le CYCLE, et non sur la session stockée localement : celle-ci ne
-    // couvre que l'achat fait sur ce téléphone, si bien qu'une vente encaissée
-    // au comptoir n'affichait aucune consigne.
-    final handoff = state.awaitingHandoff?.handoffCode;
-    if (handoff != null) return _HandoffCard(code: handoff);
+    return switch (homeBannerFor(state)) {
+      HomeBanner.none => null,
+      HomeBanner.handoff =>
+        state.awaitingHandoff?.handoffCode != null
+            ? _HandoffCard(code: state.awaitingHandoff!.handoffCode!)
+            : null,
+      HomeBanner.cycle => () {
+        final cycle = state.mostUrgent;
+        if (cycle == null) return null;
 
-    final cycle = state.mostUrgent;
-    if (cycle == null) return null;
-
-    return _CycleBanner(
-      cycle: cycle,
-      starting: state.startingToken == cycle.token,
-      // Un seul démarrage à la fois, comme sur l'écran complet.
-      //
-      // Le second temps ne se lance pas comme le premier : `start` relancerait
-      // la LAVEUSE par son jeton, alors qu'il faut désigner une sécheuse.
-      onStart: state.startingToken != null
-          ? null
-          : cycle.state == CycleState.dryingToStart
-          ? () => showPickDryerSheet(
-              context,
-              cycle,
-              cycles: context.read<MyCyclesCubit>(),
-            )
-          : () async {
-              // Confirmation avant tout démarrage physique : un appui
-              // involontaire consommerait le cycle payé sur un tambour vide.
-              final cubit = context.read<MyCyclesCubit>();
-              if (await confirmMachineStart(
-                context,
-                machineName: cycle.machineName,
-              )) {
-                await cubit.start(cycle);
-              }
-            },
-      onOpen: () => context.push(AppRoutes.myCycles),
-      others: state.onHome.length - 1,
-    );
+        return _CycleBanner(
+          cycle: cycle,
+          starting: state.startingToken == cycle.token,
+          // Un seul démarrage à la fois, comme sur l'écran complet.
+          //
+          // Le second temps ne se lance pas comme le premier : `start` relancerait
+          // la LAVEUSE par son jeton, alors qu'il faut désigner une sécheuse.
+          onStart: state.startingToken != null
+              ? null
+              : cycle.state == CycleState.dryingToStart
+              ? () => showPickDryerSheet(
+                  context,
+                  cycle,
+                  cycles: context.read<MyCyclesCubit>(),
+                )
+              : () async {
+                  // Confirmation avant tout démarrage physique : un appui
+                  // involontaire consommerait le cycle payé sur un tambour vide.
+                  final cubit = context.read<MyCyclesCubit>();
+                  if (await confirmMachineStart(
+                    context,
+                    machineName: cycle.machineName,
+                  )) {
+                    await cubit.start(cycle);
+                  }
+                },
+          onOpen: () => context.push(AppRoutes.myCycles),
+          others: state.onHome.length - 1,
+        );
+      }(),
+    };
   }
 }
 
@@ -218,6 +251,7 @@ class _CycleBanner extends StatelessWidget {
     CycleState.failed => 'Le démarrage a échoué',
     CycleState.running => 'Lavage en cours',
     CycleState.dryingToStart => 'Lavage terminé',
+    CycleState.awaitingPickup => 'Cycle terminé',
     CycleState.finished => 'Lavage terminé',
   };
 
@@ -242,6 +276,8 @@ class _CycleBanner extends StatelessWidget {
       // machine arrêtée.
       CycleState.dryingToStart =>
         'Il reste le séchage — sortez votre linge et lancez la sécheuse.',
+      CycleState.awaitingPickup =>
+        'Récupérez votre linge$_machineSuffix.',
       CycleState.finished => 'Récupérez votre linge$_machineSuffix.',
     };
   }

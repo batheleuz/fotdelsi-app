@@ -1,0 +1,21 @@
+steps:
+  - echo: >-
+      La liste complète — en cours et terminés, avec leur durée réelle.
+      Sélecteurs en coordonnées et non en texte : sur iOS le runner de flow lit
+      la hiérarchie UIView projetée, où une app Flutter n'expose qu'une seule
+      vue — voir store-01-accueil.yaml. Les frames viennent de
+      `argent run describe`, qui lit l'arbre d'accessibilité.
+  - launch: sn.fotdelsi.app
+  - wait: 9000
+  - echo: 'Lien « + 1 autre lavage · Voir », bas du bandeau d''accueil.'
+  - tap:
+      x: 0.500
+      y: 0.243
+  - wait: 2000
+  - echo: 'Bouton « Voir tous mes lavages » — frame (0.279, 0.889, 0.442, 0.050).'
+  - tap:
+      x: 0.500
+      y: 0.914
+  - wait: 2500
+  - await:
+      idle: true

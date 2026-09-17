@@ -63,6 +63,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
       provider: state.provider!,
       customerFullName: state.customerFullName.trim(),
       customerPhone: state.phone,
+      dryingDurationMinutes: event.dryingDurationMinutes,
     );
 
     await result.fold(
@@ -70,6 +71,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
         state.copyWith(
           status: PaymentStatus.failure,
           errorMessage: failure.message,
+          errorCode: failure.code,
         ),
       ),
       (session) async {

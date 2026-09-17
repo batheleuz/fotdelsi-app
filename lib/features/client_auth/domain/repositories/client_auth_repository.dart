@@ -26,6 +26,9 @@ abstract interface class ClientAuthRepository {
   /// Délie le numéro : révoque côté backend (best-effort) et purge le stockage.
   Future<void> unlink();
 
+  /// `DELETE /me` — supprime définitivement le compte client et purge la session.
+  Future<Either<Failure, void>> deleteAccount();
+
   /// `GET /me/profile` — identité du client authentifié.
   Future<Either<Failure, ClientProfile>> profile();
 

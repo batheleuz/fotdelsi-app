@@ -36,7 +36,7 @@ class _EditLaundrySheetState extends State<EditLaundrySheet> {
     super.dispose();
   }
 
-  bool get _valid => _pieces >= 1 && _types.isNotEmpty;
+  bool get _valid => _pieces >= 0;
 
   @override
   Widget build(BuildContext context) {

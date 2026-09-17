@@ -11,13 +11,14 @@ final class NewDropOffState extends Equatable {
     this.step = 0,
     this.contactPhone = '',
     this.customerName = '',
-    this.pieces = 1,
+    this.pieces = 0,
     this.types = const {},
     this.instructions = '',
     this.formulas = const [],
     this.formulasStatus = LoadStatus.initial,
     this.formulaCode,
     this.sizeKg,
+    this.dryingTier = DryingDurationTier.defaultTier,
     this.provider,
     this.draftId,
     this.delivery = PaymentDelivery.notify,
@@ -42,6 +43,7 @@ final class NewDropOffState extends Equatable {
   /// Formule et capacité choisies — le seul couple transmis au serveur.
   final String? formulaCode;
   final int? sizeKg;
+  final DryingDurationTier dryingTier;
 
   final PaymentProvider? provider;
 
@@ -69,12 +71,16 @@ final class NewDropOffState extends Equatable {
     return null;
   }
 
+  bool get hasDrying => selectedFormula?.includesDrying ?? false;
+
   /// Montant affiché, lu dans la grille. Purement indicatif : le serveur
   /// retarifie de son côté et c'est son prix qui fait foi.
   int? get total {
     final formula = selectedFormula;
     if (formula == null || sizeKg == null) return null;
-    return formula.priceFor(sizeKg!);
+    final base = formula.priceFor(sizeKg!);
+    if (base == null) return null;
+    return hasDrying ? base + dryingTier.priceAdjustment : base;
   }
 
   /// Capacités proposées pour la formule choisie.
@@ -87,7 +93,7 @@ final class NewDropOffState extends Equatable {
 
   bool get isPhoneValid => _phoneRegex.hasMatch(contactPhone);
   bool get canLeaveClient => isPhoneValid && customerName.trim().isNotEmpty;
-  bool get canLeaveLaundry => pieces >= 1 && types.isNotEmpty;
+  bool get canLeaveLaundry => true;
   bool get canSubmit =>
       formulaCode != null && sizeKg != null && provider != null;
   bool get isSubmitting => submitStatus == SubmitStatus.loading;
@@ -103,6 +109,7 @@ final class NewDropOffState extends Equatable {
     LoadStatus? formulasStatus,
     String? formulaCode,
     int? sizeKg,
+    DryingDurationTier? dryingTier,
     PaymentProvider? provider,
     String? draftId,
     PaymentDelivery? delivery,
@@ -123,6 +130,7 @@ final class NewDropOffState extends Equatable {
       formulasStatus: formulasStatus ?? this.formulasStatus,
       formulaCode: formulaCode ?? this.formulaCode,
       sizeKg: clearSize ? null : (sizeKg ?? this.sizeKg),
+      dryingTier: dryingTier ?? this.dryingTier,
       provider: provider ?? this.provider,
       draftId: draftId ?? this.draftId,
       delivery: delivery ?? this.delivery,
@@ -144,6 +152,7 @@ final class NewDropOffState extends Equatable {
     formulasStatus,
     formulaCode,
     sizeKg,
+    dryingTier,
     provider,
     draftId,
     delivery,

@@ -65,6 +65,11 @@ class ClientAuthApiDataSource {
     await _dio.post<dynamic>(ApiEndpoints.clientLogout);
   }
 
+  /// `DELETE /me` — suppression définitive du compte client.
+  Future<void> deleteAccount() async {
+    await _dio.delete<dynamic>(ApiEndpoints.clientAccount);
+  }
+
   /// `GET /me/profile` — identité du client authentifié.
   Future<ClientProfile> getProfile() async {
     final resp = await _dio.get<Map<String, dynamic>>(

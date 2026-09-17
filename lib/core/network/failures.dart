@@ -5,16 +5,20 @@ import 'package:equatable/equatable.dart';
 /// Messages déjà prêts à afficher à l'utilisateur. La présentation
 /// n'a jamais à manipuler de codes HTTP ni d'exceptions techniques.
 sealed class Failure extends Equatable {
-  const Failure(this.message);
+  const Failure(this.message, [this.code]);
 
   final String message;
+  final String? code;
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, code];
 }
 
 final class ServerFailure extends Failure {
-  const ServerFailure([super.message = 'Erreur serveur, réessayez plus tard.']);
+  const ServerFailure([
+    super.message = 'Erreur serveur, réessayez plus tard.',
+    super.code,
+  ]);
 }
 
 final class NetworkFailure extends Failure {

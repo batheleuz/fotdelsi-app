@@ -22,6 +22,7 @@ class PaymentApiDataSource {
     required String customerFullName,
     required String customerPhone,
     bool atCounter = false,
+    int? dryingDurationMinutes,
   }) async {
     try {
       final response = await _dio.post<dynamic>(
@@ -36,6 +37,7 @@ class PaymentApiDataSource {
           'customerFullName': customerFullName,
           'customerPhone': normalizePhone(customerPhone),
           'purpose': "SELF_SERVICE",
+          'dryingDurationMinutes': ?dryingDurationMinutes,
           // Déclare une vente au comptoir. Ne transmet aucune identité : le
           // serveur exige alors un jeton d'agent valide et refuse sinon.
           // C'est ce qui empêche une vente de devenir anonyme quand le jeton
@@ -50,6 +52,20 @@ class PaymentApiDataSource {
       return PaymentSessionModel.fromJson(
         apiResponse.data as Map<String, dynamic>,
       );
+    } on DioException catch (e) {
+      throw AppException.fromDio(e);
+    }
+  }
+
+  /// `GET /payments/:id/status` — vérifie si le paiement est confirmé.
+  Future<bool> isPaymentConfirmed(String paymentId) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        ApiEndpoints.paymentStatus(paymentId),
+      );
+      final json = response.data as Map<String, dynamic>;
+      final data = json['data'] as Map<String, dynamic>?;
+      return (data?['confirmed'] as bool?) ?? false;
     } on DioException catch (e) {
       throw AppException.fromDio(e);
     }

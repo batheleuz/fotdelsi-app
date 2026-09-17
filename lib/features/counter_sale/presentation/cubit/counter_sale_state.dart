@@ -33,6 +33,7 @@ final class CounterSaleState extends Equatable {
     this.machines = const [],
     this.formulaCode,
     this.machine,
+    this.dryingTier = DryingDurationTier.defaultTier,
     this.customerName = '',
     this.customerPhone = '',
     this.provider,
@@ -54,6 +55,7 @@ final class CounterSaleState extends Equatable {
 
   final String? formulaCode;
   final Machine? machine;
+  final DryingDurationTier dryingTier;
   final String customerName;
   final String customerPhone;
   final PaymentProvider? provider;
@@ -73,12 +75,20 @@ final class CounterSaleState extends Equatable {
     return null;
   }
 
+  bool get hasDrying =>
+      selectedFormula?.includesDrying ?? (machine?.type == MachineType.dryer);
+
   /// Montant affiché, lu dans la grille. Indicatif : le serveur retarife.
   int? get total {
     final formula = selectedFormula;
     final size = machine?.size;
+    if (machine?.type == MachineType.dryer) {
+      return dryingTier.price;
+    }
     if (formula == null || size == null) return null;
-    return formula.priceFor(size);
+    final base = formula.priceFor(size);
+    if (base == null) return null;
+    return hasDrying ? base + dryingTier.priceAdjustment : base;
   }
 
   /// Lien de paiement à encoder en QR, une fois la vente initiée.
@@ -119,6 +129,7 @@ final class CounterSaleState extends Equatable {
     String? formulaCode,
     Machine? machine,
     bool clearMachine = false,
+    DryingDurationTier? dryingTier,
     String? customerName,
     String? customerPhone,
     PaymentProvider? provider,
@@ -134,6 +145,7 @@ final class CounterSaleState extends Equatable {
       machines: machines ?? this.machines,
       formulaCode: formulaCode ?? this.formulaCode,
       machine: clearMachine ? null : (machine ?? this.machine),
+      dryingTier: dryingTier ?? this.dryingTier,
       customerName: customerName ?? this.customerName,
       customerPhone: customerPhone ?? this.customerPhone,
       provider: provider ?? this.provider,
@@ -151,6 +163,7 @@ final class CounterSaleState extends Equatable {
     machines,
     formulaCode,
     machine,
+    dryingTier,
     customerName,
     customerPhone,
     provider,

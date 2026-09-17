@@ -92,6 +92,16 @@ class WashSessionRepositoryImpl implements WashSessionRepository {
   }
 
   @override
+  Future<Either<Failure, void>> confirmPickup(String washSessionToken) async {
+    try {
+      await _api.confirmPickup(washSessionToken);
+      return const Right(null);
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
   Stream<SessionStatusResult> watchSessionStatus(String washSessionToken) =>
       _socket.watchStatus(washSessionToken).map(_toResult);
 

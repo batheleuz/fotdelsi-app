@@ -21,7 +21,8 @@ abstract final class PendingDropOffPaymentModel {
       formulaLabel: json['formulaLabel'] as String?,
       sizeKg: (json['sizeKg'] as num?)?.toInt(),
       machineId: json['machineId'] as String?,
-      machineName: json['machineName'] as String?,
+      machineName: json['machineName'] as String? ??
+          (json['machine'] as Map<String, dynamic>?)?['name'] as String?,
       washSessionToken: json['washSessionToken'] as String?,
       provider: json['provider'] as String?,
       redirectUrl: json['redirectUrl'] as String?,

@@ -112,7 +112,7 @@ class _NewDropOffView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Nouveau dépôt',
+            'Enregistrer un dépôt',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           Text(

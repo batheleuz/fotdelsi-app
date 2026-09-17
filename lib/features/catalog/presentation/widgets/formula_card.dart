@@ -36,7 +36,7 @@ class FormulaCard extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: InkWell(
-          onTap: onTap,
+          onTap: available ? onTap : null,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

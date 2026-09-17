@@ -18,6 +18,8 @@ import '../bloc/payment_state.dart';
 import 'package:fotdelsi/features/wash_session/presentation/cubit/wash_session_cubit.dart';
 import '../utils/payment_launcher.dart';
 import '../utils/payment_provider_presentation.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
+import 'package:fotdelsi/features/payment/presentation/widgets/drying_duration_sheet.dart';
 import '../widgets/order_recap_card.dart';
 import '../widgets/payment_provider_card.dart';
 import 'package:fotdelsi/features/service_status/presentation/widgets/service_status_banner.dart';
@@ -25,6 +27,7 @@ import '../widgets/payment_redirect_hint.dart';
 import '../widgets/phone_number_field.dart';
 import 'package:fotdelsi/features/client_auth/presentation/widgets/link_phone_sheet.dart';
 import 'package:fotdelsi/features/client_auth/presentation/cubit/client_session_cubit.dart';
+import 'package:fotdelsi/features/wash_session/presentation/widgets/unconsumed_purchase_sheet.dart';
 
 class PaymentPage extends StatelessWidget {
   const PaymentPage({super.key, required this.formula, required this.machine});
@@ -45,16 +48,56 @@ class PaymentPage extends StatelessWidget {
   }
 }
 
-class _PaymentView extends StatelessWidget {
+class _PaymentView extends StatefulWidget {
   const _PaymentView({required this.formula, required this.machine});
 
   final ServiceFormula? formula;
   final Machine machine;
 
   @override
+  State<_PaymentView> createState() => _PaymentViewState();
+}
+
+class _PaymentViewState extends State<_PaymentView> {
+  DryingDurationTier _dryingTier = DryingDurationTier.defaultTier;
+  bool _hasManuallySelectedTier = false;
+
+  bool get _hasDrying =>
+      widget.formula?.includesDrying ??
+      (widget.machine.type == MachineType.dryer);
+
+  Future<void> _selectDryingTier() async {
+    final chosen = await showDryingDurationSheet(
+      context,
+      currentTier: _dryingTier,
+      isFormula: widget.formula != null,
+    );
+    if (chosen != null && mounted) {
+      setState(() {
+        _dryingTier = chosen;
+        _hasManuallySelectedTier = true;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final bloc = context.read<PaymentBloc>();
-    final machineSize = machine.size;
+    final machineSize = widget.machine.size;
+    final formula = widget.formula;
+    final machine = widget.machine;
+
+    int? total;
+    if (formula == null) {
+      total = machine.type == MachineType.dryer
+          ? _dryingTier.price
+          : machine.price.round();
+    } else if (machineSize != null) {
+      final base = formula.priceFor(machineSize);
+      if (base != null) {
+        total = _hasDrying ? base + _dryingTier.priceAdjustment : base;
+      }
+    }
 
     return Scaffold(
       bottomNavigationBar: const ServiceStatusBanner(),
@@ -75,14 +118,24 @@ class _PaymentView extends StatelessWidget {
               // Retour à l'accueil — la bannière prendra le relais.
               if (context.mounted) context.go(AppRoutes.home);
             } else if (state.status == PaymentStatus.failure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    state.errorMessage ?? 'Paiement impossible. Réessayez.',
+              if (state.isUnconsumedPurchase) {
+                final started = await showUnconsumedPurchaseSheet(
+                  context,
+                  message: state.errorMessage ?? '',
+                );
+                if (started && context.mounted) {
+                  context.go(AppRoutes.home);
+                }
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      state.errorMessage ?? 'Paiement impossible. Réessayez.',
+                    ),
+                    backgroundColor: AppColors.danger,
                   ),
-                  backgroundColor: AppColors.danger,
-                ),
-              );
+                );
+              }
             }
           },
           child: Column(
@@ -104,7 +157,13 @@ class _PaymentView extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          OrderRecapCard(formula: formula, machine: machine),
+                          OrderRecapCard(
+                            formula: formula,
+                            machine: machine,
+                            dryingTier: _hasDrying ? _dryingTier : null,
+                            onSelectDryingTier:
+                                _hasDrying ? _selectDryingTier : null,
+                          ),
                           const SizedBox(height: AppSpacing.lg),
 
                           const _SectionLabel('Votre nom complet'),
@@ -150,24 +209,7 @@ class _PaymentView extends StatelessWidget {
               ),
               BlocBuilder<PaymentBloc, PaymentState>(
                 builder: (context, state) => _PayBar(
-                  // Prix de la GRILLE (formule x capacité), plus celui porté
-                  // par la machine. Depuis le passage au catalogue, c'est la
-                  // formule qui fixe le tarif : `machine.price` décrivait un
-                  // cycle simple et affichait donc un montant que le serveur
-                  // n'aurait pas facturé.
-                  //
-                  // `null` si la capacité est inconnue ou non tarifée — la
-                  // barre l'annonce alors comme telle plutôt que d'inventer.
-                  //
-                  // Vente à la machine : la grille ne s'applique pas, et ne
-                  // pourrait pas — une sécheuse n'a pas de capacité en kg.
-                  // C'est le prix de l'appareil qui fait foi, ici comme sur
-                  // le serveur.
-                  total: formula == null
-                      ? machine.price.round()
-                      : (machineSize == null
-                            ? null
-                            : formula!.priceFor(machineSize)),
+                  total: total,
                   state: state,
                   onPay: () async {
                     // Le numéro est exigé AVANT de payer, pas après : une fois
@@ -177,10 +219,28 @@ class _PaymentView extends StatelessWidget {
                     if (!await _ensurePhoneLinked(context)) return;
                     if (!context.mounted) return;
 
+                    var tierToUse = _dryingTier;
+                    if (_hasDrying && !_hasManuallySelectedTier) {
+                      final chosen = await showDryingDurationSheet(
+                        context,
+                        currentTier: _dryingTier,
+                        isFormula: formula != null,
+                      );
+                      if (chosen == null) return;
+                      if (!mounted) return;
+                      setState(() {
+                        _dryingTier = chosen;
+                        _hasManuallySelectedTier = true;
+                      });
+                      tierToUse = chosen;
+                    }
+
                     bloc.add(
                       PaymentSubmitted(
                         machineId: machine.id,
                         formulaCode: formula?.code,
+                        dryingDurationMinutes:
+                            _hasDrying ? tierToUse.minutes : null,
                       ),
                     );
                   },

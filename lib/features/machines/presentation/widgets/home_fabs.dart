@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
-import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/features/wash_session/domain/entities/wash_cycle.dart';
@@ -41,8 +39,8 @@ class HomeFabs extends StatelessWidget {
           _SessionFab(cycle: suivi),
           const SizedBox(height: AppSpacing.sm),
         ],
-        // FAB scan — toujours présent
-        _ScanFab(),
+        // FAB scan — commenté car déjà présent dans le corps de la page
+        // _ScanFab(),
       ],
     );
   }
@@ -82,22 +80,19 @@ class _SessionFab extends StatelessWidget {
   }
 }
 
-class _ScanFab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // Étendu, et non plus un rond muet : une icône seule n'apprend pas qu'on
-    // peut partir de la machine au lieu de la prestation. Le raccourci
-    // existait, personne ne le trouvait.
-    return FloatingActionButton.extended(
-      heroTag: 'scan_fab',
-      onPressed: () => context.push(AppRoutes.scan),
-      backgroundColor: AppColors.primary,
-      foregroundColor: Colors.white,
-      icon: const Icon(Icons.qr_code_scanner_rounded),
-      label: const Text(
-        'Scanner une machine',
-        style: TextStyle(fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-}
+// class _ScanFab extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return FloatingActionButton.extended(
+//       heroTag: 'scan_fab',
+//       onPressed: () => context.push(AppRoutes.scan),
+//       backgroundColor: AppColors.primary,
+//       foregroundColor: Colors.white,
+//       icon: const Icon(Icons.qr_code_scanner_rounded),
+//       label: const Text(
+//         'Scanner une machine',
+//         style: TextStyle(fontWeight: FontWeight.w600),
+//       ),
+//     );
+//   }
+// }

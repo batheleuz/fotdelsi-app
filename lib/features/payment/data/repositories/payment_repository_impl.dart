@@ -22,6 +22,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     required String customerFullName,
     required String customerPhone,
     bool atCounter = false,
+    int? dryingDurationMinutes,
   }) async {
     try {
       final model = await _api.initiatePayment(
@@ -31,6 +32,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
         customerFullName: customerFullName,
         customerPhone: customerPhone,
         atCounter: atCounter,
+        dryingDurationMinutes: dryingDurationMinutes,
       );
       return Right(model.toEntity());
     } catch (e) {
@@ -64,6 +66,15 @@ class PaymentRepositoryImpl implements PaymentRepository {
         delivery: delivery,
       );
       return Right(model.toEntity());
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> isPaymentConfirmed(String paymentId) async {
+    try {
+      return Right(await _api.isPaymentConfirmed(paymentId));
     } catch (e) {
       return Left(mapExceptionToFailure(e));
     }

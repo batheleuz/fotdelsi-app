@@ -90,7 +90,7 @@ class _AgentHomeView extends StatelessWidget {
 
                   const EntranceFade(
                     index: 1,
-                    child: _SectionLabel('Que voulez-vous faire ?'),
+                    child: _SectionLabel('Nouvelle opération'),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   EntranceFade(
@@ -102,8 +102,8 @@ class _AgentHomeView extends StatelessWidget {
                       // nomment ce qu'on crée, pas le geste commercial. « Vendre
                       // un cycle » désignait la même chose sous un troisième
                       // nom, après « vente au comptoir ».
-                      title: 'Cycle Direct',
-                      subtitle: 'Client sur place sans l\'application',
+                      title: 'Lancer un cycle',
+                      subtitle: 'Client sur place, sans réservation',
                       onTap: () => context.push(AppRoutes.agentSale),
                     ),
                   ),
@@ -111,8 +111,8 @@ class _AgentHomeView extends StatelessWidget {
                     index: 3,
                     child: _Action(
                       icon: Icons.add_rounded,
-                      title: 'Nouveau dépôt',
-                      subtitle: 'Le client confie son linge',
+                      title: 'Enregistrer un dépôt',
+                      subtitle: 'Prendre en charge le linge d\'un client',
                       onTap: () async {
                         await context.push(AppRoutes.agentNewDropOff);
                         if (context.mounted) {
@@ -129,8 +129,8 @@ class _AgentHomeView extends StatelessWidget {
                     index: 4,
                     child: _Action(
                       icon: Icons.search_rounded,
-                      title: 'Rechercher un code',
-                      subtitle: 'Retrait ou remise de linge',
+                      title: 'Rechercher une commande',
+                      subtitle: 'Par code client ou numéro de commande',
                       onTap: () => context.push(AppRoutes.agentSearch),
                     ),
                   ),
@@ -138,14 +138,14 @@ class _AgentHomeView extends StatelessWidget {
                   const SizedBox(height: AppSpacing.lg),
                   const EntranceFade(
                     index: 5,
-                    child: _SectionLabel('En cours'),
+                    child: _SectionLabel('À traiter'),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   EntranceFade(
                     index: 6,
                     child: _Action(
                       icon: Icons.list_alt_rounded,
-                      title: 'File d\'attente',
+                      title: 'Dépôts à traiter',
                       subtitle: queue == null
                           ? 'Chargement…'
                           : _queueSummary(
@@ -191,8 +191,8 @@ class _AgentHomeView extends StatelessWidget {
                     index: 8,
                     child: _Action(
                       icon: Icons.history_rounded,
-                      title: 'Historique des dépôts',
-                      subtitle: 'Tous les dépôts éffectués',
+                      title: 'Historique des commandes',
+                      subtitle: 'Toutes les commande enregistrées',
                       onTap: () => context.push(AppRoutes.agentHistory),
                     ),
                   ),
@@ -204,8 +204,8 @@ class _AgentHomeView extends StatelessWidget {
                     index: 9,
                     child: _Action(
                       icon: Icons.receipt_long_rounded,
-                      title: 'Historique des Cycles Directs',
-                      subtitle: 'Tous les cycles directs vendus',
+                      title: 'Historique des Cycles',
+                      subtitle: 'Tous les cycles réalisés',
                       onTap: () =>
                           context.push(AppRoutes.agentDirectCyclesHistory),
                     ),
@@ -377,7 +377,7 @@ class _CounterSaleCyclesAction extends StatelessWidget {
         // encaissé sans contrepartie. Un cycle qui tourne, ou déjà fini, n'a
         // rien d'anormal.
         accent: toStart > 0 ? AppColors.danger : AppColors.primary,
-        title: 'Cycles Directs',
+        title: 'Cycles en cours',
         subtitle: _summary(toStart, running, finished),
         badge: toStart,
         onTap: () async {

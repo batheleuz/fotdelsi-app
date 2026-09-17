@@ -48,7 +48,7 @@ class _DirectCyclesHistoryViewState extends State<_DirectCyclesHistoryView> {
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        title: const Text('Historique Cycles Directs'),
+        title: const Text('Historique des Cycles'),
       ),
       body: SafeArea(
         top: false,
@@ -135,8 +135,8 @@ class _DirectCyclesHistoryViewState extends State<_DirectCyclesHistoryView> {
                     }
                     return const _HistoryMessage(
                       icon: Icons.inbox_rounded,
-                      title: 'Aucun Cycle Direct',
-                      body: 'Les cycles directs enregistrés apparaîtront ici.',
+                      title: 'Aucun cycle',
+                      body: 'Les cycles enregistrés apparaîtront ici.',
                     );
                   }
 
@@ -314,6 +314,11 @@ class _StatusBadge extends StatelessWidget {
       ),
       CycleState.dryingToStart => (
         'Séchage à lancer',
+        const Color(0xFF8A6100),
+        const Color(0xFFFFF5E0),
+      ),
+      CycleState.awaitingPickup => (
+        'Linge à récupérer',
         const Color(0xFF8A6100),
         const Color(0xFFFFF5E0),
       ),

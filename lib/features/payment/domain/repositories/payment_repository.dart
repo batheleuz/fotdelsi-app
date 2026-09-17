@@ -26,6 +26,7 @@ abstract interface class PaymentRepository {
     /// Vente au comptoir par un agent, pour un client sans application.
     /// Le serveur exigera alors un jeton d'agent valide.
     bool atCounter,
+    int? dryingDurationMinutes,
   });
 
   /// Initie un paiement de dépôt (`purpose: DROP_OFF`). Le montant n'est pas
@@ -49,4 +50,9 @@ abstract interface class PaymentRepository {
     required String customerPhone,
     required PaymentDelivery delivery,
   });
+
+  /// Interroge le serveur pour savoir si le paiement est confirmé.
+  ///
+  /// Utilisé pour la surveillance en temps réel par QR code (dépôt ou direct).
+  Future<Either<Failure, bool>> isPaymentConfirmed(String paymentId);
 }

@@ -14,6 +14,7 @@ final class PaymentState extends Equatable {
     this.customerFullName = '',
     this.session,
     this.errorMessage,
+    this.errorCode,
   });
 
   final PaymentStatus status;
@@ -26,6 +27,7 @@ final class PaymentState extends Equatable {
 
   /// Renseigné en cas d'échec de l'appel API.
   final String? errorMessage;
+  final String? errorCode;
 
   /// Numéro sénégalais : 9 chiffres (ex. 771234567).
   bool get isPhoneValid => RegExp(r'^\d{9}$').hasMatch(phone);
@@ -40,6 +42,9 @@ final class PaymentState extends Equatable {
 
   bool get isProcessing => status == PaymentStatus.processing;
 
+  bool get isUnconsumedPurchase =>
+      status == PaymentStatus.failure && errorCode == 'UNCONSUMED_PURCHASE';
+
   PaymentState copyWith({
     PaymentStatus? status,
     PaymentProvider? provider,
@@ -47,14 +52,17 @@ final class PaymentState extends Equatable {
     String? customerFullName,
     PaymentSession? session,
     String? errorMessage,
+    String? errorCode,
   }) {
+    final isProcessing = (status ?? this.status) == PaymentStatus.processing;
     return PaymentState(
       status: status ?? this.status,
       provider: provider ?? this.provider,
       phone: phone ?? this.phone,
       customerFullName: customerFullName ?? this.customerFullName,
       session: session ?? this.session,
-      errorMessage: errorMessage,
+      errorMessage: isProcessing ? errorMessage : (errorMessage ?? this.errorMessage),
+      errorCode: isProcessing ? errorCode : (errorCode ?? this.errorCode),
     );
   }
 
@@ -66,5 +74,6 @@ final class PaymentState extends Equatable {
     customerFullName,
     session,
     errorMessage,
+    errorCode,
   ];
 }

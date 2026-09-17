@@ -186,7 +186,7 @@ class _DirectCycleQrSheetState extends State<DirectCycleQrSheet> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
-                  'Cycle Direct',
+                  'Cycle',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,

@@ -10,7 +10,6 @@ import 'package:fotdelsi/core/motion/entrance.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import '../../domain/entities/drop_off.dart';
 import '../cubit/my_dropoffs_cubit.dart';
-import '../utils/relative_time.dart';
 import '../widgets/drop_off_status_badge.dart';
 
 /// Historique des dépôts du client lié.
@@ -156,14 +155,16 @@ class _MyDropOffCard extends StatelessWidget {
                     color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 1),
-                Text(
-                  'déposé ${relativeTimeFr(dropOff.receivedAt)}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textTertiary,
+                if (dropOff.receivedLabel case final label?) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textTertiary,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),

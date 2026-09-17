@@ -28,16 +28,24 @@ enum CycleState {
   /// devant une machine arrêtée.
   dryingToStart,
 
+  /// Fin PRÉSUMÉE : le serveur pense que le cycle est terminé, mais aucune
+  /// machine ne le confirme. Le client doit vérifier et récupérer son linge.
+  awaitingPickup,
+
   /// Terminé.
   finished;
 
   /// [canStartDrying] vient du serveur : le statut seul ne suffit pas, la
   /// session reste `RUNNING` pendant tout le temps mort entre les deux temps.
+  /// [awaitingPickup] signale que le cycle est présumé terminé : le client
+  /// doit confirmer avoir récupéré son linge.
   static CycleState fromApi(
     String? sessionStatus, {
     bool canStartDrying = false,
+    bool awaitingPickup = false,
   }) {
     if (canStartDrying) return CycleState.dryingToStart;
+    if (awaitingPickup) return CycleState.awaitingPickup;
 
     return switch (sessionStatus) {
       'RUNNING' => CycleState.running,
@@ -52,7 +60,10 @@ enum CycleState {
 
   /// Réclame un geste maintenant.
   bool get needsAction =>
-      this == toStart || this == failed || this == dryingToStart;
+      this == toStart ||
+      this == failed ||
+      this == dryingToStart ||
+      this == awaitingPickup;
 }
 
 /// Cycle vendu au comptoir pour un client sans application.

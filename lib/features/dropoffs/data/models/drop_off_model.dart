@@ -26,11 +26,14 @@ abstract final class DropOffModel {
       dryCompletedAt: _date(json['dryCompletedAt']),
       paymentId: json['paymentId'] as String? ?? '',
       creationDay: json['creationDay'] as String? ?? '',
-      receivedAt: _date(json['receivedAt']) ?? DateTime.now(),
+      receivedAt: _date(json['receivedAt']),
       startedAt: _date(json['startedAt']),
       readyAt: _date(json['readyAt']),
       collectedAt: _date(json['collectedAt']),
       terminalReason: json['terminalReason'] as String?,
+      clientCycleFinished: json['clientCycleFinished'] as bool?,
+      clientCycleFinishedAt: _date(json['clientCycleFinishedAt']),
+      awaitingPickup: json['awaitingPickup'] as bool? ?? false,
     );
   }
 

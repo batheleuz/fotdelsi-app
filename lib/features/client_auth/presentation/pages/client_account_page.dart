@@ -21,6 +21,15 @@ class ClientAccountPage extends StatefulWidget {
 
 class _ClientAccountPageState extends State<ClientAccountPage> {
   bool _unlinking = false;
+  bool _deleting = false;
+
+  static const _messageSuppression =
+      'Tout sera définitivement effacé de nos serveurs : votre numéro, votre '
+      'nom, vos notifications, vos dépôts, vos lavages et vos paiements.\n\n'
+      'Y compris ce qui est en cours : un dépôt non encore récupéré, du linge '
+      'prêt qui vous attend, un paiement réglé dont le lavage n\'a pas encore '
+      'été lancé. La laverie n\'aura plus aucune trace reliant ce linge à votre '
+      'numéro.\n\nCette action est irréversible.';
 
   Future<void> _confirmUnlink() async {
     final ok = await showAppConfirmationDialog(
@@ -41,6 +50,38 @@ class _ClientAccountPageState extends State<ClientAccountPage> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(const SnackBar(content: Text('Numéro déconnecté')));
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final ok = await showAppConfirmationDialog(
+      context: context,
+      title: 'Supprimer mon compte ?',
+      message: _messageSuppression,
+      confirmLabel: 'Tout supprimer',
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
+
+    setState(() => _deleting = true);
+    final success = await context.read<ClientSessionCubit>().deleteAccount();
+    if (!mounted) return;
+    setState(() => _deleting = false);
+
+    if (success) {
+      context.go(AppRoutes.home);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Compte supprimé')));
+    } else {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Impossible de supprimer le compte pour le moment.'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+    }
   }
 
   @override
@@ -152,6 +193,30 @@ class _ClientAccountPageState extends State<ClientAccountPage> {
                     loading: _unlinking,
                     backgroundColor: AppColors.danger,
                     onPressed: _confirmUnlink,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: (_unlinking || _deleting) ? null : _confirmDeleteAccount,
+                      icon: _deleting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.danger,
+                              ),
+                            )
+                          : const Icon(Icons.delete_outline, size: 18, color: AppColors.danger),
+                      label: const Text(
+                        'Supprimer mon compte',
+                        style: TextStyle(
+                          color: AppColors.danger,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),

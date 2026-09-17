@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
+import 'package:fotdelsi/core/utils/phone_number.dart';
 import '../../domain/entities/drop_off.dart';
 import '../../domain/entities/drop_off_status.dart';
 import '../utils/relative_time.dart';
@@ -72,6 +73,16 @@ class DropOffQueueCard extends StatelessWidget {
                 color: AppColors.textPrimary,
               ),
             ),
+            if (dropOff.contactPhone.isNotEmpty) ...[
+              const SizedBox(height: 1),
+              Text(
+                displayPhone(dropOff.contactPhone),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
             const SizedBox(height: 2),
             Text(
               _subtitle(),
@@ -122,8 +133,9 @@ class DropOffQueueCard extends StatelessWidget {
 
   String _footer() => switch (dropOff.status) {
     DropOffStatus.awaitingHandoff =>
-      'payé ${relativeTimeFr(dropOff.receivedAt)}',
-    DropOffStatus.received => 'déposé ${relativeTimeFr(dropOff.receivedAt)}',
+      dropOff.receivedAt != null ? 'payé ${relativeTimeFr(dropOff.receivedAt!)}' : '',
+    DropOffStatus.received =>
+      dropOff.receivedAt != null ? 'déposé ${relativeTimeFr(dropOff.receivedAt!)}' : '',
     DropOffStatus.inProgress =>
       dropOff.startedAt != null
           ? 'démarré ${relativeTimeFr(dropOff.startedAt!)}'

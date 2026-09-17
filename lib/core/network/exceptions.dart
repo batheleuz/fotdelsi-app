@@ -8,10 +8,11 @@ import 'package:dio/dio.dart';
 /// volontairement Exception (technique, couche data) et Failure (métier,
 /// remontée à la présentation).
 sealed class AppException implements Exception {
-  const AppException(this.message, {this.statusCode});
+  const AppException(this.message, {this.statusCode, this.code});
 
   final String message;
   final int? statusCode;
+  final String? code;
 
   /// Traduit une [DioException] en exception applicative typée.
   factory AppException.fromDio(DioException e) {
@@ -24,6 +25,7 @@ sealed class AppException implements Exception {
       case DioExceptionType.badResponse:
         final code = e.response?.statusCode;
         final serverMessage = _extractMessage(e.response?.data);
+        final errorCode = _extractCode(e.response?.data);
         return switch (code) {
           401 || 403 => UnauthorizedException(message: serverMessage),
           404 => const NotFoundException(),
@@ -31,8 +33,9 @@ sealed class AppException implements Exception {
           final c? when c >= 400 && c < 500 => ServerException(
             message: serverMessage,
             statusCode: c,
+            code: errorCode,
           ),
-          _ => ServerException(statusCode: code),
+          _ => ServerException(statusCode: code, code: errorCode),
         };
 
       case DioExceptionType.connectionError:
@@ -61,10 +64,22 @@ sealed class AppException implements Exception {
     if (error is String) return error;
     return null;
   }
+
+  static String? _extractCode(Object? data) {
+    if (data is! Map) return null;
+    final error = data['error'];
+    if (error is Map && error['code'] is String) {
+      return error['code'] as String;
+    }
+    if (data['code'] is String) {
+      return data['code'] as String;
+    }
+    return null;
+  }
 }
 
 final class ServerException extends AppException {
-  const ServerException({String? message, super.statusCode})
+  const ServerException({String? message, super.statusCode, super.code})
     : super(message ?? 'Erreur serveur.');
 }
 

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import '../../cubit/counter_sale_cubit.dart';
 import '../sale_choice_tile.dart';
@@ -69,6 +70,24 @@ class SaleServiceStep extends StatelessWidget {
                 selected: state.machine?.id == m.id,
                 onTap: () => cubit.selectMachine(m),
               ),
+
+          if (state.hasDrying) ...[
+            const SizedBox(height: AppSpacing.md),
+            const _Label('Durée de séchage'),
+            const SizedBox(height: AppSpacing.sm),
+            for (final tier in DryingDurationTier.values)
+              SaleChoiceTile(
+                title: tier.label,
+                subtitle: '${tier.pulses ~/ 100} pièce(s) · ${tier.pulses} pulses',
+                trailing: tier.priceAdjustment == 0
+                    ? 'Inclus'
+                    : (tier.priceAdjustment > 0
+                        ? '+${formatFcfa(tier.priceAdjustment)}'
+                        : formatFcfa(tier.priceAdjustment)),
+                selected: state.dryingTier == tier,
+                onTap: () => cubit.selectDryingTier(tier),
+              ),
+          ],
         ],
       ],
     );

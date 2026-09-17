@@ -1,0 +1,11 @@
+executionPrerequisite: >-
+  L'application est ouverte sur l'accueil, la grille des formules affichée.
+
+steps:
+  - echo: Segment 2 — on ouvre le scanner depuis la carte de l'accueil.
+  - echo: 'Carte « Déjà devant une machine ? » — frame (0.055, 0.350, 0.891, 0.063).'
+  - tap:
+      x: 0.500
+      y: 0.382
+  - echo: Le viseur et sa consigne restent lisibles.
+  - wait: 2000

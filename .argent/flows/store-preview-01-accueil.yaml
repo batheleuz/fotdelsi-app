@@ -1,0 +1,10 @@
+steps:
+  - echo: >-
+      Segment 1 — l'offre. Premier segment d'un aperçu : il porte le `launch:`
+      et ne peut donc pas déclarer d'`executionPrerequisite`.
+      Coordonnées et non sélecteurs texte : voir store-01-accueil.yaml.
+      PAS d'`await idle` dans les segments vidéo — chacun coûtait plusieurs
+      secondes à l'écran et la vidéo dépassait 49 s pour un plafond de 30.
+  - launch: sn.fotdelsi.app
+  - echo: Amorçage de la vitrine, puis le temps de lire la grille des formules.
+  - wait: 5500

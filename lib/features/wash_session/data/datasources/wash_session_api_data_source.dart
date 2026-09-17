@@ -69,6 +69,7 @@ class WashSessionApiDataSource {
       state: CycleState.fromApi(
         json['sessionStatus'] as String?,
         canStartDrying: json['canStartDrying'] as bool? ?? false,
+        awaitingPickup: json['awaitingPickup'] as bool? ?? false,
       ),
       startedAt: DateTime.tryParse(
         json['startedAt'] as String? ?? '',
@@ -107,6 +108,17 @@ class WashSessionApiDataSource {
       await _dio.post<dynamic>(
         ApiEndpoints.startDrying,
         data: {'token': token, 'dryerMachineId': dryerMachineId},
+      );
+    } on DioException catch (e) {
+      throw AppException.fromDio(e);
+    }
+  }
+
+  Future<void> confirmPickup(String token) async {
+    try {
+      await _dio.post<dynamic>(
+        ApiEndpoints.confirmPickup,
+        data: {'token': token},
       );
     } on DioException catch (e) {
       throw AppException.fromDio(e);

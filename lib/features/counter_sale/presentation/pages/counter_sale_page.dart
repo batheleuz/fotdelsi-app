@@ -64,7 +64,7 @@ class _CounterSaleView extends StatelessWidget {
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
-            title: const Text('Cycle Direct'),
+            title: const Text('Lancer un cycle'),
             backgroundColor: AppColors.background,
             foregroundColor: AppColors.textPrimary,
             elevation: 0,

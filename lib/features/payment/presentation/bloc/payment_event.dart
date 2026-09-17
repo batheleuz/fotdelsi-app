@@ -44,7 +44,11 @@ final class PaymentPhoneChanged extends PaymentEvent {
 /// Porte le [machineId] car le bloc ne connaît pas la machine —
 /// seule la page la détient via le paramètre de navigation.
 final class PaymentSubmitted extends PaymentEvent {
-  const PaymentSubmitted({required this.machineId, this.formulaCode});
+  const PaymentSubmitted({
+    required this.machineId,
+    this.formulaCode,
+    this.dryingDurationMinutes,
+  });
 
   final String machineId;
 
@@ -53,6 +57,9 @@ final class PaymentSubmitted extends PaymentEvent {
   /// choisir, et le prix vient de la machine elle-même.
   final String? formulaCode;
 
+  /// Durée de séchage choisie si la prestation ou la machine le requiert.
+  final int? dryingDurationMinutes;
+
   @override
-  List<Object?> get props => [machineId, formulaCode];
+  List<Object?> get props => [machineId, formulaCode, dryingDurationMinutes];
 }

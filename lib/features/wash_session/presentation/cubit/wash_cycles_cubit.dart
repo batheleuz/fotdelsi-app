@@ -195,6 +195,21 @@ abstract class WashCyclesCubit extends Cubit<WashCyclesState> {
     );
   }
 
+  /// Confirme la récupération du linge et clôt le cycle.
+  Future<bool> confirmPickup(WashCycle cycle) async {
+    final result = await repository.confirmPickup(cycle.token);
+    return result.fold(
+      (failure) {
+        emit(state.copyWith(error: failure.message));
+        return false;
+      },
+      (_) {
+        load(silent: true);
+        return true;
+      },
+    );
+  }
+
   @override
   Future<void> close() {
     _ticker?.cancel();

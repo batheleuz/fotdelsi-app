@@ -16,7 +16,7 @@ Failure mapExceptionToFailure(Object error) {
   }
   if (error is AppException) {
     return switch (error) {
-      ServerException() => ServerFailure(error.message),
+      ServerException() => ServerFailure(error.message, error.code),
       NetworkException() => NetworkFailure(error.message),
       TimeoutException() => TimeoutFailure(error.message),
       UnauthorizedException() => UnauthorizedFailure(error.message),

@@ -1,0 +1,15 @@
+steps:
+  - echo: >-
+      Accueil — la grille des formules aux prix de production.
+      PAS de sélecteur `text:` dans ce dossier : sur iOS le runner de flow lit
+      la hiérarchie UIView projetée, alors que `describe` lit l'arbre
+      d'accessibilité. Une app Flutter n'expose qu'une seule UIView — tout est
+      peint dans un canevas — donc le runner ne voit aucun texte et tout
+      `await visible: {text: …}` échoue, y compris sur un écran qui affiche
+      manifestement la chaîne cherchée. Les coordonnées, elles, marchent : la
+      vitrine sert des données figées, la mise en page ne bouge pas.
+  - launch: sn.fotdelsi.app
+  - echo: Amorçage de la vitrine — conteneur, session client, sortie du splash.
+  - wait: 9000
+  - await:
+      idle: true

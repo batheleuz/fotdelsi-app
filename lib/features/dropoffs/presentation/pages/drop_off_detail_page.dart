@@ -16,6 +16,7 @@ import 'package:fotdelsi/features/dropoffs/presentation/widgets/drop_off_status_
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/drop_off_timeline.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/client_phone_row.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/edit_laundry_sheet.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/widgets/cycle_not_finished_notice.dart';
 
 /// Détail d'un dépôt côté agent + actions contextuelles selon le statut.
 class DropOffDetailPage extends StatelessWidget {
@@ -267,18 +268,22 @@ class _DetailView extends StatelessWidget {
     final cubit = context.read<DropOffDetailCubit>();
 
     return switch (dropOff.status) {
-      // Libre-service : le client a lavé lui-même, il apporte son linge pour
-      // la finition payée. Aucun lavage à lancer — seulement à prendre en
-      // charge, ce que le backend refuserait autrement.
-      DropOffStatus.awaitingHandoff => _bar(
-        PrimaryButton(
-          label: 'Prendre en charge',
-          icon: Icons.inventory_2_outlined,
-          loading: isActing,
-          backgroundColor: AppColors.primaryLight,
-          onPressed: () => cubit.receiveHandoff(),
+      // Libre-service, cycle terminé : le client peut apporter son linge.
+      DropOffStatus.awaitingHandoff when dropOff.clientCycleFinished == true =>
+        _bar(
+          PrimaryButton(
+            label: 'Prendre en charge',
+            icon: Icons.inventory_2_outlined,
+            loading: isActing,
+            backgroundColor: AppColors.primaryLight,
+            onPressed: () => cubit.receiveHandoff(),
+          ),
         ),
-      ),
+
+      // Libre-service, cycle EN COURS : le linge est encore dans la machine.
+      // On informe l'agent — aucun bouton ne serait actionnable de toute façon
+      // (le backend refuserait la prise en charge).
+      DropOffStatus.awaitingHandoff => _bar(const CycleNotFinishedNotice()),
 
       DropOffStatus.received => _bar(
         PrimaryButton(

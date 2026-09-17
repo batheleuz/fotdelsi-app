@@ -60,6 +60,7 @@ class DropOffRepositoryImpl implements DropOffRepository {
     required int pieces,
     required List<LaundryType> types,
     String? instructions,
+    int? dryingDurationMinutes,
   }) async {
     try {
       final draftId = await _api.createDraft(
@@ -70,6 +71,7 @@ class DropOffRepositoryImpl implements DropOffRepository {
         pieces: pieces,
         types: types,
         instructions: instructions,
+        dryingDurationMinutes: dryingDurationMinutes,
       );
       return Right(draftId);
     } on DioException catch (e) {

@@ -9,6 +9,7 @@ import 'package:fotdelsi/core/utils/price_formatter.dart';
 import 'package:fotdelsi/features/counter_sale/presentation/widgets/direct_cycle_qr_sheet.dart';
 import '../cubit/pending_payments_cubit.dart';
 import '../../domain/entities/pending_drop_off_payment.dart';
+import 'drop_off_qr_sheet.dart';
 
 /// Un dépôt ou cycle direct en attente d'encaissement.
 ///
@@ -39,7 +40,10 @@ class PendingPaymentCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 7,
+                  vertical: 2.5,
+                ),
                 decoration: BoxDecoration(
                   color: isDirect
                       ? AppColors.secondary.withValues(alpha: 0.12)
@@ -47,7 +51,7 @@ class PendingPaymentCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  isDirect ? 'Cycle Direct' : 'Dépôt',
+                  isDirect ? 'Cycle' : 'Dépôt',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -66,57 +70,78 @@ class PendingPaymentCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            payment.customerName.isEmpty
-                ? (isDirect ? 'Client au comptoir' : 'Client sans nom')
-                : payment.customerName,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 3),
+
+          const SizedBox(height: 12),
+
           Row(
+            mainAxisAlignment: .spaceBetween,
             children: [
-              if (payment.contactPhone.isNotEmpty)
-                Text(
-                  '+221 ${payment.contactPhone}',
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    color: AppColors.textSecondary,
+              Column(
+                crossAxisAlignment: .start,
+                children: [
+                  Text(
+                    payment.customerName.isEmpty
+                        ? (isDirect ? 'Client au comptoir' : 'Client sans nom')
+                        : payment.customerName,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-              if (isDirect && payment.machineName != null) ...[
-                if (payment.contactPhone.isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  const Text('·', style: TextStyle(color: AppColors.textTertiary)),
-                  const SizedBox(width: 8),
+
+                  const SizedBox(height: 3),
+
+                  if (payment.contactPhone.isNotEmpty)
+                    Text(
+                      '+221 ${payment.contactPhone}',
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                 ],
-                Text(
-                  payment.machineName!,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-              if (isDirect && payment.formulaLabel != null) ...[
-                const SizedBox(width: 6),
-                Text(
-                  '(${payment.formulaLabel})',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
+              ),
+
+              Column(
+                crossAxisAlignment: .end,
+                children: [
+                  if (payment.formulaLabel != null) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      '${payment.formulaLabel}',
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+
+                  if (payment.machineName != null) ...[
+                    Text(
+                      "(${payment.machineName!})",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ] else if (payment.sizeKg != null) ...[
+                    Text(
+                      "(${payment.sizeKg} kg)",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
+
           Row(
             children: [
               // Le lien meurt pendant que l'agent regarde la liste : la
@@ -148,6 +173,7 @@ class PendingPaymentCard extends StatelessWidget {
                   ),
                 ),
               ),
+
               const Spacer(),
               // Depuis combien de temps le client attend, et — tant que le lien
               // vit — combien de temps il lui reste. C'est ce qui dit s'il faut
@@ -174,18 +200,18 @@ class PendingPaymentCard extends StatelessWidget {
             ),
           ],
 
-          if (isDirect &&
-              payment.state == PendingPaymentState.awaitingPayment &&
+          if (payment.state == PendingPaymentState.awaitingPayment &&
               payment.qrPayload != null) ...[
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () async {
-                  await DirectCycleQrSheet.show(
-                    context,
-                    payment: payment,
-                  );
+                  if (payment.isDirectCycle) {
+                    await DirectCycleQrSheet.show(context, payment: payment);
+                  } else {
+                    await DropOffQrSheet.show(context, payment: payment);
+                  }
                   if (context.mounted) {
                     context.read<PendingPaymentsCubit>().refresh();
                   }
@@ -193,10 +219,7 @@ class PendingPaymentCard extends StatelessWidget {
                 icon: const Icon(Icons.qr_code_2_rounded, size: 18),
                 label: const Text(
                   'Afficher le QR Code',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.secondary,

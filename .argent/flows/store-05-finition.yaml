@@ -1,0 +1,32 @@
+steps:
+  - echo: >-
+      Le suivi de la finition — pliage et repassage, étape par étape.
+      Sélecteurs en coordonnées et non en texte : sur iOS le runner de flow lit
+      la hiérarchie UIView projetée, où une app Flutter n'expose qu'une seule
+      vue — voir store-01-accueil.yaml. Les frames viennent de
+      `argent run describe`, qui lit l'arbre d'accessibilité.
+  - launch: sn.fotdelsi.app
+  - wait: 9000
+  - echo: 'Lien « + 1 autre lavage · Voir ».'
+  - tap:
+      x: 0.500
+      y: 0.243
+  - wait: 2000
+  - echo: 'Bouton « Voir tous mes lavages ».'
+  - tap:
+      x: 0.500
+      y: 0.914
+  - wait: 2500
+  - echo: >-
+      Lien « Suivre la préparation de votre linge », carte du cycle terminé.
+      Visait 0.566, ce qui tombait dans le vide depuis que la carte d'un cycle
+      lancé porte l'encadré « Mettez votre linge dans la machine… » : tout ce
+      qui suit a été poussé vers le bas. Le parcours passait alors sans rien
+      ouvrir, et la capture « finition » montrait « Mes cycles » — le même
+      écran que la scène précédente. Mesuré à 1750 px sur 2868.
+  - tap:
+      x: 0.500
+      y: 0.610
+  - wait: 2500
+  - await:
+      idle: true

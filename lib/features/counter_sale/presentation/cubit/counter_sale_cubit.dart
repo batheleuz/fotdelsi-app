@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
+import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
 import 'package:fotdelsi/features/catalog/domain/repositories/service_formula_repository.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
@@ -125,6 +126,10 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
       ..sort((a, b) => a.size!.compareTo(b.size!));
   }
 
+  void selectDryingTier(DryingDurationTier tier) {
+    emit(state.copyWith(dryingTier: tier));
+  }
+
   // ── Navigation ──────────────────────────────────────────────────────────────
 
   void next() {
@@ -161,6 +166,8 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
       // Impose au serveur d'exiger un jeton d'agent valide. Sans ça, un jeton
       // expiré passait sans bruit et la vente perdait son vendeur.
       atCounter: true,
+      dryingDurationMinutes:
+          state.hasDrying ? state.dryingTier.minutes : null,
     );
 
     result.fold(

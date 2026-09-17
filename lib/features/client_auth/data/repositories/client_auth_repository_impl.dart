@@ -76,6 +76,19 @@ class ClientAuthRepositoryImpl implements ClientAuthRepository {
   }
 
   @override
+  Future<Either<Failure, void>> deleteAccount() async {
+    try {
+      await _api.deleteAccount();
+      await _store.clear();
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(mapExceptionToFailure(AppException.fromDio(e)));
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
   Future<Either<Failure, ClientProfile>> profile() async {
     try {
       return Right(await _api.getProfile());

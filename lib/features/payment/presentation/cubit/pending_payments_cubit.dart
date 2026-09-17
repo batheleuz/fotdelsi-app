@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -20,10 +22,25 @@ part 'pending_payments_state.dart';
 /// erreur par-dessus ce que le client était venu faire.
 class ClientPendingPaymentsCubit extends Cubit<ClientPendingPaymentsState> {
   ClientPendingPaymentsCubit(this._repository, this._session)
-    : super(const ClientPendingPaymentsState());
+    : super(const ClientPendingPaymentsState()) {
+    _sub = _session.changes.listen((_) async {
+      if (await _session.token() == null) {
+        emit(const ClientPendingPaymentsState(payments: []));
+      } else {
+        await load();
+      }
+    });
+  }
 
   final PaymentRepository _repository;
   final ClientSessionStore _session;
+  StreamSubscription<void>? _sub;
+
+  @override
+  Future<void> close() {
+    _sub?.cancel();
+    return super.close();
+  }
 
   Future<void> load() async {
     // `GET /me/payments/pending` exige une session client. Sans numéro lié,

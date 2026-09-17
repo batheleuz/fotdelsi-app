@@ -10,11 +10,13 @@ class ScanTopBar extends StatelessWidget {
     required this.torchOn,
     required this.onBack,
     required this.onToggleTorch,
+    this.title,
   });
 
   final bool torchOn;
   final VoidCallback onBack;
   final VoidCallback onToggleTorch;
+  final String? title;
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +26,23 @@ class ScanTopBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _GlassButton(icon: AppIcons.back, onTap: onBack),
+          if (title != null)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  title!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
           _GlassButton(
             icon: torchOn ? AppIcons.flashOn : AppIcons.flashOff,
             active: torchOn,

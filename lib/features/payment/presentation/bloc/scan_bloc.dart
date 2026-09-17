@@ -16,9 +16,17 @@ class ScanBloc extends Bloc<ScanEvent, ScanState> {
   ScanBloc(this._repository) : super(const ScanState()) {
     on<ScanQrDetected>(_onQrDetected);
     on<ScanReset>(_onReset);
+    on<ScanErrorOccurred>(_onErrorOccurred);
   }
 
   final MachineRepository _repository;
+
+  void _onErrorOccurred(
+    ScanErrorOccurred event,
+    Emitter<ScanState> emit,
+  ) {
+    emit(state.copyWith(status: ScanStatus.error, error: event.message));
+  }
 
   Future<void> _onQrDetected(
     ScanQrDetected event,

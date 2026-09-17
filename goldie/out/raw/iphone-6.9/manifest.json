@@ -1,0 +1,52 @@
+{
+  "device": "iphone-6.9",
+  "udid": "0ECD5FBD-BAF9-4956-A07A-25EC703CC923",
+  "capturedAt": "2026-09-12T00:50:37.251Z",
+  "screenshots": [
+    {
+      "sceneId": "accueil",
+      "file": "/Users/marndiaye/workspace/client-projects/fotdelsy/app/goldie/out/raw/iphone-6.9/accueil.png"
+    },
+    {
+      "sceneId": "scan",
+      "file": "/Users/marndiaye/workspace/client-projects/fotdelsy/app/goldie/out/raw/iphone-6.9/scan.png"
+    },
+    {
+      "sceneId": "cycle",
+      "file": "/Users/marndiaye/workspace/client-projects/fotdelsy/app/goldie/out/raw/iphone-6.9/cycle.png"
+    },
+    {
+      "sceneId": "cycles",
+      "file": "/Users/marndiaye/workspace/client-projects/fotdelsy/app/goldie/out/raw/iphone-6.9/cycles.png"
+    },
+    {
+      "sceneId": "finition",
+      "file": "/Users/marndiaye/workspace/client-projects/fotdelsy/app/goldie/out/raw/iphone-6.9/finition.png"
+    }
+  ],
+  "preview": {
+    "sceneId": "parcours",
+    "clips": [
+      {
+        "segmentId": "accueil",
+        "file": "/Users/marndiaye/workspace/client-projects/fotdelsy/app/goldie/out/raw/iphone-6.9/parcours-accueil.mp4",
+        "durationSeconds": 8.761
+      },
+      {
+        "segmentId": "scan",
+        "file": "/Users/marndiaye/workspace/client-projects/fotdelsy/app/goldie/out/raw/iphone-6.9/parcours-scan.mp4",
+        "durationSeconds": 3.11
+      },
+      {
+        "segmentId": "cycle",
+        "file": "/Users/marndiaye/workspace/client-projects/fotdelsy/app/goldie/out/raw/iphone-6.9/parcours-cycle.mp4",
+        "durationSeconds": 4.373
+      },
+      {
+        "segmentId": "finition",
+        "file": "/Users/marndiaye/workspace/client-projects/fotdelsy/app/goldie/out/raw/iphone-6.9/parcours-finition.mp4",
+        "durationSeconds": 6.031
+      }
+    ]
+  }
+}

@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
-import '../../../domain/entities/laundry_type.dart';
 import '../../cubit/new_dropoff_cubit.dart';
 
 /// Étape 2 — description du linge.
@@ -61,21 +60,6 @@ class _NewDropOffLaundryStepState extends State<NewDropOffLaundryStep> {
             ),
             _RoundBtn(icon: Icons.add, onTap: cubit.incrementPieces),
           ],
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        const _Title('Type de linge'),
-        const SizedBox(height: AppSpacing.sm),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: LaundryType.values.map((type) {
-            final selected = state.types.contains(type);
-            return _Chip(
-              label: type.label,
-              selected: selected,
-              onTap: () => cubit.toggleType(type),
-            );
-          }).toList(),
         ),
         const SizedBox(height: AppSpacing.lg),
         const _Title('Instructions (optionnel)'),
@@ -149,51 +133,4 @@ class _RoundBtn extends StatelessWidget {
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
 
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.surfaceTint : AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          border: Border.all(
-            color: selected ? AppColors.primaryLight : AppColors.border,
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (selected) ...[
-              const Icon(Icons.check, size: 16, color: AppColors.primaryDark),
-              const SizedBox(width: 5),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                color: selected
-                    ? AppColors.primaryDark
-                    : AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

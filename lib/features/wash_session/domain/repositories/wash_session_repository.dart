@@ -63,6 +63,9 @@ abstract interface class WashSessionRepository {
     required String dryerMachineId,
   });
 
+  /// `POST /wash-sessions/pickup` — clôt un cycle dont le linge a été récupéré.
+  Future<Either<Failure, void>> confirmPickup(String washSessionToken);
+
   /// Flux temps réel du statut de la session active (WebSocket `session.status`).
   ///
   /// À l'abonnement, rejoint la room `session:<token>` côté backend ; au

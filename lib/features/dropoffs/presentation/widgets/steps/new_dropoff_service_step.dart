@@ -5,6 +5,7 @@ import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart';
 // Fournit l'extension `label` sur PaymentProvider.
@@ -40,6 +41,15 @@ class NewDropOffServiceStep extends StatelessWidget {
             formula: formula,
             selected: state.sizeKg,
             onSelect: cubit.selectSize,
+          ),
+        ],
+        if (state.hasDrying) ...[
+          const SizedBox(height: AppSpacing.lg),
+          const _Title('Durée de séchage'),
+          const SizedBox(height: AppSpacing.sm),
+          _DryingDurationPicker(
+            selected: state.dryingTier,
+            onSelect: cubit.selectDryingTier,
           ),
         ],
         if (state.total != null && formula != null) ...[
@@ -392,3 +402,91 @@ class _CatalogError extends StatelessWidget {
     );
   }
 }
+
+class _DryingDurationPicker extends StatelessWidget {
+  const _DryingDurationPicker({
+    required this.selected,
+    required this.onSelect,
+  });
+
+  final DryingDurationTier selected;
+  final ValueChanged<DryingDurationTier> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: DryingDurationTier.values.map((tier) {
+        final isSelected = tier == selected;
+        final tokens = tier.pulses ~/ 100;
+        final adj = tier.priceAdjustment;
+        final priceLabel = adj == 0
+            ? 'Inclus'
+            : (adj > 0 ? '+${formatFcfa(adj)}' : formatFcfa(adj));
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: GestureDetector(
+            onTap: () => onSelect(tier),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.surfaceTint : AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(
+                  color: isSelected ? AppColors.primaryLight : AppColors.border,
+                  width: isSelected ? 2 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          tier.label,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$tokens pièce${tokens > 1 ? 's' : ''} · ${tier.pulses} pulses',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    priceLabel,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                  if (isSelected) ...[
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      size: 20,
+                      color: AppColors.primaryLight,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+

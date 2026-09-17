@@ -102,7 +102,7 @@ class _AgentQueueViewState extends State<_AgentQueueView>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'File d\'attente',
+                  'Dépôts à traiter',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
                 Text(
@@ -141,7 +141,7 @@ class _AgentQueueViewState extends State<_AgentQueueView>
         backgroundColor: AppColors.secondary,
         foregroundColor: AppColors.onPrimary,
         icon: const Icon(Icons.add),
-        label: const Text('Nouveau dépôt'),
+        label: const Text('Enregistrer un dépôt'),
         onPressed: () async {
           await context.push(AppRoutes.agentNewDropOff);
           if (context.mounted) context.read<DropOffQueueCubit>().refresh();

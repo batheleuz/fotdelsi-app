@@ -1,0 +1,16 @@
+steps:
+  - echo: >-
+      Le minuteur du cycle en cours, alimenté par les relevés de la machine.
+      Sélecteurs en coordonnées et non en texte : sur iOS le runner de flow lit
+      la hiérarchie UIView projetée, où une app Flutter n'expose qu'une seule
+      vue — voir store-01-accueil.yaml. Les frames viennent de
+      `argent run describe`, qui lit l'arbre d'accessibilité.
+  - launch: sn.fotdelsi.app
+  - wait: 9000
+  - echo: 'Bouton flottant « En cours » — frame (0.661, 0.881, 0.302, 0.059).'
+  - tap:
+      x: 0.812
+      y: 0.911
+  - wait: 2500
+  - await:
+      idle: true

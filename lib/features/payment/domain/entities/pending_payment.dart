@@ -12,7 +12,7 @@ class PendingPayment extends Equatable {
     required this.paymentId,
     required this.amount,
     required this.expiresAt,
-    required this.machineStillHeld,
+    this.machineStillHeld = false,
     this.machineHeldUntil,
     this.machineName,
     this.formulaLabel,

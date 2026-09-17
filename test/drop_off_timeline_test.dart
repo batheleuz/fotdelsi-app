@@ -9,6 +9,7 @@ import 'package:fotdelsi/features/dropoffs/presentation/widgets/drop_off_timelin
 DropOff _dropOff({
   required String origin,
   required DropOffStatus status,
+  DateTime? clientCycleFinishedAt,
   DateTime? startedAt,
   DateTime? readyAt,
 }) => DropOff(
@@ -20,6 +21,7 @@ DropOff _dropOff({
   laundry: const Laundry(pieces: 0, types: []),
   status: status,
   receivedAt: DateTime(2026, 8, 17, 9),
+  clientCycleFinishedAt: clientCycleFinishedAt,
   startedAt: startedAt,
   readyAt: readyAt,
 );
@@ -69,6 +71,44 @@ void main() {
       expect(find.text('Apporté au comptoir'), findsOneWidget);
     });
 
+    testWidgets(
+      'coche « Lavé par le client » uniquement quand le cycle est terminé',
+      (tester) async {
+        // Avant le fix : `receivedAt` (posé au PAIEMENT) cochait cette étape
+        // dès l'achat. Désormais c'est `clientCycleFinishedAt` — timestamp réel
+        // de fin de cycle renvoyé par le backend — qui fait foi.
+        await _poser(
+          tester,
+          _dropOff(
+            origin: 'SELF_SERVICE',
+            status: DropOffStatus.awaitingHandoff,
+            clientCycleFinishedAt: DateTime(2026, 8, 17, 10, 15),
+          ),
+        );
+
+        // La date et l'heure ne s'affichent que sur une étape franchie.
+        expect(find.text('17 août à 10:15'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      '« Lavé par le client » reste non coché si le cycle n\'est pas encore terminé',
+      (tester) async {
+        await _poser(
+          tester,
+          _dropOff(
+            origin: 'SELF_SERVICE',
+            status: DropOffStatus.awaitingHandoff,
+            // clientCycleFinishedAt non renseigné → case non cochée
+          ),
+        );
+
+        expect(find.text('Lavé par le client'), findsOneWidget);
+        // Aucun horodatage affiché : le linge n'est pas encore lavé
+        expect(find.textContaining('août'), findsNothing);
+      },
+    );
+
     testWidgets('coche la remise une fois le linge apporté', (tester) async {
       await _poser(
         tester,
@@ -79,8 +119,8 @@ void main() {
         ),
       );
 
-      // L'heure ne s'affiche que sur une étape franchie.
-      expect(find.text('11:30'), findsOneWidget);
+      // La date et l'heure ne s'affichent que sur une étape franchie.
+      expect(find.text('17 août à 11:30'), findsOneWidget);
     });
   });
 

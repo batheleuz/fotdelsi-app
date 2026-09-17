@@ -32,11 +32,13 @@ abstract final class ApiEndpoints {
 
   // Paiement
   static const String paymentsInitiate = '/payments/initiate';
+  static String paymentStatus(String paymentId) => '/payments/$paymentId/status';
 
   // Wash Session
   static String sessionStatus(String token) => '/wash-sessions/$token/status';
   static const String startMachine = '/wash-sessions/start';
   static const String startDrying = '/wash-sessions/start-drying';
+  static const String confirmPickup = '/wash-sessions/pickup';
 
   /// Cycles vendus au comptoir : à démarrer, en cours, terminés (24 h).
   static const String counterSaleCycles = '/wash-sessions/counter-sales';
@@ -55,6 +57,7 @@ abstract final class ApiEndpoints {
   static const String requestOtp = '/me/link-phone/request-otp';
   static const String verifyOtp = '/me/link-phone/verify-otp';
   static const String clientLogout = '/me/logout';
+  static const String clientAccount = '/me';
 
   /// Profil du client authentifié (lecture et modification du nom).
   static const String clientProfile = '/me/profile';

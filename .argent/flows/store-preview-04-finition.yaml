@@ -1,0 +1,30 @@
+executionPrerequisite: >-
+  La feuille du cycle en cours est ouverte par-dessus l'accueil.
+
+steps:
+  - echo: Segment 4 — la finition d'un dépôt, suivie étape par étape.
+  - echo: On referme la feuille en tapant le voile, au-dessus d'elle.
+  - tap:
+      x: 0.500
+      y: 0.200
+  - wait: 600
+  - echo: 'Lien « + 1 autre lavage · Voir », bas du bandeau d''accueil.'
+  - tap:
+      x: 0.500
+      y: 0.243
+  - wait: 700
+  - echo: 'Bouton « Voir tous mes lavages » — frame (0.279, 0.889, 0.442, 0.050).'
+  - tap:
+      x: 0.500
+      y: 0.914
+  - wait: 900
+  - echo: >-
+      Lien « Suivre la préparation de votre linge » — centre (0.500, 0.610).
+      Visait 0.566, devenu du vide depuis que la carte d'un cycle lancé porte
+      l'encadré « Mettez votre linge dans la machine… ». Même correction que
+      dans store-05-finition.yaml, mesurée à 1750 px sur 2868.
+  - tap:
+      x: 0.500
+      y: 0.610
+  - echo: La chronologie du dépôt reste à l'écran pour finir.
+  - wait: 1800

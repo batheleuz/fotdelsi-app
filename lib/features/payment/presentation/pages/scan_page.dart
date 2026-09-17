@@ -7,6 +7,8 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:fotdelsi/core/di/service_locator.dart';
 import 'package:fotdelsi/core/router/app_router.dart';
 import 'package:fotdelsi/core/router/app_routes.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
+import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import '../bloc/scan_bloc.dart';
 import '../bloc/scan_event.dart';
 import '../bloc/scan_state.dart';
@@ -14,19 +16,46 @@ import '../widgets/scan_top_bar.dart';
 import '../widgets/scan_viewfinder.dart';
 
 class ScanPage extends StatelessWidget {
-  const ScanPage({super.key});
+  const ScanPage({super.key, this.formula});
+
+  final ServiceFormula? formula;
+
+  /// Vérifie si la machine scannée est compatible avec la formule choisie.
+  static bool fits(ServiceFormula formula, Machine machine) {
+    final wanted = formula.needsWasher ? MachineType.washer : MachineType.dryer;
+    return machine.type == wanted &&
+        machine.size != null &&
+        formula.priceFor(machine.size!) != null;
+  }
+
+  /// Retourne le message d'erreur d'incompatibilité, ou null si la machine convient.
+  static String? fitError(ServiceFormula formula, Machine machine) {
+    final wanted = formula.needsWasher ? MachineType.washer : MachineType.dryer;
+    if (machine.type != wanted) {
+      return formula.needsWasher
+          ? 'Cette formule nécessite une laveuse. La machine scannée est une sécheuse.'
+          : 'Cette formule nécessite une sécheuse. La machine scannée est une laveuse.';
+    }
+    if (machine.size == null || formula.priceFor(machine.size!) == null) {
+      final sizeLabel = machine.size != null ? '${machine.size} kg' : 'inconnue';
+      return 'Cette formule n\'est pas disponible pour une machine de $sizeLabel.';
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => serviceLocator<ScanBloc>(),
-      child: const _ScanView(),
+      child: _ScanView(formula: formula),
     );
   }
 }
 
 class _ScanView extends StatefulWidget {
-  const _ScanView();
+  const _ScanView({this.formula});
+
+  final ServiceFormula? formula;
 
   @override
   State<_ScanView> createState() => _ScanViewState();
@@ -70,17 +99,19 @@ class _ScanViewState extends State<_ScanView> {
       // au pop — cela évite qu'un second scan soit déclenché pendant la
       // navigation et provoque un conflit de GlobalKey sur le Navigator GoRouter.
       final machine = state.machine!;
-      // Droit au paiement : il n'y a rien à choisir.
-      //
-      // Le scan passait par l'écran des formules, ce qui n'a pas de sens ici :
-      // on a une MACHINE devant soi, pas un besoin à formuler. Une laveuse ne
-      // sait que laver, une sécheuse que sécher — et ni l'une ni l'autre ne
-      // sait plier ou repasser. Proposer « Prêt à porter » sur une sécheuse
-      // scannée promettait une prestation que l'appareil ne rend pas.
-      //
-      // `formula: null` dit exactement cela au reste de la chaîne, jusqu'au
-      // serveur qui tarife alors sur la machine.
-      final PaymentArgs args = (formula: null, machine: machine);
+      final formula = widget.formula;
+
+      // Si une formule a été sélectionnée, on s'assure que la machine scannée
+      // devant le client y correspond bien.
+      if (formula != null) {
+        final error = ScanPage.fitError(formula, machine);
+        if (error != null) {
+          context.read<ScanBloc>().add(ScanErrorOccurred(error));
+          return;
+        }
+      }
+
+      final PaymentArgs args = (formula: formula, machine: machine);
       context.push(AppRoutes.payment, extra: args).then((_) {
         if (mounted) _resumeScanning();
       });
@@ -99,6 +130,7 @@ class _ScanViewState extends State<_ScanView> {
 
   @override
   Widget build(BuildContext context) {
+    final formula = widget.formula;
     return Scaffold(
       backgroundColor: const Color(0xFF0B1B33),
       body: BlocListener<ScanBloc, ScanState>(
@@ -116,6 +148,7 @@ class _ScanViewState extends State<_ScanView> {
               child: Column(
                 children: [
                   ScanTopBar(
+                    title: formula?.label,
                     torchOn: _torchOn,
                     onBack: () => Navigator.of(context).maybePop(),
                     onToggleTorch: _toggleTorch,
@@ -123,24 +156,28 @@ class _ScanViewState extends State<_ScanView> {
                   const Spacer(),
                   const ScanViewfinder(),
                   const SizedBox(height: 34),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 36),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 36),
                     child: Column(
                       children: [
                         Text(
-                          'Scannez le QR de la machine',
+                          formula != null
+                              ? 'Scannez votre machine'
+                              : 'Scannez le QR de la machine',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 17,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
-                          'Placez le code dans le cadre pour démarrer votre lavage',
+                          formula != null
+                              ? 'Scannez la machine devant vous pour démarrer ${formula.label}'
+                              : 'Placez le code dans le cadre pour démarrer votre lavage',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                          style: const TextStyle(color: Colors.white70, fontSize: 13),
                         ),
                       ],
                     ),

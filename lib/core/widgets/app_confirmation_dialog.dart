@@ -85,36 +85,42 @@ class _AppConfirmationDialog extends StatelessWidget {
                 ],
               ),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 310),
+                constraints: BoxConstraints(
+                  maxWidth: 310,
+                  maxHeight: MediaQuery.sizeOf(context).height - 48,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(22, 21, 22, 18),
-                      child: Column(
-                        children: [
-                          Text(
-                            title,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                              height: 1.25,
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(22, 21, 22, 18),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              title,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                height: 1.25,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            message,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                              height: 1.35,
+                            const SizedBox(height: 8),
+                            Text(
+                              message,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                height: 1.35,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     const Divider(height: 0.5, thickness: 0.5, color: _divider),

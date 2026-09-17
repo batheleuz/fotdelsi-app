@@ -115,8 +115,7 @@ void main() {
 
     expect(find.text('En cours'), findsNothing);
     expect(find.text('Séchage à lancer'), findsNothing);
-    // Le bouton de scan, lui, reste toujours là.
-    expect(find.byIcon(Icons.qr_code_scanner_rounded), findsOneWidget);
+    // Le bouton de scan a été commenté par l'utilisateur car déjà présent dans la page.
   });
 
   testWidgets('rouvre bien la feuille de suivi', (tester) async {

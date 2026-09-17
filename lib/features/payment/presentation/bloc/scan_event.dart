@@ -21,3 +21,13 @@ final class ScanQrDetected extends ScanEvent {
 final class ScanReset extends ScanEvent {
   const ScanReset();
 }
+
+/// Erreur signalée lors de la validation de la machine scannée.
+final class ScanErrorOccurred extends ScanEvent {
+  const ScanErrorOccurred(this.message);
+
+  final String message;
+
+  @override
+  List<Object?> get props => [message];
+}

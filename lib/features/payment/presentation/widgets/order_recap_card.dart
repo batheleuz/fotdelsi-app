@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 
@@ -16,12 +17,16 @@ class OrderRecapCard extends StatelessWidget {
     super.key,
     required this.formula,
     required this.machine,
+    this.dryingTier,
+    this.onSelectDryingTier,
   });
 
   /// `null` pour une machine scannée : il n'y a pas de prestation, seulement
   /// un appareil. Le récapitulatif décrit alors la machine.
   final ServiceFormula? formula;
   final Machine machine;
+  final DryingDurationTier? dryingTier;
+  final VoidCallback? onSelectDryingTier;
 
   /// Ce qu'une machine sait faire, et rien d'autre.
   ///
@@ -34,9 +39,18 @@ class OrderRecapCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = machine.size;
     final f = formula;
-    final price = f == null
-        ? machine.price.round()
-        : (size == null ? null : f.priceFor(size));
+    final hasDrying = f?.includesDrying ?? (machine.type == MachineType.dryer);
+    final tier = dryingTier ?? DryingDurationTier.defaultTier;
+
+    int? price;
+    if (f == null) {
+      price = machine.type == MachineType.dryer ? tier.price : machine.price.round();
+    } else {
+      final base = size == null ? null : f.priceFor(size);
+      if (base != null) {
+        price = hasDrying ? base + tier.priceAdjustment : base;
+      }
+    }
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -67,6 +81,62 @@ class OrderRecapCard extends StatelessWidget {
               color: AppColors.textSecondary,
             ),
           ),
+          if (hasDrying) ...[
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: onSelectDryingTier,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.timer_outlined,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Séchage : ${tier.label}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (onSelectDryingTier != null)
+                      const Row(
+                        children: [
+                          Text(
+                            'Modifier',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           // Prévient avant le paiement : le linge ne repartira pas tout de suite.
           if (f?.requiresAgent ?? false) ...[
             const SizedBox(height: 6),

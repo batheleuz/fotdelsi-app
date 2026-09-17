@@ -1,0 +1,16 @@
+executionPrerequisite: >-
+  L'écran de scan est ouvert, viseur affiché.
+
+steps:
+  - echo: Segment 3 — retour à l'accueil, puis le minuteur du cycle en cours.
+  - echo: 'Bouton retour de l''écran de scan — centre (0.064, 0.094).'
+  - tap:
+      x: 0.064
+      y: 0.094
+  - wait: 900
+  - echo: 'Bouton flottant « En cours » — frame (0.661, 0.881, 0.302, 0.059).'
+  - tap:
+      x: 0.812
+      y: 0.911
+  - echo: Le décompte se lit, avec le temps écoulé et la durée totale.
+  - wait: 2200

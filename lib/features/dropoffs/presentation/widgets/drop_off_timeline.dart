@@ -31,11 +31,14 @@ class DropOffTimeline extends StatelessWidget {
   /// Étapes du parcours suivi par CE dépôt.
   List<_Stage> get _stages => dropOff.isSelfService
       ? [
-          // Les machines sont derrière : elles ont tourné sur la session de
-          // lavage du client, pas sur ce dépôt. L'étape est acquise par
-          // construction — un dépôt libre-service n'existe qu'une fois payé,
-          // et le code de remise ne lui parvient qu'en fin de cycle.
-          ('Lavé par le client', dropOff.receivedAt),
+          // `receivedAt` est posé au moment du PAIEMENT, pas quand le cycle
+          // de lavage s'achève — utiliser cette date cocherait l'étape dès
+          // l'achat, avant même que le linge soit lavé.
+          //
+          // `clientCycleFinishedAt` vient du backend : c'est le timestamp réel
+          // de fin de cycle (`washCompletedAt / dryCompletedAt / endedAt` de la
+          // session du client). Il est null tant que le linge n'est pas prêt.
+          ('Lavé par le client', dropOff.clientCycleFinishedAt),
           ('Apporté au comptoir', dropOff.startedAt),
           ('Prêt', dropOff.readyAt),
           ('Remis au client', dropOff.collectedAt),
@@ -138,7 +141,7 @@ class _Row extends StatelessWidget {
                 ),
                 if (time != null)
                   Text(
-                    _hhmm(time!),
+                    _formatDateTime(time!),
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.textTertiary,
@@ -152,6 +155,23 @@ class _Row extends StatelessWidget {
     );
   }
 
-  String _hhmm(DateTime d) =>
-      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+  static String _formatDateTime(DateTime d) {
+    const months = [
+      'janv.',
+      'févr.',
+      'mars',
+      'avr.',
+      'mai',
+      'juin',
+      'juil.',
+      'août',
+      'sept.',
+      'oct.',
+      'nov.',
+      'déc.',
+    ];
+    final hh = d.hour.toString().padLeft(2, '0');
+    final mm = d.minute.toString().padLeft(2, '0');
+    return '${d.day} ${months[d.month - 1]} à $hh:$mm';
+  }
 }

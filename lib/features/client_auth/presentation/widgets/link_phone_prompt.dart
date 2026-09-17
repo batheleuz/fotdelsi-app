@@ -37,6 +37,7 @@ abstract final class LinkPhonePrompt {
 
     final result = await showModalBottomSheet<_PromptResult>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: AppColors.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),

@@ -22,7 +22,6 @@ import 'package:fotdelsi/features/client_auth/presentation/pages/client_account_
 import 'package:fotdelsi/features/client_auth/presentation/pages/link_phone_page.dart';
 import 'package:fotdelsi/features/client_auth/presentation/pages/otp_verify_page.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
-import 'package:fotdelsi/features/catalog/presentation/pages/pick_machine_page.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:fotdelsi/features/machines/presentation/pages/home_page.dart';
 import 'package:fotdelsi/features/onboarding/presentation/pages/onboarding_page.dart';
@@ -117,13 +116,20 @@ abstract final class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.scan,
-        builder: (context, state) => const ScanPage(),
+        builder: (context, state) {
+          final formula = state.extra as ServiceFormula?;
+          return ScanPage(formula: formula);
+        },
       ),
       GoRoute(
         path: AppRoutes.pickMachine,
         builder: (context, state) {
-          final args = state.extra! as PickMachineArgs;
-          return PickMachinePage(formula: args.formula);
+          final formula = switch (state.extra) {
+            final PickMachineArgs args => args.formula,
+            final ServiceFormula f => f,
+            _ => null,
+          };
+          return ScanPage(formula: formula);
         },
       ),
       GoRoute(
@@ -210,7 +216,7 @@ abstract final class AppRouter {
           // Le défaut « Mes cycles » est celui de l'écran CLIENT : sur le
           // poste agent, ces cycles ne sont pas les siens, ce sont ceux qu'il
           // a vendus. Même nom que partout ailleurs dans l'espace agent.
-          title: 'Cycles Directs',
+          title: 'Cycles',
           explanation:
               'Ces cycles ont été vendus au comptoir et payés. Chargez le '
               'linge, puis lancez la machine ici.',

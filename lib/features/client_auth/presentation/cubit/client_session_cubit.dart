@@ -99,6 +99,21 @@ class ClientSessionCubit extends Cubit<ClientSessionState> {
     emit(const ClientSessionState());
   }
 
+  /// Supprime définitivement le compte client côté serveur et localement.
+  ///
+  /// Renvoie `true` en cas de succès, `false` en cas d'échec.
+  Future<bool> deleteAccount() async {
+    final result = await _repository.deleteAccount();
+    return result.fold(
+      (_) => false,
+      (_) {
+        onUnlinked?.call();
+        emit(const ClientSessionState());
+        return true;
+      },
+    );
+  }
+
   @override
   Future<void> close() {
     _sub?.cancel();

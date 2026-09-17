@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 
 import 'package:fotdelsi/core/network/failures.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
 import 'package:fotdelsi/features/catalog/domain/repositories/service_formula_repository.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_delivery.dart';
@@ -69,7 +70,7 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
   void incrementPieces() => emit(state.copyWith(pieces: state.pieces + 1));
 
   void decrementPieces() {
-    if (state.pieces > 1) emit(state.copyWith(pieces: state.pieces - 1));
+    if (state.pieces > 0) emit(state.copyWith(pieces: state.pieces - 1));
   }
 
   void toggleType(LaundryType type) {
@@ -97,6 +98,9 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
   }
 
   void selectSize(int sizeKg) => emit(state.copyWith(sizeKg: sizeKg));
+
+  void selectDryingTier(DryingDurationTier tier) =>
+      emit(state.copyWith(dryingTier: tier));
 
   void selectProvider(PaymentProvider provider) =>
       emit(state.copyWith(provider: provider));
@@ -132,6 +136,8 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
       pieces: state.pieces,
       types: state.types.toList(),
       instructions: state.instructions,
+      dryingDurationMinutes:
+          state.hasDrying ? state.dryingTier.minutes : null,
     );
 
     await draft.fold(

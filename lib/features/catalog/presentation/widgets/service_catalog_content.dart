@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:fotdelsi/core/router/app_router.dart';
 import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/motion/app_motion.dart';
 import 'package:fotdelsi/core/motion/entrance.dart';
@@ -83,8 +82,7 @@ class ServiceCatalogContent extends StatelessWidget {
                     // machine, l'agent doit encore être là à la sortie du cycle.
                     available: formula.availability.selfService,
                     onTap: () {
-                      final PickMachineArgs args = (formula: formula);
-                      context.push(AppRoutes.pickMachine, extra: args);
+                      context.push(AppRoutes.scan, extra: formula);
                     },
                   ),
                 ),
@@ -191,7 +189,7 @@ class _ScanHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surfaceTint,
+      color: AppColors.primary,
       borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: () => context.push(AppRoutes.scan),
@@ -203,7 +201,7 @@ class _ScanHint extends StatelessWidget {
               const Icon(
                 Icons.qr_code_scanner_rounded,
                 size: 19,
-                color: AppColors.primary,
+                color: AppColors.onPrimary,
               ),
               const SizedBox(width: 10),
               // Deux lignes assumées plutôt qu'une phrase qui se casse où elle
@@ -219,7 +217,7 @@ class _ScanHint extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: AppColors.onPrimary,
                       ),
                     ),
                     SizedBox(height: 1),
@@ -227,7 +225,7 @@ class _ScanHint extends StatelessWidget {
                       'Scannez son QR code.',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: AppColors.surfaceTint,
                       ),
                     ),
                   ],
@@ -236,7 +234,7 @@ class _ScanHint extends StatelessWidget {
               const Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: AppColors.textTertiary,
+                color: AppColors.surfaceTint,
               ),
             ],
           ),

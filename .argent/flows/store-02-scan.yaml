@@ -1,0 +1,16 @@
+steps:
+  - echo: >-
+      Scan du QR machine — l'entrée la plus courte du parcours client.
+      Sélecteurs en coordonnées et non en texte : sur iOS le runner de flow lit
+      la hiérarchie UIView projetée, où une app Flutter n'expose qu'une seule
+      vue — voir store-01-accueil.yaml. Les frames viennent de
+      `argent run describe`, qui lit l'arbre d'accessibilité.
+  - launch: sn.fotdelsi.app
+  - wait: 9000
+  - echo: 'Carte « Déjà devant une machine ? » — frame (0.055, 0.350, 0.891, 0.063).'
+  - tap:
+      x: 0.500
+      y: 0.382
+  - wait: 2500
+  - await:
+      idle: true

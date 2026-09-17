@@ -156,7 +156,8 @@ class _DetailView extends StatelessWidget {
           _kv('Linge', laundry),
           if (d.laundry.instructions.isNotEmpty)
             _kv('Instructions', d.laundry.instructions),
-          _kv('Déposé le', _dateFr(d.receivedAt)),
+          if (d.receivedAt case final at?)
+            _kv('Déposé le', _dateFr(at)),
         ],
       ),
     );
