@@ -10,6 +10,7 @@ import '../../domain/entities/drop_off_status.dart';
 import '../cubit/my_dropoff_detail_cubit.dart';
 import '../widgets/drop_off_status_badge.dart';
 import '../widgets/drop_off_timeline.dart';
+import 'package:fotdelsi/core/widgets/cycle_running_card.dart';
 
 /// Détail d'un dépôt côté client : code, statut, suivi et résumé du linge.
 class MyDropOffDetailPage extends StatelessWidget {
@@ -74,6 +75,37 @@ class _DetailView extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           _header(d),
+          if (d.isCycleRunning) ...[
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: CycleRunningCard(
+                startedAt: d.dryStartedAt ?? d.startedAt,
+                phaseLabel: d.dryStartedAt != null
+                    ? 'Séchage en cours'
+                    : 'Lavage en cours',
+                phaseIcon: d.dryStartedAt != null
+                    ? Icons.dry_cleaning_rounded
+                    : Icons.local_laundry_service_rounded,
+                instructionTitle: 'Commande de démarrage envoyée',
+                instructionBody:
+                    'Mettez votre linge à l\'intérieur de la machine, '
+                    'puis appuyez sur le bouton Démarrer sur son écran.',
+                footerMessage: d.dryStartedAt != null
+                    ? (d.dryingDurationMinutes != null
+                        ? 'Un séchage dure environ ${d.dryingDurationMinutes} minutes. Vous serez prévenu dès qu\'il sera bientôt terminé.'
+                        : 'Vous serez prévenu dès que le séchage sera bientôt terminé.')
+                    : 'Nous vous préviendrons dès que votre cycle devrait être '
+                        'terminé. Un programme dure au moins 27 minutes.',
+              ),
+            ),
+          ],
           if (d.status == DropOffStatus.ready)
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.md),

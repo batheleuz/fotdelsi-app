@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
-import 'package:fotdelsi/features/payment/presentation/widgets/session_countdown_ring.dart';
+import 'package:fotdelsi/core/widgets/cycle_running_card.dart';
 import '../../domain/entities/wash_cycle.dart';
 import '../cubit/wash_cycles_cubit.dart';
 import 'pick_dryer_sheet.dart';
@@ -154,68 +154,18 @@ class _Countdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final remaining = cycle.remainingSeconds;
-    final elapsed = cycle.elapsed;
-
-    // Durée totale DÉDUITE d'écoulé + restant, jamais supposée : la machine
-    // n'annonce que ce qu'il reste. La feuille affichait auparavant « 35 min »
-    // en dur, quel que soit le cycle réellement payé.
-    final total = (remaining != null && elapsed != null)
-        ? elapsed.inSeconds + remaining
-        : null;
-
-    return Column(
-      children: [
-        // Sur une formule à deux temps, « en cours » ne suffit pas : le client
-        // doit savoir lequel des deux tourne.
-        if (cycle.withDrying)
-          _Badge(
-            label: cycle.isDrying ? 'Séchage en cours' : 'Lavage en cours',
-            icon: cycle.isDrying
-                ? Icons.dry_cleaning_rounded
-                : Icons.local_laundry_service_rounded,
-          ),
-        if (cycle.withDrying) const SizedBox(height: AppSpacing.md),
-
-        SessionCountdownRing(
-          remaining: remaining,
-          total: total ?? 0,
-          size: 160,
-        ),
-
-        const SizedBox(height: AppSpacing.lg),
-        Row(
-          children: [
-            Expanded(
-              child: _Stat(
-                label: 'Écoulé',
-                // Seul compteur qui avance à la seconde, et le seul qui le
-                // puisse : il se déduit de l'instant de démarrage, il est
-                // exact par construction.
-                value: elapsed == null ? '—' : _clock(elapsed),
-              ),
-            ),
-            Expanded(
-              child: _Stat(
-                label: 'Durée totale',
-                value: total == null ? '—' : '${(total / 60).ceil()} min',
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: AppSpacing.md),
-        const Text(
-          'Le temps restant est celui annoncé par la machine : il avance par '
-          'paliers, au rythme des relevés.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 12,
-            height: 1.4,
-            color: AppColors.textTertiary,
-          ),
-        ),
-      ],
+    return CycleRunningCard(
+      startedAt: cycle.startedAt,
+      phaseLabel: cycle.isDrying ? 'Séchage en cours' : 'Lavage lancé',
+      phaseIcon: cycle.isDrying
+          ? Icons.dry_cleaning_rounded
+          : Icons.local_laundry_service_rounded,
+      instructionTitle: 'Commande de démarrage envoyée',
+      instructionBody:
+          'Mettez votre linge à l\'intérieur de la machine, '
+          'puis appuyez sur le bouton Démarrer sur son écran.',
+      footerMessage:
+          'Nous vous préviendrons dès que votre cycle devrait être terminé.',
     );
   }
 }
@@ -362,66 +312,3 @@ class _StepCard extends StatelessWidget {
   }
 }
 
-class _Badge extends StatelessWidget {
-  const _Badge({required this.label, required this.icon});
-
-  final String label;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    decoration: BoxDecoration(
-      color: AppColors.surfaceTint,
-      borderRadius: BorderRadius.circular(99),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 15, color: AppColors.primary),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primary,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-String _clock(Duration d) {
-  final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return d.inHours > 0 ? '${d.inHours}:$m:$s' : '$m:$s';
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Text(
-        value,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-          fontFeatures: [FontFeature.tabularFigures()],
-        ),
-      ),
-      const SizedBox(height: 2),
-      Text(
-        label,
-        style: const TextStyle(fontSize: 11.5, color: AppColors.textTertiary),
-      ),
-    ],
-  );
-}

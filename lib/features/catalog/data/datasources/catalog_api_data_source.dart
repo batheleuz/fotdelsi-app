@@ -4,6 +4,7 @@ import 'package:fotdelsi/core/network/api_endpoints.dart';
 import 'package:fotdelsi/core/network/api_response.dart';
 import 'package:fotdelsi/core/network/exceptions.dart';
 import '../../domain/entities/business_hours.dart';
+import '../../domain/entities/drying_duration_tier.dart';
 import '../models/service_formula_model.dart';
 
 /// Source distante du catalogue (`GET /service-formulas`). Endpoint public.
@@ -26,6 +27,32 @@ class CatalogApiDataSource {
       final responseData = ApiResponse<Map<String, dynamic>>.fromJson(
         jsonResponse,
       );
+
+      final dryingTiers = responseData.data['dryingTiers'] as List<dynamic>?;
+      final defaultDuration =
+          responseData.data['defaultDryingDurationMinutes'] as int?;
+      if (dryingTiers != null) {
+        final prices = <int, int>{};
+        int? resolvedDefault = defaultDuration;
+        for (final item in dryingTiers) {
+          if (item is Map<String, dynamic>) {
+            final duration = item['durationMinutes'] as int?;
+            final price = item['price'] as int?;
+            final isDefault = item['isDefault'] as bool?;
+            if (duration != null && price != null) {
+              prices[duration] = price;
+            }
+            if (isDefault == true && resolvedDefault == null) {
+              resolvedDefault = duration;
+            }
+          }
+        }
+        DryingDurationTier.configure(
+          prices: prices,
+          defaultMinutes: resolvedDefault,
+        );
+      }
+
       final formulas =
           (responseData.data['formulas'] as List<dynamic>?) ?? const [];
       final hours = responseData.data['businessHours'] as Map<String, dynamic>?;
@@ -47,3 +74,4 @@ class CatalogApiDataSource {
     }
   }
 }
+

@@ -76,16 +76,31 @@ class SaleServiceStep extends StatelessWidget {
             const _Label('Durée de séchage'),
             const SizedBox(height: AppSpacing.sm),
             for (final tier in DryingDurationTier.values)
-              SaleChoiceTile(
-                title: tier.label,
-                subtitle: '${tier.pulses ~/ 100} pièce(s) · ${tier.pulses} pulses',
-                trailing: tier.priceAdjustment == 0
-                    ? 'Inclus'
-                    : (tier.priceAdjustment > 0
-                        ? '+${formatFcfa(tier.priceAdjustment)}'
-                        : formatFcfa(tier.priceAdjustment)),
-                selected: state.dryingTier == tier,
-                onTap: () => cubit.selectDryingTier(tier),
+              Builder(
+                builder: (context) {
+                  final isDryerOnly = state.machine?.type == MachineType.dryer;
+                  final String priceLabel;
+                  if (isDryerOnly) {
+                    priceLabel = formatFcfa(tier.price);
+                  } else {
+                    final adj = tier.priceAdjustment;
+                    if (adj == 0) {
+                      priceLabel = 'Inclus (${formatFcfa(tier.price)})';
+                    } else if (adj > 0) {
+                      priceLabel = '+${formatFcfa(adj)} (${formatFcfa(tier.price)})';
+                    } else {
+                      priceLabel = '${formatFcfa(adj)} (${formatFcfa(tier.price)})';
+                    }
+                  }
+
+                  return SaleChoiceTile(
+                    title: tier.label,
+                    subtitle: '${tier.pulses ~/ 100} pièce(s) · ${tier.pulses} pulses',
+                    trailing: priceLabel,
+                    selected: state.dryingTier == tier,
+                    onTap: () => cubit.selectDryingTier(tier),
+                  );
+                },
               ),
           ],
         ],

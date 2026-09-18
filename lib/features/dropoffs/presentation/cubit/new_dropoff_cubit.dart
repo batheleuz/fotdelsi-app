@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
@@ -157,9 +159,38 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
               error: failure.message,
             ),
           ),
-          (_) =>
-              emit(state.copyWith(submitStatus: SubmitStatus.success, step: 3)),
+          (_) {
+            emit(state.copyWith(submitStatus: SubmitStatus.success, step: 3));
+            _startPolling();
+          },
         );
+      },
+    );
+  }
+
+  // ── Suivi du paiement ───────────────────────────────────────────────────────
+
+  Timer? _poll;
+  static const _pollInterval = Duration(seconds: 2);
+
+  void _startPolling() {
+    _poll?.cancel();
+    final paymentId = state.session?.paymentId;
+    if (paymentId == null) return;
+    _poll = Timer.periodic(_pollInterval, (_) => _checkPaymentStatus(paymentId));
+    _checkPaymentStatus(paymentId);
+  }
+
+  Future<void> _checkPaymentStatus(String paymentId) async {
+    final result = await _paymentRepository.isPaymentConfirmed(paymentId);
+    if (isClosed) return;
+    result.fold(
+      (_) => null,
+      (confirmed) {
+        if (confirmed && !state.isPaid) {
+          _poll?.cancel();
+          emit(state.copyWith(isPaid: true));
+        }
       },
     );
   }
@@ -172,6 +203,9 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
   /// Renvoie la demande de paiement au client (étape d'attente).
   Future<bool> resend() async {
     final result = await _initiate();
+    if (result.isRight()) {
+      _startPolling();
+    }
     return result.isRight();
   }
 
@@ -191,5 +225,11 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
       (session) => emit(state.copyWith(session: session)),
     );
     return result;
+  }
+
+  @override
+  Future<void> close() {
+    _poll?.cancel();
+    return super.close();
   }
 }

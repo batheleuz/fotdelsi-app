@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -290,7 +291,7 @@ class _WashCyclesView extends StatelessWidget {
                             ),
                             CycleSection.running => _cycleSection(
                               context,
-                              label: 'En cours',
+                              label: 'Lancés',
                               cycles: running,
                               build: (cycle) => _RunningCard(cycle: cycle),
                             ),
@@ -573,22 +574,40 @@ class _ToStartCard extends StatelessWidget {
   }
 }
 
-/// Cycle en cours : la machine tourne, l'agent suit.
+/// Cycle en cours : la machine tourne.
 ///
-/// Deux durées, parce qu'elles ne répondent pas à la même question. Le temps
-/// ÉCOULÉ se calcule ici, à la seconde, depuis l'instant de démarrage. Le
-/// temps RESTANT vient de la machine — c'est elle qui sait combien dure
-/// vraiment son cycle ; on le réaffiche sans jamais l'interpoler.
-class _RunningCard extends StatelessWidget {
+/// Affiche la formule, les instructions de chargement, et le temps écoulé.
+/// Le compteur avance à la seconde grâce à un [Timer] interne.
+class _RunningCard extends StatefulWidget {
   const _RunningCard({required this.cycle});
 
   final WashCycle cycle;
 
   @override
+  State<_RunningCard> createState() => _RunningCardState();
+}
+
+class _RunningCardState extends State<_RunningCard> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final machine = _machineLine(cycle);
-    final elapsed = cycle.elapsed;
-    final remaining = cycle.remainingSeconds;
+    final machine = _machineLine(widget.cycle);
+    final elapsed = widget.cycle.elapsed;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -602,15 +621,17 @@ class _RunningCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.local_laundry_service_rounded,
+              Icon(
+                widget.cycle.isDrying
+                    ? Icons.dry_cleaning_rounded
+                    : Icons.local_laundry_service_rounded,
                 size: 18,
                 color: AppColors.primary,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  cycle.formulaLabel ?? 'Cycle en cours',
+                  widget.cycle.formulaLabel ?? 'Cycle en cours',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -618,9 +639,9 @@ class _RunningCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (cycle.customerName != null)
+              if (widget.cycle.customerName != null)
                 Text(
-                  cycle.customerName!,
+                  widget.cycle.customerName!,
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -640,51 +661,46 @@ class _RunningCard extends StatelessWidget {
           ],
 
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _DurationBlock(
-                  label: 'Restant',
-                  // `null` tant que la machine n'a pas encore été relevée :
-                  // afficher « 00:00 » laisserait croire que c'est fini.
-                  value: remaining == null
-                      ? '—'
-                      : _clock(Duration(seconds: remaining)),
-                  strong: true,
-                ),
-              ),
-              Expanded(
-                child: _DurationBlock(
-                  label: 'Écoulé',
-                  value: elapsed == null ? '—' : _clock(elapsed),
-                ),
-              ),
-            ],
-          ),
 
-          if (remaining != null) ...[
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(99),
-              child: LinearProgressIndicator(
-                value: _progress(elapsed, remaining),
-                minHeight: 5,
-                backgroundColor: AppColors.surfaceTint,
+          // Instruction box (grey background)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0F3F8),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: const Text(
+              'Mettez votre linge dans la machine, puis appuyez '
+              'sur Démarrer sur son écran.',
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.4,
+                color: AppColors.textSecondary,
               ),
             ),
-          ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Elapsed time
+          const Text(
+            'Depuis',
+            style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            elapsed == null ? '--:--' : _clock(elapsed),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              fontFeatures: [FontFeature.tabularFigures()],
+              color: AppColors.textPrimary,
+            ),
+          ),
         ],
       ),
     );
-  }
-
-  /// Part accomplie du cycle. Déduite d'écoulé et restant plutôt que d'une
-  /// durée totale : celle-ci n'est jamais annoncée par la machine.
-  static double? _progress(Duration? elapsed, int remaining) {
-    if (elapsed == null) return null;
-    final total = elapsed.inSeconds + remaining;
-    if (total <= 0) return null;
-    return (elapsed.inSeconds / total).clamp(0.0, 1.0);
   }
 }
 
@@ -885,42 +901,6 @@ class _HandoffStrip extends StatelessWidget {
   }
 }
 
-class _DurationBlock extends StatelessWidget {
-  const _DurationBlock({
-    required this.label,
-    required this.value,
-    this.strong = false,
-  });
-
-  final String label;
-  final String value;
-  final bool strong;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: strong ? 22 : 18,
-            fontWeight: strong ? FontWeight.w700 : FontWeight.w600,
-            // Chasse fixe : sans elle, la largeur des chiffres change et le
-            // compteur tressaute à chaque seconde.
-            fontFeatures: const [FontFeature.tabularFigures()],
-            color: strong ? AppColors.primary : AppColors.textSecondary,
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 /// Dit à l'agent ce qu'il regarde : ces cycles ne sont dans aucune autre liste.
 class _Explanation extends StatelessWidget {

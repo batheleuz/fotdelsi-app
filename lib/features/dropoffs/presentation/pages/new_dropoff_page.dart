@@ -36,8 +36,10 @@ class _NewDropOffView extends StatelessWidget {
 
   /// La dernière étape n'annonce pas la même chose selon le canal choisi :
   /// « Demande envoyée » serait faux devant un client qui va scanner.
-  static String _lastStepTitle(NewDropOffState state) =>
-      state.showsQr ? 'Paiement sur place' : 'Demande envoyée';
+  static String _lastStepTitle(NewDropOffState state) {
+    if (state.isPaid) return 'Paiement confirmé';
+    return state.showsQr ? 'Paiement sur place' : 'Demande envoyée';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +103,7 @@ class _NewDropOffView extends StatelessWidget {
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
         onPressed: () {
-          if (state.step > 0 && state.step < 3) {
+          if (state.step > 0 && state.step < 3 && !state.isPaid) {
             cubit.back();
           } else {
             context.pop();

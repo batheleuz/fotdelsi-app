@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fotdelsi/core/network/failures.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/business_hours.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
 import 'package:fotdelsi/features/catalog/domain/repositories/service_formula_repository.dart';
 import 'package:fotdelsi/features/dropoffs/domain/entities/laundry_type.dart';
 import 'package:fotdelsi/features/dropoffs/domain/repositories/drop_off_repository.dart';
@@ -34,6 +35,13 @@ class _CapturingPayments implements PaymentRepository {
         redirectUrl: 'https://wave.test/pay',
       ),
     );
+  }
+
+  bool confirmedReturn = false;
+
+  @override
+  Future<Either<Failure, bool>> isPaymentConfirmed(String paymentId) async {
+    return Right(confirmedReturn);
   }
 
   @override
@@ -127,5 +135,34 @@ void main() {
     // Notification : même avec un lien, il n'y a rien à montrer.
     const aDistance = NewDropOffState(session: avecLien);
     expect(aDistance.showsQr, isFalse);
+  });
+
+  test('détecte la confirmation du paiement et passe isPaid à true', () async {
+    final payments = _CapturingPayments()..confirmedReturn = true;
+    final cubit = _cubit(payments);
+
+    cubit.setPhone('771234567');
+    cubit.setName('Client Test');
+    cubit.selectFormula(
+      const ServiceFormula(
+        code: 'wash',
+        label: 'Lavage',
+        items: [],
+        includesDrying: false,
+        requiresAgent: false,
+        selfServiceEnabled: true,
+        displayOrder: 1,
+        prices: [FormulaPrice(sizeKg: 12, price: 2500)],
+      ),
+    );
+    cubit.selectSize(12);
+    cubit.selectProvider(PaymentProvider.wave);
+    cubit.chooseDelivery(PaymentDelivery.onSite);
+
+    await cubit.submit();
+    await pumpEventQueue();
+
+    expect(cubit.state.isPaid, isTrue);
+    await cubit.close();
   });
 }

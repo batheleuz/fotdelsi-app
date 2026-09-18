@@ -11,7 +11,10 @@ class SessionCountdownRing extends StatelessWidget {
     required this.remaining,
     required this.total,
     this.size = 180,
+    this.label = 'restantes',
   });
+
+  final String label;
 
   /// Secondes restantes, ou `null` tant que la machine n'a rien annoncé.
   ///
@@ -59,9 +62,9 @@ class SessionCountdownRing extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              const Text(
-                'restantes',
-                style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
               ),
             ],
           ),

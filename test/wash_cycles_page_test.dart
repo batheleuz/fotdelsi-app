@@ -238,7 +238,7 @@ void main() {
 
       expect(
         await yOf(tester, 'À démarrer'),
-        lessThan(await yOf(tester, 'En cours')),
+        lessThan(await yOf(tester, 'Lancés')),
       );
     });
 
@@ -248,7 +248,7 @@ void main() {
       await pumpWith(tester, CyclesLayout.history);
 
       expect(
-        await yOf(tester, 'En cours'),
+        await yOf(tester, 'Lancés'),
         lessThan(await yOf(tester, 'À démarrer')),
       );
     });
@@ -392,19 +392,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
     }
 
-    String totalShown(WidgetTester tester) {
-      final labels = find.text('Durée totale');
-      expect(labels, findsOneWidget);
-      final column = tester.widget<Column>(
-        find.ancestor(of: labels, matching: find.byType(Column)).first,
-      );
-      return (column.children.first as Text).data!;
-    }
-
-    testWidgets('déduit la durée totale au lieu de l\'inventer', (
+    testWidgets('affiche le temps écoulé depuis le démarrage', (
       tester,
     ) async {
-      // La feuille affichait « 35 min » en dur, quel que soit le cycle payé.
       final cubit = _FakeMyCycles([
         running(remaining: 1200, elapsedMinutes: 10),
       ]);
@@ -412,30 +402,28 @@ void main() {
 
       await openSheet(tester, cubit);
 
-      expect(totalShown(tester), isNot('—'));
-      expect(totalShown(tester), isNot('35 min'));
+      expect(find.text('Depuis'), findsOneWidget);
+      expect(find.text('10:00'), findsOneWidget);
     });
 
     testWidgets('suit les relevés au lieu de rester figée', (tester) async {
-      // Le reproche exact : « ça ne bouge pas ». La feuille lisait une session
-      // stockée localement, sans battement propre.
       final cubit = _FakeMyCycles([
         running(remaining: 1800, elapsedMinutes: 5),
       ]);
       await cubit.load();
 
       await openSheet(tester, cubit);
-      final avant = totalShown(tester);
+      expect(find.text('05:00'), findsOneWidget);
 
       cubit.emit(
         cubit.state.copyWith(
-          cycles: [running(remaining: 600, elapsedMinutes: 5)],
+          cycles: [running(remaining: 600, elapsedMinutes: 8)],
         ),
       );
       await tester.pump();
       await tester.pump();
 
-      expect(totalShown(tester), isNot(avant));
+      expect(find.text('08:00'), findsOneWidget);
     });
 
     testWidgets('reste ouverte quand le lavage finit et qu\'il reste le séchage', (

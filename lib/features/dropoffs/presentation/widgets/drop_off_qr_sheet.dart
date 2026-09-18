@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:fotdelsi/core/di/service_locator.dart';
+import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
+import 'package:fotdelsi/core/widgets/primary_button.dart';
 import 'package:fotdelsi/core/utils/phone_number.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart';
@@ -159,8 +162,19 @@ class _DropOffQrSheetState extends State<DropOffQrSheet> {
             _ClientCard(payment: payment),
             const SizedBox(height: AppSpacing.md),
 
-            if (_isPaid)
-              const _Confirmed()
+            if (_isPaid) ...[
+              const _Confirmed(),
+              const SizedBox(height: AppSpacing.lg),
+              PrimaryButton(
+                label: 'Dépôts à traiter',
+                icon: Icons.list_alt_rounded,
+                backgroundColor: AppColors.primaryLight,
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  context.push(AppRoutes.agentQueue);
+                },
+              ),
+            ]
             else if (payload != null)
               PaymentQrView(
                 payload: payload,

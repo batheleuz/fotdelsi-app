@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
@@ -71,6 +72,8 @@ class _NewDropOffAwaitingStepState extends State<NewDropOffAwaitingStep> {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<NewDropOffCubit>().state;
+
+    if (state.isPaid) return const _DropOffPaidView();
 
     // Le client est devant l'agent : il n'y a rien à attendre ni à renvoyer,
     // seulement un code à lui montrer.
@@ -213,7 +216,23 @@ class _QrToShow extends StatelessWidget {
             size: 240,
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 10),
+              Text(
+                'En attente du paiement…',
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           const Text(
             'Le dépôt rejoindra la file dès le paiement confirmé.',
             textAlign: TextAlign.center,
@@ -225,6 +244,68 @@ class _QrToShow extends StatelessWidget {
             icon: Icons.check_rounded,
             backgroundColor: AppColors.primaryLight,
             onPressed: () => context.pop(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Vue affichée dès que le paiement est confirmé (par webhook / polling).
+class _DropOffPaidView extends StatelessWidget {
+  const _DropOffPaidView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: AppColors.surfaceTint,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 84,
+            height: 84,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.success.withValues(alpha: 0.12),
+            ),
+            child: const Icon(
+              Icons.check_circle_rounded,
+              size: 48,
+              color: AppColors.success,
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Paiement confirmé',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Le dépôt a été enregistré et a rejoint la file d\'attente.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 36),
+          PrimaryButton(
+            label: 'Dépôts à traiter',
+            icon: Icons.list_alt_rounded,
+            backgroundColor: AppColors.primaryLight,
+            onPressed: () {
+              context.pushReplacement(AppRoutes.agentQueue);
+            },
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TextButton(
+            onPressed: () => context.pop(),
+            child: const Text('Revenir à l\'accueil'),
           ),
         ],
       ),

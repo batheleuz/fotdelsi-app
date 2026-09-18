@@ -38,13 +38,13 @@ class AgentHomePage extends StatelessWidget {
           create: (_) => serviceLocator<AgentHandoffsCubit>()..load(),
         ),
         BlocProvider(
-          create: (_) => serviceLocator<CounterSaleCyclesCubit>()..load(),
+          create: (_) => serviceLocator<CounterSaleCyclesCubit>()
+            ..load()
+            ..startTicking(),
         ),
         BlocProvider(
           create: (_) => serviceLocator<PendingPaymentsCubit>()
             ..load()
-            // Temps réel : la confirmation du paiement crée le dépôt, ce qui
-            // fait disparaître la ligne sans que l'agent touche à rien.
             ..startRealtime(),
         ),
       ],
@@ -53,8 +53,35 @@ class AgentHomePage extends StatelessWidget {
   }
 }
 
-class _AgentHomeView extends StatelessWidget {
+class _AgentHomeView extends StatefulWidget {
   const _AgentHomeView();
+
+  @override
+  State<_AgentHomeView> createState() => _AgentHomeViewState();
+}
+
+class _AgentHomeViewState extends State<_AgentHomeView>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    context.read<DropOffQueueCubit>().refresh();
+    context.read<AgentHandoffsCubit>().refresh();
+    context.read<CounterSaleCyclesCubit>().refresh();
+    context.read<PendingPaymentsCubit>().refresh();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +131,13 @@ class _AgentHomeView extends StatelessWidget {
                       // nom, après « vente au comptoir ».
                       title: 'Lancer un cycle',
                       subtitle: 'Client sur place, sans réservation',
-                      onTap: () => context.push(AppRoutes.agentSale),
+                      onTap: () async {
+                        await context.push(AppRoutes.agentSale);
+                        if (context.mounted) {
+                          context.read<CounterSaleCyclesCubit>().refresh();
+                          context.read<PendingPaymentsCubit>().refresh();
+                        }
+                      },
                     ),
                   ),
                   EntranceFade(

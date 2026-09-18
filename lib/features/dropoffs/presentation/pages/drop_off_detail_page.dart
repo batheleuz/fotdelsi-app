@@ -17,6 +17,9 @@ import 'package:fotdelsi/features/dropoffs/presentation/widgets/drop_off_timelin
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/client_phone_row.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/edit_laundry_sheet.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/cycle_not_finished_notice.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/assign_machine_cubit.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/widgets/pick_machine_sheet.dart';
+import 'package:fotdelsi/core/widgets/cycle_running_card.dart';
 
 /// Détail d'un dépôt côté agent + actions contextuelles selon le statut.
 class DropOffDetailPage extends StatelessWidget {
@@ -133,6 +136,38 @@ class _DetailView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
+
+        if (dropOff.isCycleRunning) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: CycleRunningCard(
+              startedAt: dropOff.dryStartedAt ?? dropOff.startedAt,
+              phaseLabel: dropOff.dryStartedAt != null
+                  ? 'Séchage en cours'
+                  : 'Lavage en cours',
+              phaseIcon: dropOff.dryStartedAt != null
+                  ? Icons.dry_cleaning_rounded
+                  : Icons.local_laundry_service_rounded,
+              instructionTitle: 'Commande de démarrage envoyée',
+              instructionBody:
+                  'Mettez votre linge à l\'intérieur de la machine, '
+                  'puis appuyez sur le bouton Démarrer sur son écran.',
+              footerMessage: dropOff.dryStartedAt != null
+                  ? (dropOff.dryingDurationMinutes != null
+                      ? 'Un séchage dure environ ${dropOff.dryingDurationMinutes} minutes. Vous serez prévenu dès qu\'il sera bientôt terminé.'
+                      : 'Vous serez prévenu dès que le séchage sera bientôt terminé.')
+                  : 'Nous vous préviendrons dès que votre cycle devrait être '
+                      'terminé. Un programme dure au moins 27 minutes.',
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ],
 
         DropOffTimeline(dropOff: dropOff),
 
@@ -306,8 +341,14 @@ class _DetailView extends StatelessWidget {
           loading: isActing,
           backgroundColor: AppColors.secondary,
           onPressed: () async {
-            await context.push(AppRoutes.agentStartDrying(dropOff.id));
-            if (context.mounted) cubit.load(dropOff.id);
+            final started = await showPickMachineSheet(
+              context,
+              dropOffId: dropOff.id,
+              mode: AssignMode.dry,
+            );
+            if (started && context.mounted) {
+              cubit.load(dropOff.id);
+            }
           },
         ),
       ),
@@ -401,8 +442,7 @@ class _DetailView extends StatelessWidget {
   }
 }
 
-/// Barre non-actionnable affichée pendant qu'un cycle tourne : l'agent attend
-/// la fin (marquée automatiquement quand la machine repasse disponible).
+/// Barre affichée pendant qu'un cycle tourne.
 class _CycleRunningBar extends StatelessWidget {
   const _CycleRunningBar({required this.label});
 

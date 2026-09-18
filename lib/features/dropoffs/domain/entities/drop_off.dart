@@ -18,6 +18,7 @@ class DropOff extends Equatable {
     this.machineId,
     this.washSessionId,
     this.withDrying = false,
+    this.dryingDurationMinutes,
     this.dryerMachineId,
     this.dryStartedAt,
     this.washCompletedAt,
@@ -50,6 +51,9 @@ class DropOff extends Equatable {
 
   /// Séchage inclus (choisi et payé au dépôt).
   final bool withDrying;
+
+  /// Durée de séchage choisie en minutes (15, 30, 45, 60), null si pas de séchage.
+  final int? dryingDurationMinutes;
 
   /// Sécheuse assignée — null tant que le séchage n'est pas lancé.
   final String? dryerMachineId;
@@ -145,6 +149,7 @@ class DropOff extends Equatable {
     machineId,
     washSessionId,
     withDrying,
+    dryingDurationMinutes,
     dryerMachineId,
     dryStartedAt,
     washCompletedAt,

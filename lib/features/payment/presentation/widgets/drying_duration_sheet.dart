@@ -74,7 +74,7 @@ class _DryingDurationSheetContent extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               isFormula
-                  ? 'La formule inclut 30 minutes. Vous pouvez ajuster selon vos besoins.'
+                  ? 'La formule inclut ${DryingDurationTier.configuredDefault.minutes} minutes. Vous pouvez ajuster selon vos besoins.'
                   : 'Choisissez le temps de séchage pour cette machine.',
               style: const TextStyle(
                 fontSize: 13,
@@ -119,7 +119,7 @@ class _TierTile extends StatelessWidget {
     if (isFormula) {
       final adj = tier.priceAdjustment;
       if (adj == 0) {
-        priceLabel = 'Inclus (3 000 F)';
+        priceLabel = 'Inclus (${formatFcfa(tier.price)})';
       } else if (adj > 0) {
         priceLabel = '+${formatFcfa(adj)} (${formatFcfa(tier.price)})';
       } else {

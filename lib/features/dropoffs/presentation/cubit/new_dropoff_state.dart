@@ -25,6 +25,7 @@ final class NewDropOffState extends Equatable {
     this.session,
     this.submitStatus = SubmitStatus.idle,
     this.error,
+    this.isPaid = false,
   });
 
   final int step;
@@ -88,6 +89,7 @@ final class NewDropOffState extends Equatable {
 
   final SubmitStatus submitStatus;
   final String? error;
+  final bool isPaid;
 
   // ── Validations ─────────────────────────────────────────────────────────────
 
@@ -116,6 +118,7 @@ final class NewDropOffState extends Equatable {
     PaymentSession? session,
     SubmitStatus? submitStatus,
     String? error,
+    bool? isPaid,
     bool clearError = false,
     bool clearSize = false,
   }) {
@@ -137,6 +140,7 @@ final class NewDropOffState extends Equatable {
       session: session ?? this.session,
       submitStatus: submitStatus ?? this.submitStatus,
       error: clearError ? null : (error ?? this.error),
+      isPaid: isPaid ?? this.isPaid,
     );
   }
 
@@ -159,5 +163,6 @@ final class NewDropOffState extends Equatable {
     session?.qrPayload,
     submitStatus,
     error,
+    isPaid,
   ];
 }

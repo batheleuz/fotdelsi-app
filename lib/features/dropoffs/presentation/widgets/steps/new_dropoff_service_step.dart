@@ -420,8 +420,10 @@ class _DryingDurationPicker extends StatelessWidget {
         final tokens = tier.pulses ~/ 100;
         final adj = tier.priceAdjustment;
         final priceLabel = adj == 0
-            ? 'Inclus'
-            : (adj > 0 ? '+${formatFcfa(adj)}' : formatFcfa(adj));
+            ? 'Inclus (${formatFcfa(tier.price)})'
+            : (adj > 0
+                ? '+${formatFcfa(adj)} (${formatFcfa(tier.price)})'
+                : '${formatFcfa(adj)} (${formatFcfa(tier.price)})');
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),

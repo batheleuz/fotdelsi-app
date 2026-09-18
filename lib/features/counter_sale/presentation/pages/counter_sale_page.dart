@@ -212,6 +212,11 @@ class _ActionBar extends StatelessWidget {
             ),
           if (state.canGoBack)
             TextButton(onPressed: cubit.back, child: const Text('Retour')),
+          if (isStartStep && !started)
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Démarrer plus tard'),
+            ),
         ],
       ),
     );
