@@ -418,12 +418,7 @@ class _DryingDurationPicker extends StatelessWidget {
       children: DryingDurationTier.values.map((tier) {
         final isSelected = tier == selected;
         final tokens = tier.pulses ~/ 100;
-        final adj = tier.priceAdjustment;
-        final priceLabel = adj == 0
-            ? 'Inclus (${formatFcfa(tier.price)})'
-            : (adj > 0
-                ? '+${formatFcfa(adj)} (${formatFcfa(tier.price)})'
-                : '${formatFcfa(adj)} (${formatFcfa(tier.price)})');
+        final priceLabel = '+${formatFcfa(tier.price)}';
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),

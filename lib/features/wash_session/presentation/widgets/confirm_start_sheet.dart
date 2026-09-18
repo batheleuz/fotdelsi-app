@@ -124,8 +124,9 @@ class _ConfirmStart extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.md),
           const Text(
-            'La machine démarre tout de suite et le cycle payé est consommé. '
-            'Un cycle lancé ne peut pas être annulé.',
+            'Une commande de démarrage sera envoyée à la machine et le cycle '
+            'payé sera consommé. Vous devrez ensuite appuyer sur Démarrer '
+            'sur son écran. Un cycle lancé ne peut pas être annulé.',
             style: TextStyle(
               fontSize: 13,
               height: 1.45,

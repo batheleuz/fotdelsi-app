@@ -77,8 +77,9 @@ class SaleCustomerStep extends StatelessWidget {
         if (state.total != null) ...[
           const SizedBox(height: AppSpacing.lg),
           _Recap(
-            label:
-                '${state.selectedFormula!.label} · ${state.machine!.size} kg',
+            label: state.hasDrying
+                ? '${state.selectedFormula!.label} · ${state.machine!.size} kg · Séchage ${state.dryingTier.label}'
+                : '${state.selectedFormula!.label} · ${state.machine!.size} kg',
             total: state.total!,
           ),
         ],

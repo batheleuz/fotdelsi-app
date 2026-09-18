@@ -7,6 +7,7 @@ import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:fotdelsi/features/wash_session/presentation/widgets/start_command_sent_sheet.dart';
+import 'package:fotdelsi/features/wash_session/presentation/widgets/confirm_start_sheet.dart';
 import '../cubit/assign_machine_cubit.dart';
 
 /// Choix de la machine qui va tourner, en feuille et non plus en page.
@@ -15,12 +16,8 @@ import '../cubit/assign_machine_cubit.dart';
 /// dépôt disparaissait de l'écran, et l'agent revenait à l'aveugle. La feuille
 /// laisse le détail visible derrière, comme le choix de sécheuse côté client.
 ///
-/// Le tap sur une machine LANCE : pas de sélection puis de bouton « Démarrer »
-/// à aller chercher en bas. Pas de confirmation non plus — choisir une machine
-/// précise dans une liste est déjà un geste délibéré, et empiler une feuille
-/// sur une feuille se paierait en confusion. C'est le même parti pris que
-/// `showPickDryerSheet`, et l'inverse des boutons de lancement directs, qui
-/// eux n'ont rien à désigner et passent par `confirmMachineStart`.
+/// Le tap sur une laveuse ouvre la confirmation avant l'envoi de la commande.
+/// Le choix d'une sécheuse démarre directement le séchage.
 ///
 /// Ne sert plus au lavage que pour les dépôts ANTÉRIEURS au choix de machine à
 /// la saisie. Les dépôts récents en portent une : leur bouton lance
@@ -70,6 +67,13 @@ class _PickMachineState extends State<_PickMachine> {
 
   Future<void> _start(Machine machine) async {
     if (_starting != null) return;
+    if (!_isDry) {
+      final confirmed = await confirmMachineStart(
+        context,
+        machineName: machine.name,
+      );
+      if (!confirmed || !mounted) return;
+    }
     setState(() {
       _starting = machine.id;
       _error = null;

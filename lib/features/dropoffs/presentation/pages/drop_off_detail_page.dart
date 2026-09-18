@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:fotdelsi/core/di/service_locator.dart';
-import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
@@ -20,6 +18,8 @@ import 'package:fotdelsi/features/dropoffs/presentation/widgets/cycle_not_finish
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/assign_machine_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/pick_machine_sheet.dart';
 import 'package:fotdelsi/core/widgets/cycle_running_card.dart';
+import 'package:fotdelsi/features/wash_session/presentation/widgets/confirm_start_sheet.dart';
+import 'package:fotdelsi/features/wash_session/presentation/widgets/start_command_sent_sheet.dart';
 
 /// Détail d'un dépôt côté agent + actions contextuelles selon le statut.
 class DropOffDetailPage extends StatelessWidget {
@@ -149,8 +149,8 @@ class _DetailView extends StatelessWidget {
             child: CycleRunningCard(
               startedAt: dropOff.dryStartedAt ?? dropOff.startedAt,
               phaseLabel: dropOff.dryStartedAt != null
-                  ? 'Séchage en cours'
-                  : 'Lavage en cours',
+                  ? 'Séchage lancé'
+                  : 'Lavage lancé',
               phaseIcon: dropOff.dryStartedAt != null
                   ? Icons.dry_cleaning_rounded
                   : Icons.local_laundry_service_rounded,
@@ -160,10 +160,10 @@ class _DetailView extends StatelessWidget {
                   'puis appuyez sur le bouton Démarrer sur son écran.',
               footerMessage: dropOff.dryStartedAt != null
                   ? (dropOff.dryingDurationMinutes != null
-                      ? 'Un séchage dure environ ${dropOff.dryingDurationMinutes} minutes. Vous serez prévenu dès qu\'il sera bientôt terminé.'
-                      : 'Vous serez prévenu dès que le séchage sera bientôt terminé.')
+                        ? 'Un séchage dure environ ${dropOff.dryingDurationMinutes} minutes. Vous serez prévenu dès qu\'il sera bientôt terminé.'
+                        : 'Vous serez prévenu dès que le séchage sera bientôt terminé.')
                   : 'Nous vous préviendrons dès que votre cycle devrait être '
-                      'terminé. Un programme dure au moins 27 minutes.',
+                        'terminé. Un programme dure au moins 27 minutes.',
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -186,7 +186,8 @@ class _DetailView extends StatelessWidget {
             ),
           ),
 
-        if (dropOff.terminalReason != null && dropOff.terminalReason!.isNotEmpty)
+        if (dropOff.terminalReason != null &&
+            dropOff.terminalReason!.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.md),
             child: _banner(
@@ -219,10 +220,7 @@ class _DetailView extends StatelessWidget {
           // décide de joindre le client pour convenir d'une remise. Le format
           // était par ailleurs bricolé à la main — « +221 » recollé devant une
           // valeur dont on retirait « +221 », ce qui ne groupait rien.
-          _kvWidget(
-            'Téléphone',
-            ClientPhoneRow(phone: d.contactPhone),
-          ),
+          _kvWidget('Téléphone', ClientPhoneRow(phone: d.contactPhone)),
           _kv('Linge', laundry),
           if (d.laundry.instructions.isNotEmpty)
             _kv('Instructions', d.laundry.instructions),
@@ -326,10 +324,7 @@ class _DetailView extends StatelessWidget {
           icon: Icons.play_arrow_rounded,
           loading: isActing,
           backgroundColor: AppColors.primaryLight,
-          onPressed: () async {
-            await context.push(AppRoutes.agentAssignMachine(dropOff.id));
-            if (context.mounted) cubit.load(dropOff.id);
-          },
+          onPressed: () => _startWash(context, dropOff, cubit),
         ),
       ),
 
@@ -364,17 +359,6 @@ class _DetailView extends StatelessWidget {
         ),
       ),
 
-      // Un cycle tourne encore : on attend sa fin (détectée automatiquement).
-      // Sans objet en libre-service, où le travail restant est manuel :
-      // `canMarkReady` y est vrai dès la prise en charge.
-      DropOffStatus.inProgress => _bar(
-        _CycleRunningBar(
-          label: dropOff.dryStartedAt != null
-              ? 'Séchage en cours…'
-              : 'Lavage en cours…',
-        ),
-      ),
-
       DropOffStatus.ready => _bar(
         PrimaryButton(
           label: 'Remettre au client',
@@ -391,6 +375,37 @@ class _DetailView extends StatelessWidget {
 
   Widget _bar(Widget child) =>
       SafeArea(minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12), child: child);
+
+  Future<void> _startWash(
+    BuildContext context,
+    DropOff dropOff,
+    DropOffDetailCubit cubit,
+  ) async {
+    final machineId = dropOff.plannedMachineId;
+    if (machineId == null) {
+      final started = await showPickMachineSheet(
+        context,
+        dropOffId: dropOff.id,
+        mode: AssignMode.wash,
+      );
+      if (started && context.mounted) cubit.load(dropOff.id);
+      return;
+    }
+
+    final confirmed = await confirmMachineStart(
+      context,
+      machineName: dropOff.plannedMachineName,
+    );
+    if (!confirmed || !context.mounted) return;
+
+    final started = await cubit.startWash(machineId);
+    if (started && context.mounted) {
+      await showStartCommandSent(
+        context,
+        machineName: dropOff.plannedMachineName,
+      );
+    }
+  }
 
   Future<void> _confirmCollect(
     BuildContext context,
@@ -432,53 +447,8 @@ class _DetailView extends StatelessWidget {
       ),
       builder: (_) => EditLaundrySheet(
         initial: dropOff.laundry,
-        onSave: (pieces, types, instructions) => cubit.updateLaundry(
-          pieces: pieces,
-          types: types,
-          instructions: instructions,
-        ),
-      ),
-    );
-  }
-}
-
-/// Barre affichée pendant qu'un cycle tourne.
-class _CycleRunningBar extends StatelessWidget {
-  const _CycleRunningBar({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: AppColors.primaryLight,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
+        onSave: (pieces, instructions) =>
+            cubit.updateLaundry(pieces: pieces, instructions: instructions),
       ),
     );
   }

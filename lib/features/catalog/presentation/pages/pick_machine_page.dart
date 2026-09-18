@@ -14,6 +14,7 @@ import 'package:fotdelsi/features/machines/presentation/bloc/machines_bloc.dart'
 import 'package:fotdelsi/features/machines/presentation/bloc/machines_event.dart';
 import 'package:fotdelsi/features/machines/presentation/bloc/machines_state.dart';
 import 'package:fotdelsi/features/machines/presentation/widgets/machine_status_badge.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
 import '../../domain/entities/service_formula.dart';
 
 /// Choix de la machine pour une prestation déjà sélectionnée.
@@ -110,9 +111,13 @@ class _PickMachineView extends StatelessWidget {
         }
 
         final machine = eligible[index - 1];
+        final basePrice = formula.priceFor(machine.size!)!;
+        final displayPrice = formula.includesDrying
+            ? basePrice + DryingDurationTier.configuredDefault.price
+            : basePrice;
         return _MachineTile(
           machine: machine,
-          price: formula.priceFor(machine.size!)!,
+          price: displayPrice,
           onTap: machine.status == MachineStatus.available
               ? () {
                   final PaymentArgs args = (formula: formula, machine: machine);

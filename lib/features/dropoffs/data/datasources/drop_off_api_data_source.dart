@@ -178,7 +178,7 @@ class DropOffApiDataSource {
   Future<void> updateLaundry(
     String id, {
     required int pieces,
-    required List<LaundryType> types,
+    List<LaundryType> types = const [],
     String? instructions,
   }) async {
     await _dio.put<dynamic>(
@@ -186,7 +186,6 @@ class DropOffApiDataSource {
       data: {
         'laundry': {
           'pieces': pieces,
-          'types': types.map((t) => t.apiValue).toList(),
           if (instructions != null && instructions.isNotEmpty)
             'instructions': instructions,
         },

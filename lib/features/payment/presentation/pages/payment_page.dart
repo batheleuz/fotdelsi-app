@@ -95,7 +95,7 @@ class _PaymentViewState extends State<_PaymentView> {
     } else if (machineSize != null) {
       final base = formula.priceFor(machineSize);
       if (base != null) {
-        total = _hasDrying ? base + _dryingTier.priceAdjustment : base;
+        total = _hasDrying ? base + _dryingTier.price : base;
       }
     }
 
@@ -212,6 +212,7 @@ class _PaymentViewState extends State<_PaymentView> {
                   total: total,
                   state: state,
                   onPay: () async {
+                    if (total == null || total <= 0) return;
                     // Le numéro est exigé AVANT de payer, pas après : une fois
                     // la transaction partie, plus rien ne rattache le cycle à
                     // son client — le serveur ne connaît que le numéro, et il
@@ -385,7 +386,7 @@ class _PayBar extends StatelessWidget {
             // Sans montant connu, on ne lance rien : le serveur refuserait la
             // capacite non tarifee, et un paiement engage sur un prix qu'on ne
             // sait pas afficher n'a aucun sens.
-            enabled: state.canPay && amount != null,
+            enabled: state.canPay && amount != null && amount > 0,
             loading: state.isProcessing,
             onPressed: onPay,
           ),

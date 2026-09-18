@@ -48,7 +48,7 @@ class OrderRecapCard extends StatelessWidget {
     } else {
       final base = size == null ? null : f.priceFor(size);
       if (base != null) {
-        price = hasDrying ? base + tier.priceAdjustment : base;
+        price = hasDrying ? base + tier.price : base;
       }
     }
 

@@ -73,9 +73,7 @@ class _DryingDurationSheetContent extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              isFormula
-                  ? 'La formule inclut ${DryingDurationTier.configuredDefault.minutes} minutes. Vous pouvez ajuster selon vos besoins.'
-                  : 'Choisissez le temps de séchage pour cette machine.',
+              'Choisissez le temps de séchage pour votre linge.',
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
@@ -115,19 +113,9 @@ class _TierTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = tier.pulses ~/ 100;
 
-    String priceLabel;
-    if (isFormula) {
-      final adj = tier.priceAdjustment;
-      if (adj == 0) {
-        priceLabel = 'Inclus (${formatFcfa(tier.price)})';
-      } else if (adj > 0) {
-        priceLabel = '+${formatFcfa(adj)} (${formatFcfa(tier.price)})';
-      } else {
-        priceLabel = '${formatFcfa(adj)} (${formatFcfa(tier.price)})';
-      }
-    } else {
-      priceLabel = formatFcfa(tier.price);
-    }
+    final String priceLabel = isFormula
+        ? '+${formatFcfa(tier.price)}'
+        : formatFcfa(tier.price);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),

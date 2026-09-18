@@ -5,7 +5,6 @@ import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
 import '../../domain/entities/laundry.dart';
-import '../../domain/entities/laundry_type.dart';
 
 /// Feuille d'édition de la description du linge d'un dépôt.
 class EditLaundrySheet extends StatefulWidget {
@@ -16,8 +15,7 @@ class EditLaundrySheet extends StatefulWidget {
   });
 
   final Laundry initial;
-  final void Function(int pieces, List<LaundryType> types, String? instructions)
-  onSave;
+  final void Function(int pieces, String? instructions) onSave;
 
   @override
   State<EditLaundrySheet> createState() => _EditLaundrySheetState();
@@ -25,7 +23,6 @@ class EditLaundrySheet extends StatefulWidget {
 
 class _EditLaundrySheetState extends State<EditLaundrySheet> {
   late int _pieces = widget.initial.pieces;
-  late final Set<LaundryType> _types = {...widget.initial.types};
   late final TextEditingController _instructions = TextEditingController(
     text: widget.initial.instructions,
   );
@@ -93,47 +90,6 @@ class _EditLaundrySheetState extends State<EditLaundrySheet> {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          const Text(
-            'Type de linge',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: LaundryType.values.map((t) {
-              final on = _types.contains(t);
-              return GestureDetector(
-                onTap: () =>
-                    setState(() => on ? _types.remove(t) : _types.add(t)),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 9,
-                  ),
-                  decoration: BoxDecoration(
-                    color: on ? AppColors.surfaceTint : AppColors.surface,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    border: Border.all(
-                      color: on ? AppColors.primaryLight : AppColors.border,
-                      width: on ? 1.5 : 1,
-                    ),
-                  ),
-                  child: Text(
-                    t.label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: on ? FontWeight.w600 : FontWeight.w500,
-                      color: on
-                          ? AppColors.primaryDark
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _instructions,
             maxLines: 2,
@@ -160,7 +116,6 @@ class _EditLaundrySheetState extends State<EditLaundrySheet> {
             onPressed: () {
               widget.onSave(
                 _pieces,
-                _types.toList(),
                 _instructions.text.trim(),
               );
               Navigator.of(context).pop();

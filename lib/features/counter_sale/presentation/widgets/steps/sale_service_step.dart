@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:fotdelsi/core/theme/app_colors.dart';
+import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
@@ -27,9 +28,8 @@ class SaleServiceStep extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       children: [
-        // La vente au comptoir reste un cycle libre-service : le linge du
-        // client passera en machine, l'agent doit encore être là à la sortie.
-        // C'est donc la même règle que dans l'app cliente, pas celle du dépôt.
+        const _Label('Prestation'),
+        const SizedBox(height: AppSpacing.sm),
         for (final f in state.formulas)
           SaleChoiceTile(
             title: f.label,
@@ -40,9 +40,7 @@ class SaleServiceStep extends StatelessWidget {
                 ? null
                 : 'dès ${formatFcfa(f.lowestPrice!, withSuffix: false)}',
             selected: state.formulaCode == f.code,
-            onTap: f.availability.selfService
-                ? () => cubit.selectFormula(f)
-                : null,
+            onTap: () => cubit.selectFormula(f),
           ),
 
         if (formula != null) ...[
@@ -58,8 +56,6 @@ class SaleServiceStep extends StatelessWidget {
             for (final m in machines)
               SaleChoiceTile(
                 title: '${m.size} kg',
-                // La disponibilité est affichée mais ne filtre pas : l'agent
-                // doit pouvoir annoncer une attente au client.
                 subtitle: m.status == MachineStatus.available
                     ? 'Disponible'
                     : 'Occupée',
@@ -79,29 +75,28 @@ class SaleServiceStep extends StatelessWidget {
               Builder(
                 builder: (context) {
                   final isDryerOnly = state.machine?.type == MachineType.dryer;
-                  final String priceLabel;
-                  if (isDryerOnly) {
-                    priceLabel = formatFcfa(tier.price);
-                  } else {
-                    final adj = tier.priceAdjustment;
-                    if (adj == 0) {
-                      priceLabel = 'Inclus (${formatFcfa(tier.price)})';
-                    } else if (adj > 0) {
-                      priceLabel = '+${formatFcfa(adj)} (${formatFcfa(tier.price)})';
-                    } else {
-                      priceLabel = '${formatFcfa(adj)} (${formatFcfa(tier.price)})';
-                    }
-                  }
+                  final String priceLabel = isDryerOnly
+                      ? formatFcfa(tier.price)
+                      : '+${formatFcfa(tier.price)}';
 
                   return SaleChoiceTile(
                     title: tier.label,
-                    subtitle: '${tier.pulses ~/ 100} pièce(s) · ${tier.pulses} pulses',
+                    subtitle:
+                        '${tier.pulses ~/ 100} pièce(s) · ${tier.pulses} pulses',
                     trailing: priceLabel,
                     selected: state.dryingTier == tier,
                     onTap: () => cubit.selectDryingTier(tier),
                   );
                 },
               ),
+          ],
+
+          if (state.total != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            _TotalBanner(
+              total: state.total!,
+              hasDrying: state.hasDrying,
+            ),
           ],
         ],
       ],
@@ -122,4 +117,62 @@ class _Label extends StatelessWidget {
       color: AppColors.textSecondary,
     ),
   );
+}
+
+class _TotalBanner extends StatelessWidget {
+  const _TotalBanner({required this.total, required this.hasDrying});
+
+  final int total;
+  final bool hasDrying;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceTint,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: AppColors.primaryLight.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Total à payer',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              if (hasDrying) ...[
+                const SizedBox(height: 2),
+                const Text(
+                  'Séchage compris',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          Text(
+            formatFcfa(total),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

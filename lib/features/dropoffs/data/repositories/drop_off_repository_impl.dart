@@ -127,7 +127,7 @@ class DropOffRepositoryImpl implements DropOffRepository {
   Future<Either<Failure, void>> updateLaundry(
     String id, {
     required int pieces,
-    required List<LaundryType> types,
+    List<LaundryType> types = const [],
     String? instructions,
   }) => _guard(
     () => _api.updateLaundry(

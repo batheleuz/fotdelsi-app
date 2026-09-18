@@ -16,6 +16,8 @@ class DropOff extends Equatable {
     required this.status,
     this.receivedAt,
     this.machineId,
+    this.plannedMachineId,
+    this.plannedMachineName,
     this.washSessionId,
     this.withDrying = false,
     this.dryingDurationMinutes,
@@ -47,6 +49,8 @@ class DropOff extends Equatable {
   final String origin;
 
   final String? machineId;
+  final String? plannedMachineId;
+  final String? plannedMachineName;
   final String? washSessionId;
 
   /// Séchage inclus (choisi et payé au dépôt).
@@ -130,7 +134,8 @@ class DropOff extends Equatable {
       _inProgress &&
       (isSelfService ||
           (withDrying
-              ? (dryCompletedAt != null || (dryStartedAt != null && awaitingPickup))
+              ? (dryCompletedAt != null ||
+                    (dryStartedAt != null && awaitingPickup))
               : (washCompletedAt != null)));
 
   // Toutes les valeurs affichables entrent dans l'égalité : sinon une
@@ -147,6 +152,8 @@ class DropOff extends Equatable {
     laundry,
     status,
     machineId,
+    plannedMachineId,
+    plannedMachineName,
     washSessionId,
     withDrying,
     dryingDurationMinutes,

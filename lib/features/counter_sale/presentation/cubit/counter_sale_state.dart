@@ -88,7 +88,7 @@ final class CounterSaleState extends Equatable {
     if (formula == null || size == null) return null;
     final base = formula.priceFor(size);
     if (base == null) return null;
-    return hasDrying ? base + dryingTier.priceAdjustment : base;
+    return hasDrying ? base + dryingTier.price : base;
   }
 
   /// Lien de paiement à encoder en QR, une fois la vente initiée.
@@ -105,15 +105,17 @@ final class CounterSaleState extends Equatable {
       machine != null &&
       provider != null &&
       customerName.trim().length >= 2 &&
-      _phoneRegex.hasMatch(customerPhone);
+      _phoneRegex.hasMatch(customerPhone) &&
+      (total ?? 0) > 0;
 
   /// L'agent peut-il avancer depuis l'étape courante ?
   bool get canGoNext => switch (step) {
-    0 => formulaCode != null && machine != null,
+    0 => formulaCode != null && machine != null && (total ?? 0) > 0,
     1 =>
       provider != null &&
           customerName.trim().length >= 2 &&
-          _phoneRegex.hasMatch(customerPhone),
+          _phoneRegex.hasMatch(customerPhone) &&
+          (total ?? 0) > 0,
     _ => false,
   };
 

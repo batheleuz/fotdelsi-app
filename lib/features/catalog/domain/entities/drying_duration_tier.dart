@@ -6,10 +6,10 @@
 /// - 45 min -> 3 pièces = 300 pulses EQLink -> 4 500 CFA (durée de base incluse par défaut dans les formules)
 /// - 1h (60 min) -> 4 pièces = 400 pulses EQLink -> 5 000 CFA
 enum DryingDurationTier {
-  m15(minutes: 15, pulses: 100, basePrice: 1500, label: '15 minutes'),
-  m30(minutes: 30, pulses: 200, basePrice: 3000, label: '30 minutes'),
-  m45(minutes: 45, pulses: 300, basePrice: 4500, label: '45 minutes'),
-  m60(minutes: 60, pulses: 400, basePrice: 5000, label: '1 heure');
+  m15(minutes: 15, pulses: 100, basePrice: 1000, label: '15 minutes'),
+  m30(minutes: 30, pulses: 200, basePrice: 2000, label: '30 minutes'),
+  m45(minutes: 45, pulses: 300, basePrice: 3000, label: '45 minutes'),
+  m60(minutes: 60, pulses: 400, basePrice: 4000, label: '1 heure');
 
   const DryingDurationTier({
     required this.minutes,
@@ -28,6 +28,10 @@ enum DryingDurationTier {
   static final Map<int, int> customPrices = {};
 
   int get price => customPrices[minutes] ?? _basePrice;
+
+  /// Plus petit prix parmi l'ensemble des paliers de séchage (ex: 15 min à 1 000 CFA).
+  static int get lowestPrice =>
+      values.map((t) => t.price).reduce((a, b) => a < b ? a : b);
 
   static void configure({Map<int, int>? prices, int? defaultMinutes}) {
     if (prices != null) {

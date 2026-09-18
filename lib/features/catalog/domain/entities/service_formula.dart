@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'drying_duration_tier.dart';
+
 /// Prestation unitaire composant une formule.
 enum ServiceItemKind { washing, drying, folding, ironing }
 
@@ -126,10 +128,20 @@ class ServiceFormula extends Equatable {
     return null;
   }
 
-  /// Prix d'entrée de gamme — sert à annoncer « à partir de … ».
-  int? get lowestPrice => prices.isEmpty
-      ? null
-      : prices.map((p) => p.price).reduce((a, b) => a < b ? a : b);
+  /// Prix d'entrée de gamme — sert à annoncer « à partir de … » (ex: dès 3 500 CFA).
+  ///
+  /// Prend le tarif de la plus petite machine (12 kg),
+  /// auquel s'ajoute le prix du séchage par défaut (45 min)
+  /// si la formule inclut le séchage.
+  int? get lowestPrice {
+    if (prices.isEmpty) return null;
+    final basePrice = priceFor(12) ??
+        prices.map((p) => p.price).reduce((a, b) => a < b ? a : b);
+    if (includesDrying) {
+      return basePrice + DryingDurationTier.configuredDefault.price;
+    }
+    return basePrice;
+  }
 
   @override
   List<Object?> get props => [

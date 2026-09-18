@@ -86,11 +86,15 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
   // ── Saisies ─────────────────────────────────────────────────────────────────
 
   void selectFormula(ServiceFormula formula) {
-    // La machine choisie peut ne plus convenir (mauvais type, capacité non
+    // La machine n'est conservée que si elle convient à la formule (type et
     // tarifée) : on la réinitialise plutôt que d'afficher un total faux.
     final keep = state.machine != null && _fits(formula, state.machine!);
+    final updatedFormulas = state.formulas.any((f) => f.code == formula.code)
+        ? state.formulas
+        : [...state.formulas, formula];
     emit(
       state.copyWith(
+        formulas: updatedFormulas,
         formulaCode: formula.code,
         machine: keep ? state.machine : null,
         clearMachine: !keep,
@@ -154,6 +158,15 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
   /// Aucun montant n'est transmis : le serveur le recalcule depuis la grille.
   Future<void> submit() async {
     if (!state.canSubmit || state.isSubmitting) return;
+
+    final total = state.total;
+    if (total == null || total <= 0) {
+      emit(state.copyWith(
+        saleStatus: SaleStatus.failure,
+        error: 'Le montant calculé doit être strictement supérieur à 0 F CFA.',
+      ));
+      return;
+    }
 
     emit(state.copyWith(saleStatus: SaleStatus.submitting, clearError: true));
 

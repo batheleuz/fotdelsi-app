@@ -90,8 +90,12 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
   void selectFormula(ServiceFormula formula) {
     final keepSize =
         state.sizeKg != null && formula.priceFor(state.sizeKg!) != null;
+    final updatedFormulas = state.formulas.any((f) => f.code == formula.code)
+        ? state.formulas
+        : [...state.formulas, formula];
     emit(
       state.copyWith(
+        formulas: updatedFormulas,
         formulaCode: formula.code,
         sizeKg: keepSize ? state.sizeKg : null,
         clearSize: !keepSize,
@@ -125,6 +129,15 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
 
   Future<void> submit() async {
     if (!state.canSubmit || state.submitStatus == SubmitStatus.loading) return;
+
+    final total = state.total;
+    if (total == null || total <= 0) {
+      emit(state.copyWith(
+        submitStatus: SubmitStatus.failure,
+        error: 'Le montant calculé doit être strictement supérieur à 0 F CFA.',
+      ));
+      return;
+    }
 
     emit(state.copyWith(submitStatus: SubmitStatus.loading, clearError: true));
 

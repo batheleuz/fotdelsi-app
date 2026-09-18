@@ -5,7 +5,7 @@ import 'package:fotdelsi/core/di/service_locator.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
-import 'package:fotdelsi/core/utils/price_formatter.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
 import 'package:fotdelsi/features/catalog/presentation/cubit/service_catalog_cubit.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
@@ -125,7 +125,10 @@ class _PickFormula extends StatelessWidget {
                       formula: formula,
                       // Le prix de CETTE capacité : `machine.size` est non nul
                       // dès qu'une formule a passé le filtre.
-                      price: formula.priceFor(machine.size!)!,
+                      price: formula.includesDrying
+                          ? formula.priceFor(machine.size!)! +
+                              DryingDurationTier.configuredDefault.price
+                          : formula.priceFor(machine.size!)!,
                       onTap: () => Navigator.of(context).pop(formula),
                     ),
                 ],

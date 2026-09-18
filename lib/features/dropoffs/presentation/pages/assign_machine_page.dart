@@ -9,6 +9,7 @@ import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/assign_machine_cubit.dart';
+import 'package:fotdelsi/features/wash_session/presentation/widgets/start_command_sent_sheet.dart';
 
 /// Choix d'une machine disponible pour lancer le lavage (laveuse) ou le
 /// séchage (sécheuse) d'un dépôt, selon [mode].
@@ -57,16 +58,19 @@ class _AssignView extends StatelessWidget {
       ),
       body: BlocConsumer<AssignMachineCubit, AssignMachineState>(
         listenWhen: (p, c) => p.assignStatus != c.assignStatus,
-        listener: (context, state) {
+        listener: (context, state) async {
           if (state.assignStatus == AssignStatus.success) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(
-                  content: Text(_isDry ? 'Séchage démarré' : 'Lavage démarré'),
-                ),
-              );
-            context.pop();
+            final selected = state.machines
+                .where((m) => m.id == state.selectedId)
+                .firstOrNull;
+            await showStartCommandSent(
+              context,
+              machineName: selected?.name,
+              drying: _isDry,
+            );
+            if (context.mounted) {
+              context.pop();
+            }
           } else if (state.assignStatus == AssignStatus.failure) {
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()

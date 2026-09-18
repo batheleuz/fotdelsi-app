@@ -81,7 +81,7 @@ final class NewDropOffState extends Equatable {
     if (formula == null || sizeKg == null) return null;
     final base = formula.priceFor(sizeKg!);
     if (base == null) return null;
-    return hasDrying ? base + dryingTier.priceAdjustment : base;
+    return hasDrying ? base + dryingTier.price : base;
   }
 
   /// Capacités proposées pour la formule choisie.
@@ -97,7 +97,10 @@ final class NewDropOffState extends Equatable {
   bool get canLeaveClient => isPhoneValid && customerName.trim().isNotEmpty;
   bool get canLeaveLaundry => true;
   bool get canSubmit =>
-      formulaCode != null && sizeKg != null && provider != null;
+      formulaCode != null &&
+      sizeKg != null &&
+      provider != null &&
+      (total ?? 0) > 0;
   bool get isSubmitting => submitStatus == SubmitStatus.loading;
 
   NewDropOffState copyWith({

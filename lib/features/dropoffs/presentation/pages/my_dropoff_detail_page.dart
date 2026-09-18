@@ -88,8 +88,8 @@ class _DetailView extends StatelessWidget {
               child: CycleRunningCard(
                 startedAt: d.dryStartedAt ?? d.startedAt,
                 phaseLabel: d.dryStartedAt != null
-                    ? 'Séchage en cours'
-                    : 'Lavage en cours',
+                    ? 'Séchage lancé'
+                    : 'Lavage lancé',
                 phaseIcon: d.dryStartedAt != null
                     ? Icons.dry_cleaning_rounded
                     : Icons.local_laundry_service_rounded,

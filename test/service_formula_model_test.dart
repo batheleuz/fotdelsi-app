@@ -71,7 +71,25 @@ void main() {
       expect(formula.priceFor(15), 10000);
       expect(formula.priceFor(20), 12000);
       expect(formula.sizes, [12, 15, 20]);
-      expect(formula.lowestPrice, 9000);
+      // Avec séchage inclus, le tarif d'appel ajoute le palier par défaut (45 min = 3 000 CFA)
+      expect(formula.lowestPrice, 12000);
+    });
+
+    test('formule sans séchage conserve uniquement le tarif de la plus petite machine', () {
+      const washing = ServiceFormula(
+        code: 'LAVAGE',
+        label: 'Lavage',
+        items: [ServiceItem(kind: ServiceItemKind.washing, label: 'Lavage', requiresAgent: false)],
+        includesDrying: false,
+        requiresAgent: false,
+        selfServiceEnabled: true,
+        displayOrder: 1,
+        prices: [
+          FormulaPrice(sizeKg: 12, price: 4000),
+          FormulaPrice(sizeKg: 15, price: 5000),
+        ],
+      );
+      expect(washing.lowestPrice, 4000);
     });
 
     test('retourne null pour une capacité non tarifée', () {
