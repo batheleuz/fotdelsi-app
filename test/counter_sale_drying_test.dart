@@ -5,7 +5,6 @@ import 'package:fotdelsi/core/di/service_locator.dart';
 import 'package:fotdelsi/core/network/failures.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/business_hours.dart';
-import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
 import 'package:fotdelsi/features/catalog/domain/repositories/service_formula_repository.dart';
 import 'package:fotdelsi/features/counter_sale/presentation/cubit/counter_sale_cubit.dart';

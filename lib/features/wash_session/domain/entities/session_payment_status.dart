@@ -3,7 +3,7 @@
 /// `pendingPayment` : paiement initié, en attente de confirmation du provider.
 /// `confirmed`      : webhook du provider reçu par le backend — paiement OK.
 /// `failed`         : paiement échoué ou annulé par le provider.
-/// `expired`        : réservation expirée avant confirmation.
+/// `expired`        : paiement expiré avant confirmation.
 /// `anomaly`        : incohérence détectée (montant, transition illégale…).
 enum SessionPaymentStatus {
   pendingPayment,

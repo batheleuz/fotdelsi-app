@@ -26,7 +26,6 @@ PaymentSession _session({
   paymentId: 'p-1',
   externalRef: 'FOT-1',
   amount: 4000,
-  reservedUntil: '2026-08-04T17:00:00.000Z',
   washSessionToken: 'tok',
   redirectUrl: redirectUrl,
   omUrl: omUrl,

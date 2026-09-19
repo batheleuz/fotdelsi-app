@@ -10,7 +10,6 @@ class PaymentSessionModel {
     required this.externalRef,
     required this.amount,
     this.machineId,
-    this.reservedUntil,
     this.washSessionToken,
 
     // Wave URL
@@ -23,12 +22,12 @@ class PaymentSessionModel {
   });
 
   final String provider;
+
   /// `null` pour un dépôt : aucune machine n'est choisie à cet instant.
   final String? machineId;
   final String paymentId;
   final String externalRef;
   final int amount;
-  final String? reservedUntil;
   final String? washSessionToken;
 
   final String? redirectUrl;
@@ -44,7 +43,6 @@ class PaymentSessionModel {
       amount: json['amount'],
       externalRef: json['externalRef'],
       paymentId: json["paymentId"],
-      reservedUntil: json["reservedUntil"],
       washSessionToken: json["washSessionToken"],
 
       redirectUrl: json["redirectUrl"],
@@ -61,7 +59,6 @@ class PaymentSessionModel {
     externalRef: externalRef,
     paymentId: paymentId,
     provider: fromApiValue(provider),
-    reservedUntil: reservedUntil,
     washSessionToken: washSessionToken,
     maxitUrl: maxitUrl,
     omUrl: omUrl,

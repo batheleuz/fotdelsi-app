@@ -56,8 +56,7 @@ abstract interface class WashSessionRepository {
 
   /// `POST /wash-sessions/start-drying` — second temps du cycle.
   ///
-  /// La sécheuse n'est pas réservée au paiement (elle tournerait à vide
-  /// pendant le lavage) : le client la choisit ici parmi celles libres.
+  /// Le client choisit ici une sécheuse parmi celles qui sont libres.
   Future<Either<Failure, void>> startDrying({
     required String washSessionToken,
     required String dryerMachineId,

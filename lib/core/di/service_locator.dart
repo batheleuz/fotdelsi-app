@@ -106,6 +106,11 @@ Future<void> setupLocator({
         serviceLocator<AuthTokenStore>(),
         serviceLocator<ClientSessionStore>(),
         ApiEndpoints.baseUrl,
+        onAgentSessionExpired: () async {
+          if (serviceLocator.isRegistered<AuthCubit>()) {
+            serviceLocator<AuthCubit>().sessionExpired();
+          }
+        },
       ),
     );
     return dio;

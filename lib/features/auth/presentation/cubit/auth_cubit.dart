@@ -57,4 +57,10 @@ class AuthCubit extends Cubit<AuthState> {
     await _repository.logout();
     emit(const AuthState(status: AuthStatus.anonymous));
   }
+
+  /// Appelé par la couche réseau uniquement quand le refresh token est
+  /// réellement absent, expiré ou révoqué.
+  void sessionExpired() {
+    emit(const AuthState(status: AuthStatus.anonymous));
+  }
 }

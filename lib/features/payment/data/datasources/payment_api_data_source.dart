@@ -88,11 +88,6 @@ class PaymentApiDataSource {
     expiresAt:
         DateTime.tryParse(json['expiresAt'] as String? ?? '')?.toLocal() ??
         DateTime.now(),
-    machineStillHeld: json['machineStillHeld'] as bool? ?? false,
-    machineHeldUntil: DateTime.tryParse(
-      json['machineHeldUntil'] as String? ?? '',
-    )?.toLocal(),
-    machineName: json['machineName'] as String?,
     formulaLabel: json['formulaLabel'] as String?,
     checkoutUrl: json['checkoutUrl'] as String?,
     fallbackUrl: json['fallbackUrl'] as String?,

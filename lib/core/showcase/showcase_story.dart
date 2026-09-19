@@ -64,9 +64,6 @@ abstract final class ShowcaseStory {
   static String _ago(Duration d) =>
       DateTime.now().toUtc().subtract(d).toIso8601String();
 
-  static String _within(Duration d) =>
-      DateTime.now().toUtc().add(d).toIso8601String();
-
   // ─────────────────────────── Réponses ───────────────────────────
 
   static Map<String, dynamic> envelope(Object? data) => {
@@ -411,10 +408,5 @@ abstract final class ShowcaseStory {
     'readyAt': null,
     'collectedAt': null,
     'terminalReason': null,
-  };
-
-  /// Réservation encore tenue — utile si une capture passe par le paiement.
-  static Map<String, dynamic> reservationHold() => {
-    'reservedUntil': _within(const Duration(minutes: 9)),
   };
 }

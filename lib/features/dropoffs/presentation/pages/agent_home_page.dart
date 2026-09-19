@@ -130,7 +130,7 @@ class _AgentHomeViewState extends State<_AgentHomeView>
                       // un cycle » désignait la même chose sous un troisième
                       // nom, après « vente au comptoir ».
                       title: 'Lancer un cycle',
-                      subtitle: 'Client sur place, sans réservation',
+                      subtitle: 'Client sur place, paiement immédiat',
                       onTap: () async {
                         await context.push(AppRoutes.agentSale);
                         if (context.mounted) {

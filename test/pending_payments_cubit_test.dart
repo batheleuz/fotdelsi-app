@@ -42,7 +42,6 @@ PendingPayment _paiement({
   paymentId: id,
   amount: 6000,
   expiresAt: DateTime.now().add(reste),
-  machineStillHeld: true,
   checkoutUrl: url,
 );
 

@@ -44,8 +44,8 @@ final class ServiceCatalogState extends Equatable {
 
 /// Catalogue des prestations vendables en libre-service.
 ///
-/// Filtré sur `selfServiceOnly` côté serveur : une formule réservée au
-/// comptoir ne doit pas apparaître dans un parcours d'achat depuis l'app, où
+/// Filtré sur `selfServiceOnly` côté serveur : une formule disponible seulement
+/// au comptoir ne doit pas apparaître dans un parcours d'achat depuis l'app, où
 /// elle serait de toute façon refusée à l'initiation du paiement.
 class ServiceCatalogCubit extends Cubit<ServiceCatalogState> {
   ServiceCatalogCubit(this._repository) : super(const ServiceCatalogState());

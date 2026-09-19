@@ -22,9 +22,10 @@ class PendingPaymentBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final paiement = context.select<ClientPendingPaymentsCubit, PendingPayment?>(
-      (c) => c.state.mostRecent,
-    );
+    final paiement = context
+        .select<ClientPendingPaymentsCubit, PendingPayment?>(
+          (c) => c.state.mostRecent,
+        );
 
     return AnimatedReveal(
       visible: paiement != null,
@@ -99,18 +100,14 @@ class _BannerState extends State<_Banner> {
     cubit.dismiss(paiement.paymentId);
   }
 
-  /// La réservation ne dure que cinq minutes : sous la minute, afficher
-  /// « 0 min » ferait croire que c'est déjà perdu alors qu'il reste du temps.
-  static String? _dureeDeGarde(Duration? reste) {
-    if (reste == null) return null;
+  static String _dureeRestante(Duration reste) {
     final minutes = reste.inMinutes;
     return minutes < 1 ? 'moins d\'une minute' : '$minutes min';
   }
 
   @override
   Widget build(BuildContext context) {
-    final minutes = paiement.remaining.inMinutes;
-    final garde = _dureeDeGarde(paiement.holdRemaining);
+    final duree = _dureeRestante(paiement.remaining);
 
     return Container(
       width: double.infinity,
@@ -119,7 +116,9 @@ class _BannerState extends State<_Banner> {
       decoration: BoxDecoration(
         color: const Color(0xFFFDF3E2),
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: const Color(0xFFEF9F27).withValues(alpha: 0.4)),
+        border: Border.all(
+          color: const Color(0xFFEF9F27).withValues(alpha: 0.4),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,47 +153,22 @@ class _BannerState extends State<_Banner> {
           ),
 
           const SizedBox(height: 4),
-          Text(
-            [
-              ?paiement.formulaLabel,
-              ?paiement.machineName,
-            ].join(' · '),
-            style: const TextStyle(
-              fontSize: 12.5,
-              color: AppColors.textSecondary,
+          if (paiement.formulaLabel case final formule?) ...[
+            const SizedBox(height: 4),
+            Text(
+              formule,
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
+          ],
 
           const SizedBox(height: 10),
-          // DEUX échéances, jamais dans la même phrase.
-          //
-          // « Votre machine est réservée. Il vous reste 27 min pour payer. »
-          // se lit comme une machine tenue 27 minutes. Elle l'est cinq. Le
-          // client repartait donc tranquille, et retrouvait sa machine prise.
-          //
-          // Chaque durée porte désormais son propre sujet, et la plus courte
-          // — la seule qui contraigne vraiment — passe en premier, en gras.
           Text(
-            garde == null
-                ? 'La machine n\'est plus réservée'
-                : 'Votre machine est réservée pour encore $garde',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: garde == null
-                  ? AppColors.danger
-                  : const Color(0xFF8A5A0E),
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            garde == null
-                ? 'Elle a pu être prise par quelqu\'un d\'autre. '
-                      'Le paiement reste possible pendant $minutes min.'
-                : 'Ensuite, elle peut être prise par quelqu\'un d\'autre. '
-                      'Le paiement, lui, reste possible pendant $minutes min.',
+            'Vous pouvez reprendre ce paiement pendant encore $duree.',
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               height: 1.4,
               color: AppColors.textSecondary,
             ),

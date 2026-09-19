@@ -12,10 +12,7 @@ part 'pending_payments_state.dart';
 /// Paiements que le client peut encore honorer.
 ///
 /// Le cas visé est précis : le solde manquait au moment de payer. Le client
-/// recharge son compte, revient — et n'avait aucun moyen de reprendre. Relancer
-/// un paiement échouait de surcroît sur la réservation posée par sa PROPRE
-/// tentative, avec un « machine indisponible » qui accusait à tort quelqu'un
-/// d'autre.
+/// recharge son compte, revient et reprend le même lien de paiement.
 ///
 /// Silencieux en cas d'échec : cette liste est un rattrapage, pas le contenu
 /// principal de l'accueil. Un réseau capricieux n'a pas à y faire surgir une
