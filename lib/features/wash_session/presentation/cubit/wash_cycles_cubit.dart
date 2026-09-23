@@ -130,6 +130,29 @@ abstract class WashCyclesCubit extends Cubit<WashCyclesState> {
     );
   }
 
+  /// Démarre le crédit sur la machine libre choisie au dernier moment.
+  /// Renvoie `null` en cas de succès pour laisser la feuille afficher l'erreur
+  /// sans snackbar masquée derrière elle.
+  Future<String?> startOnMachine(WashCycle cycle, Machine machine) async {
+    emit(state.copyWith(startingToken: cycle.token, clearStartError: true));
+
+    final result = await repository.startMachine(
+      cycle.token,
+      machineId: machine.id,
+    );
+    return result.fold(
+      (failure) {
+        emit(state.copyWith(clearStarting: true, clearStartError: true));
+        return failure.message;
+      },
+      (_) {
+        emit(state.copyWith(clearStarting: true, clearStartError: true));
+        _chaseRemainingTime();
+        return null;
+      },
+    );
+  }
+
   /// Délais des rechargements qui suivent un démarrage, en secondes.
   ///
   /// La durée d'un cycle n'existe pas à l'instant du démarrage : EQLink ne la

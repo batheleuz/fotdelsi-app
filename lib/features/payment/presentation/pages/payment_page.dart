@@ -61,6 +61,7 @@ class _PaymentView extends StatefulWidget {
 class _PaymentViewState extends State<_PaymentView> {
   DryingDurationTier _dryingTier = DryingDurationTier.defaultTier;
   bool _hasManuallySelectedTier = false;
+  int _quantity = 1;
 
   bool get _hasDrying =>
       widget.formula?.includesDrying ??
@@ -98,6 +99,7 @@ class _PaymentViewState extends State<_PaymentView> {
         total = _hasDrying ? base + _dryingTier.price : base;
       }
     }
+    if (total != null) total *= _quantity;
 
     return Scaffold(
       bottomNavigationBar: const ServiceStatusBanner(),
@@ -163,6 +165,9 @@ class _PaymentViewState extends State<_PaymentView> {
                             dryingTier: _hasDrying ? _dryingTier : null,
                             onSelectDryingTier:
                                 _hasDrying ? _selectDryingTier : null,
+                            quantity: _quantity,
+                            onQuantityChanged: (quantity) =>
+                                setState(() => _quantity = quantity),
                           ),
                           const SizedBox(height: AppSpacing.lg),
 
@@ -242,6 +247,7 @@ class _PaymentViewState extends State<_PaymentView> {
                         formulaCode: formula?.code,
                         dryingDurationMinutes:
                             _hasDrying ? tierToUse.minutes : null,
+                        quantity: _quantity,
                       ),
                     );
                   },

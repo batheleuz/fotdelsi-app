@@ -5,6 +5,7 @@ import 'package:fotdelsi/core/network/api_response.dart';
 import 'package:fotdelsi/core/network/exceptions.dart';
 import '../models/wash_session_status_model.dart';
 import '../../domain/entities/wash_cycle.dart';
+import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 
 /// Source distante REST des wash-sessions.
 ///
@@ -56,6 +57,11 @@ class WashSessionApiDataSource {
     return WashCycle(
       token: json['token'] as String,
       machineId: json['machineId'] as String,
+      machineType: (json['machineType'] as String?) == 'SECHEUSE'
+          ? MachineType.dryer
+          : MachineType.washer,
+      unitIndex: (json['unitIndex'] as num?)?.toInt() ?? 1,
+      quantity: (json['quantity'] as num?)?.toInt() ?? 1,
       machineName: json['machineName'] as String?,
       dryerMachineName: json['dryerMachineName'] as String?,
       sizeKg: (json['sizeKg'] as num?)?.toInt(),
@@ -89,11 +95,11 @@ class WashSessionApiDataSource {
 
   /// `POST /wash-session/start` — démarrage manuel (retry) via EQLink.
   /// Le token transite dans le **body**.
-  Future<void> startMachine(String token) async {
+  Future<void> startMachine(String token, {String? machineId}) async {
     try {
       await _dio.post<dynamic>(
         ApiEndpoints.startMachine,
-        data: {'token': token},
+        data: {'token': token, 'machineId': ?machineId},
       );
     } on DioException catch (e) {
       throw AppException.fromDio(e);

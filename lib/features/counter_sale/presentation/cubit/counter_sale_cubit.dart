@@ -134,6 +134,8 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
     emit(state.copyWith(dryingTier: tier));
   }
 
+  void selectQuantity(int quantity) => emit(state.copyWith(quantity: quantity));
+
   // ── Navigation ──────────────────────────────────────────────────────────────
 
   void next() {
@@ -181,6 +183,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
       atCounter: true,
       dryingDurationMinutes:
           state.hasDrying ? state.dryingTier.minutes : null,
+      quantity: state.quantity,
     );
 
     result.fold(
@@ -236,20 +239,37 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
 
   /// Le client n'ayant pas l'app, c'est l'agent qui lance la machine une fois
   /// le linge chargé. Le jeton de session est resté de son côté.
-  Future<void> startMachine() async {
+  Future<String?> startMachine(Machine machine) async {
     final session = state.session;
-    if (session == null || state.saleStatus != SaleStatus.paid) return;
+    if (session == null || state.saleStatus != SaleStatus.paid) {
+      return 'Ce cycle ne peut pas être démarré.';
+    }
 
     emit(state.copyWith(saleStatus: SaleStatus.starting, clearError: true));
 
-    final result = await _sessions.startMachine(session.washSessionToken!);
+    final result = await _sessions.startMachine(
+      session.washSessionToken!,
+      machineId: machine.id,
+    );
 
-    result.fold(
-      (failure) => emit(
+    return result.fold(
+      (failure) {
+        emit(
         // Retour à « payé » : le paiement reste valide, l'agent peut réessayer.
-        state.copyWith(saleStatus: SaleStatus.paid, error: failure.message),
-      ),
-      (_) => emit(state.copyWith(saleStatus: SaleStatus.started)),
+          state.copyWith(saleStatus: SaleStatus.paid, clearError: true),
+        );
+        return failure.message;
+      },
+      (_) {
+        emit(
+          state.copyWith(
+            saleStatus: SaleStatus.started,
+            machine: machine,
+            clearError: true,
+          ),
+        );
+        return null;
+      },
     );
   }
 

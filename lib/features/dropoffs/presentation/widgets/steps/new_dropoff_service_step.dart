@@ -11,6 +11,7 @@ import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart'
 // Fournit l'extension `label` sur PaymentProvider.
 import 'package:fotdelsi/features/payment/presentation/utils/payment_provider_presentation.dart';
 import 'package:fotdelsi/features/payment/presentation/widgets/payment_provider_logo.dart';
+import 'package:fotdelsi/core/widgets/quantity_stepper.dart';
 import '../../cubit/new_dropoff_cubit.dart';
 
 /// Étape 3 — formule de service, capacité, puis opérateur de paiement.
@@ -50,6 +51,35 @@ class NewDropOffServiceStep extends StatelessWidget {
           _DryingDurationPicker(
             selected: state.dryingTier,
             onSelect: cubit.selectDryingTier,
+          ),
+        ],
+        if (formula != null && state.sizeKg != null) ...[
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Title('Nombre de cycles'),
+                    SizedBox(height: 2),
+                    Text(
+                      'Chaque cycle pourra être lancé sur une laveuse libre.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              QuantityStepper(
+                value: state.quantity,
+                onChanged: cubit.selectQuantity,
+              ),
+            ],
           ),
         ],
         if (state.total != null && formula != null) ...[
@@ -486,4 +516,3 @@ class _DryingDurationPicker extends StatelessWidget {
     );
   }
 }
-

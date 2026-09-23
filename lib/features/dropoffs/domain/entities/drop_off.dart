@@ -4,6 +4,59 @@ import '../../presentation/utils/relative_time.dart';
 import 'drop_off_status.dart';
 import 'laundry.dart';
 
+class DropOffMachineCycle extends Equatable {
+  const DropOffMachineCycle({
+    required this.id,
+    required this.unitIndex,
+    required this.machineId,
+    required this.status,
+    this.machineName,
+    this.dryerMachineId,
+    this.dryerMachineName,
+    this.startedAt,
+    this.washCompletedAt,
+    this.dryStartedAt,
+    this.dryCompletedAt,
+    this.awaitingPickup = false,
+    this.canStartDrying = false,
+  });
+
+  final String id;
+  final int unitIndex;
+  final String machineId;
+  final String status;
+  final String? machineName;
+  final String? dryerMachineId;
+  final String? dryerMachineName;
+  final DateTime? startedAt;
+  final DateTime? washCompletedAt;
+  final DateTime? dryStartedAt;
+  final DateTime? dryCompletedAt;
+  final bool awaitingPickup;
+  final bool canStartDrying;
+
+  bool get isRunning =>
+      status == 'RUNNING' && !canStartDrying && !awaitingPickup;
+  bool get isCompleted => status == 'DONE' || awaitingPickup;
+
+  @override
+  List<Object?> get props => [
+    id,
+    unitIndex,
+    machineId,
+    status,
+    machineName,
+    dryerMachineId,
+    dryerMachineName,
+    startedAt,
+    washCompletedAt,
+    dryStartedAt,
+    dryCompletedAt,
+    awaitingPickup,
+    canStartDrying,
+  ];
+}
+
 /// Dépôt de linge géré par un agent.
 class DropOff extends Equatable {
   const DropOff({
@@ -34,6 +87,10 @@ class DropOff extends Equatable {
     this.clientCycleFinished,
     this.clientCycleFinishedAt,
     this.awaitingPickup = false,
+    this.quantity = 1,
+    this.cyclesStarted = 0,
+    this.cyclesCompleted = 0,
+    this.cycles = const [],
   });
 
   final String id;
@@ -56,7 +113,7 @@ class DropOff extends Equatable {
   /// Séchage inclus (choisi et payé au dépôt).
   final bool withDrying;
 
-  /// Durée de séchage choisie en minutes (15, 30, 45, 60), null si pas de séchage.
+  /// Durée de séchage choisie en minutes (15, 30, 45, 60, 90), null si pas de séchage.
   final int? dryingDurationMinutes;
 
   /// Sécheuse assignée — null tant que le séchage n'est pas lancé.
@@ -86,6 +143,10 @@ class DropOff extends Equatable {
   /// lavage (`endedAt ?? dryCompletedAt ?? washCompletedAt`).
   final DateTime? clientCycleFinishedAt;
   final bool awaitingPickup;
+  final int quantity;
+  final int cyclesStarted;
+  final int cyclesCompleted;
+  final List<DropOffMachineCycle> cycles;
 
   /// Vrai si le linge a été effectivement réceptionné au comptoir.
   bool get isReceived => receivedAt != null;
@@ -114,15 +175,36 @@ class DropOff extends Equatable {
 
   /// Un cycle (lavage ou séchage) tourne encore : aucune action agent possible,
   /// on attend la fin détectée automatiquement (polling) ou présumée.
-  bool get isCycleRunning => _inProgress && !canStartDrying && !canMarkReady;
+  bool get isCycleRunning =>
+      _inProgress &&
+      (cycles.any((cycle) => cycle.isRunning) || _legacyCycleRunning);
+
+  bool get _legacyCycleRunning {
+    if (
+      isSelfService ||
+      cycles.isNotEmpty ||
+      (washSessionId == null && startedAt == null)
+    ) {
+      return false;
+    }
+    if (!withDrying) return washCompletedAt == null && !awaitingPickup;
+    if (washCompletedAt == null) return true;
+    if (dryStartedAt == null) return false;
+    return dryCompletedAt == null && !awaitingPickup;
+  }
+
+  bool get canStartAnotherWash =>
+      !isSelfService &&
+      (status == DropOffStatus.received || _inProgress) &&
+      cyclesStarted < quantity;
 
   /// Lavage terminé + séchage payé mais pas encore lancé → « Lancer le séchage ».
   bool get canStartDrying =>
       _inProgress &&
       !isSelfService &&
       withDrying &&
-      washCompletedAt != null &&
-      dryStartedAt == null;
+      (cycles.any((cycle) => cycle.canStartDrying) ||
+          (cycles.isEmpty && washCompletedAt != null && dryStartedAt == null));
 
   /// Le cycle requis est terminé → « Marquer prêt » :
   ///  - sans séchage : dès que le lavage est fini ;
@@ -133,10 +215,17 @@ class DropOff extends Equatable {
   bool get canMarkReady =>
       _inProgress &&
       (isSelfService ||
-          (withDrying
-              ? (dryCompletedAt != null ||
-                    (dryStartedAt != null && awaitingPickup))
-              : (washCompletedAt != null)));
+          (cyclesStarted >= quantity &&
+              (cycles.isNotEmpty
+                  ? cycles.every((cycle) =>
+                        withDrying
+                            ? (cycle.dryStartedAt != null && cycle.isCompleted)
+                            : (cycle.washCompletedAt != null ||
+                                  cycle.isCompleted))
+                  : (withDrying
+                        ? (dryCompletedAt != null ||
+                              (dryStartedAt != null && awaitingPickup))
+                        : (washCompletedAt != null)))));
 
   // Toutes les valeurs affichables entrent dans l'égalité : sinon une
   // modification d'un champ absent (nom du client, linge, instructions…) rend
@@ -171,5 +260,9 @@ class DropOff extends Equatable {
     clientCycleFinished,
     clientCycleFinishedAt,
     awaitingPickup,
+    quantity,
+    cyclesStarted,
+    cyclesCompleted,
+    cycles,
   ];
 }

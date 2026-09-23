@@ -6,7 +6,7 @@ import 'package:fotdelsi/core/di/service_locator.dart';
 import 'package:fotdelsi/core/router/app_routes.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
-import 'package:fotdelsi/features/wash_session/presentation/widgets/confirm_start_sheet.dart';
+import 'package:fotdelsi/features/wash_session/presentation/widgets/pick_cycle_machine_sheet.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
 import '../cubit/counter_sale_cubit.dart';
 import '../widgets/counter_sale_stepper.dart';
@@ -188,14 +188,11 @@ class _ActionBar extends StatelessWidget {
                   // téléphone est dans la main de l'agent, souvent tendu vers
                   // le client, et un appui involontaire consommerait le cycle
                   // qui vient d'être payé sur un tambour vide.
-                  : () async {
-                      if (await confirmMachineStart(
-                        context,
-                        machineName: state.machine?.name,
-                      )) {
-                        await cubit.startMachine();
-                      }
-                    },
+                  : () => showPickCycleMachineSheet(
+                      context,
+                      machineType: state.machine!.type,
+                      onStart: cubit.startMachine,
+                    ),
             )
           else
             PrimaryButton(

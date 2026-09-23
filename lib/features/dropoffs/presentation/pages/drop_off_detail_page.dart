@@ -18,8 +18,6 @@ import 'package:fotdelsi/features/dropoffs/presentation/widgets/cycle_not_finish
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/assign_machine_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/widgets/pick_machine_sheet.dart';
 import 'package:fotdelsi/core/widgets/cycle_running_card.dart';
-import 'package:fotdelsi/features/wash_session/presentation/widgets/confirm_start_sheet.dart';
-import 'package:fotdelsi/features/wash_session/presentation/widgets/start_command_sent_sheet.dart';
 
 /// Détail d'un dépôt côté agent + actions contextuelles selon le statut.
 class DropOffDetailPage extends StatelessWidget {
@@ -137,7 +135,42 @@ class _DetailView extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
 
-        if (dropOff.isCycleRunning) ...[
+        if (dropOff.cycles.any((cycle) => cycle.isRunning)) ...[
+          for (final cycle in dropOff.cycles.where(
+            (cycle) => cycle.isRunning,
+          )) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: CycleRunningCard(
+                startedAt: cycle.dryStartedAt ?? cycle.startedAt,
+                phaseLabel: cycle.dryStartedAt != null
+                    ? 'Séchage ${cycle.unitIndex}/${dropOff.quantity} lancé'
+                    : 'Lavage ${cycle.unitIndex}/${dropOff.quantity} lancé',
+                phaseIcon: cycle.dryStartedAt != null
+                    ? Icons.dry_cleaning_rounded
+                    : Icons.local_laundry_service_rounded,
+                instructionTitle: 'Commande de démarrage envoyée',
+                instructionBody:
+                    'Mettez votre linge à l\'intérieur de la machine, '
+                    'puis appuyez sur le bouton Démarrer sur son écran.',
+                footerMessage: cycle.dryStartedAt != null
+                    ? (dropOff.dryingDurationMinutes != null
+                          ? 'Un séchage dure environ ${dropOff.dryingDurationMinutes} minutes. Vous serez prévenu dès qu\'il sera bientôt terminé.'
+                          : 'Vous serez prévenu dès que le séchage sera bientôt terminé.')
+                    : 'Nous vous préviendrons dès que votre cycle devrait être '
+                          'terminé. Un programme dure au moins 27 minutes.',
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          const SizedBox(height: AppSpacing.sm),
+        ] else if (dropOff.isCycleRunning) ...[
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -156,14 +189,8 @@ class _DetailView extends StatelessWidget {
                   : Icons.local_laundry_service_rounded,
               instructionTitle: 'Commande de démarrage envoyée',
               instructionBody:
-                  'Mettez votre linge à l\'intérieur de la machine, '
-                  'puis appuyez sur le bouton Démarrer sur son écran.',
-              footerMessage: dropOff.dryStartedAt != null
-                  ? (dropOff.dryingDurationMinutes != null
-                        ? 'Un séchage dure environ ${dropOff.dryingDurationMinutes} minutes. Vous serez prévenu dès qu\'il sera bientôt terminé.'
-                        : 'Vous serez prévenu dès que le séchage sera bientôt terminé.')
-                  : 'Nous vous préviendrons dès que votre cycle devrait être '
-                        'terminé. Un programme dure au moins 27 minutes.',
+                  'Mettez votre linge à l’intérieur de la machine, puis '
+                  'appuyez sur le bouton Démarrer sur son écran.',
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -222,6 +249,12 @@ class _DetailView extends StatelessWidget {
           // valeur dont on retirait « +221 », ce qui ne groupait rien.
           _kvWidget('Téléphone', ClientPhoneRow(phone: d.contactPhone)),
           _kv('Linge', laundry),
+          _kv(
+            'Cycles',
+            d.quantity == 1
+                ? '1 cycle'
+                : '${d.quantity} cycles · ${d.cyclesStarted}/${d.quantity} lancés',
+          ),
           if (d.laundry.instructions.isNotEmpty)
             _kv('Instructions', d.laundry.instructions),
         ],
@@ -300,6 +333,21 @@ class _DetailView extends StatelessWidget {
   Widget? _actionBar(BuildContext context, DropOff dropOff, bool isActing) {
     final cubit = context.read<DropOffDetailCubit>();
 
+    if (dropOff.canStartAnotherWash) {
+      final next = dropOff.cyclesStarted + 1;
+      return _bar(
+        PrimaryButton(
+          label: dropOff.quantity > 1
+              ? 'Lancer le lavage $next/${dropOff.quantity}'
+              : 'Lancer le lavage',
+          icon: Icons.play_arrow_rounded,
+          loading: isActing,
+          backgroundColor: AppColors.primaryLight,
+          onPressed: () => _startWash(context, dropOff, cubit),
+        ),
+      );
+    }
+
     return switch (dropOff.status) {
       // Libre-service, cycle terminé : le client peut apporter son linge.
       DropOffStatus.awaitingHandoff when dropOff.clientCycleFinished == true =>
@@ -318,15 +366,7 @@ class _DetailView extends StatelessWidget {
       // (le backend refuserait la prise en charge).
       DropOffStatus.awaitingHandoff => _bar(const CycleNotFinishedNotice()),
 
-      DropOffStatus.received => _bar(
-        PrimaryButton(
-          label: 'Lancer le lavage',
-          icon: Icons.play_arrow_rounded,
-          loading: isActing,
-          backgroundColor: AppColors.primaryLight,
-          onPressed: () => _startWash(context, dropOff, cubit),
-        ),
-      ),
+      DropOffStatus.received => null,
 
       // Lavage terminé (auto) + séchage payé → l'agent lance le séchage.
       DropOffStatus.inProgress when dropOff.canStartDrying => _bar(
@@ -381,30 +421,12 @@ class _DetailView extends StatelessWidget {
     DropOff dropOff,
     DropOffDetailCubit cubit,
   ) async {
-    final machineId = dropOff.plannedMachineId;
-    if (machineId == null) {
-      final started = await showPickMachineSheet(
-        context,
-        dropOffId: dropOff.id,
-        mode: AssignMode.wash,
-      );
-      if (started && context.mounted) cubit.load(dropOff.id);
-      return;
-    }
-
-    final confirmed = await confirmMachineStart(
+    final started = await showPickMachineSheet(
       context,
-      machineName: dropOff.plannedMachineName,
+      dropOffId: dropOff.id,
+      mode: AssignMode.wash,
     );
-    if (!confirmed || !context.mounted) return;
-
-    final started = await cubit.startWash(machineId);
-    if (started && context.mounted) {
-      await showStartCommandSent(
-        context,
-        machineName: dropOff.plannedMachineName,
-      );
-    }
+    if (started && context.mounted) cubit.load(dropOff.id);
   }
 
   Future<void> _confirmCollect(

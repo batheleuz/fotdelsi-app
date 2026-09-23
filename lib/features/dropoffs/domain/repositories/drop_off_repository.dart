@@ -41,6 +41,7 @@ abstract interface class DropOffRepository {
     required List<LaundryType> types,
     String? instructions,
     int? dryingDurationMinutes,
+    int quantity = 1,
   });
 
   /// `GET /me/dropoffs` — historique des dépôts du client lié.

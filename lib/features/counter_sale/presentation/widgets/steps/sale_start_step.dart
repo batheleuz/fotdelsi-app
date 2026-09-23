@@ -47,7 +47,8 @@ class SaleStartStep extends StatelessWidget {
             ),
             child: Text(
               'Faites charger le linge dans la machine '
-              '${state.machine?.size ?? ''} kg, puis démarrez-la.',
+              'de votre choix, puis démarrez-la. Les autres cycles achetés '
+              'resteront disponibles dans Cycles Directs.',
               style: const TextStyle(
                 fontSize: 13,
                 height: 1.5,

@@ -29,6 +29,7 @@ class _FakePayments implements PaymentRepository {
     required String customerPhone,
     bool atCounter = false,
     int? dryingDurationMinutes,
+    int quantity = 1,
   }) async {
     initiateCalls++;
     return const Right(
@@ -77,6 +78,7 @@ class _FakeDropOffs implements DropOffRepository {
     required List<LaundryType> types,
     String? instructions,
     int? dryingDurationMinutes,
+    int quantity = 1,
   }) async {
     createDraftCalls++;
     return const Right('draft-1');
@@ -159,6 +161,13 @@ void main() {
       // 60 min (4 000 F) -> 200 + 4 000 = 4 200 F
       state = state.copyWith(dryingTier: DryingDurationTier.m60);
       expect(state.total, 4200);
+
+      // 90 min (5 000 F) -> 200 + 5 000 = 5 200 F
+      state = state.copyWith(dryingTier: DryingDurationTier.m90);
+      expect(state.total, 5200);
+
+      state = state.copyWith(quantity: 2);
+      expect(state.total, 10400);
     });
 
     test('CounterSale: ne contacte JAMAIS l\'API si total <= 0', () async {
@@ -212,6 +221,9 @@ void main() {
 
       state = state.copyWith(dryingTier: DryingDurationTier.m45);
       expect(state.total, 3200);
+
+      state = state.copyWith(quantity: 2);
+      expect(state.total, 6400);
     });
 
     test('NewDropOff: ne contacte JAMAIS l\'API si total <= 0', () async {

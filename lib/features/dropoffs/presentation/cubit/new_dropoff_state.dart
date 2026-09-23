@@ -19,6 +19,7 @@ final class NewDropOffState extends Equatable {
     this.formulaCode,
     this.sizeKg,
     this.dryingTier = DryingDurationTier.defaultTier,
+    this.quantity = 1,
     this.provider,
     this.draftId,
     this.delivery = PaymentDelivery.notify,
@@ -45,6 +46,7 @@ final class NewDropOffState extends Equatable {
   final String? formulaCode;
   final int? sizeKg;
   final DryingDurationTier dryingTier;
+  final int quantity;
 
   final PaymentProvider? provider;
 
@@ -81,7 +83,7 @@ final class NewDropOffState extends Equatable {
     if (formula == null || sizeKg == null) return null;
     final base = formula.priceFor(sizeKg!);
     if (base == null) return null;
-    return hasDrying ? base + dryingTier.price : base;
+    return (hasDrying ? base + dryingTier.price : base) * quantity;
   }
 
   /// Capacités proposées pour la formule choisie.
@@ -115,6 +117,7 @@ final class NewDropOffState extends Equatable {
     String? formulaCode,
     int? sizeKg,
     DryingDurationTier? dryingTier,
+    int? quantity,
     PaymentProvider? provider,
     String? draftId,
     PaymentDelivery? delivery,
@@ -137,6 +140,7 @@ final class NewDropOffState extends Equatable {
       formulaCode: formulaCode ?? this.formulaCode,
       sizeKg: clearSize ? null : (sizeKg ?? this.sizeKg),
       dryingTier: dryingTier ?? this.dryingTier,
+      quantity: quantity ?? this.quantity,
       provider: provider ?? this.provider,
       draftId: draftId ?? this.draftId,
       delivery: delivery ?? this.delivery,
@@ -160,6 +164,7 @@ final class NewDropOffState extends Equatable {
     formulaCode,
     sizeKg,
     dryingTier,
+    quantity,
     provider,
     draftId,
     delivery,

@@ -13,7 +13,8 @@ import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart'
 import 'package:fotdelsi/features/payment/presentation/widgets/payment_qr_view.dart';
 import 'package:fotdelsi/features/wash_session/domain/entities/session_payment_status.dart';
 import 'package:fotdelsi/features/wash_session/domain/repositories/wash_session_repository.dart';
-import 'package:fotdelsi/features/wash_session/presentation/widgets/confirm_start_sheet.dart';
+import 'package:fotdelsi/features/wash_session/presentation/widgets/pick_cycle_machine_sheet.dart';
+import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 
 /// Feuille modale pour réafficher le QR code de paiement d'un Cycle Direct en attente.
 ///
@@ -105,35 +106,41 @@ class _DirectCycleQrSheetState extends State<DirectCycleQrSheet> {
     final token = widget.payment.washSessionToken;
     if (token == null || _isStarting || _isStarted) return;
 
-    final confirmed = await confirmMachineStart(
+    await showPickCycleMachineSheet(
       context,
-      machineName: widget.payment.machineName,
+      machineType: widget.payment.sizeKg == null
+          ? MachineType.dryer
+          : MachineType.washer,
+      onStart: (machine) => _startSelectedMachine(token, machine),
     );
-    if (!confirmed || !mounted) return;
+  }
 
+  Future<String?> _startSelectedMachine(String token, Machine machine) async {
     setState(() {
       _isStarting = true;
       _errorMessage = null;
     });
 
-    final result = await _sessionRepo.startMachine(token);
-    if (!mounted) return;
+    final result = await _sessionRepo.startMachine(
+      token,
+      machineId: machine.id,
+    );
+    if (!mounted) return 'La fenêtre a été fermée.';
 
-    result.fold(
+    return result.fold(
       (failure) {
         setState(() {
           _isStarting = false;
           _errorMessage = failure.message;
         });
+        return failure.message;
       },
       (_) {
         setState(() {
           _isStarting = false;
           _isStarted = true;
         });
-        Future.delayed(const Duration(milliseconds: 600), () {
-          if (mounted) Navigator.of(context).pop(true);
-        });
+        return null;
       },
     );
   }
@@ -329,7 +336,7 @@ class _DirectCycleQrSheetState extends State<DirectCycleQrSheet> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Chargez le linge dans ${payment.machineName ?? 'la machine'} puis lancez le cycle.',
+                    'Choisissez une machine libre, chargez le linge puis lancez le cycle.',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 12.5,

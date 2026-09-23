@@ -66,9 +66,12 @@ class WashSessionRepositoryImpl implements WashSessionRepository {
   }
 
   @override
-  Future<Either<Failure, void>> startMachine(String washSessionToken) async {
+  Future<Either<Failure, void>> startMachine(
+    String washSessionToken, {
+    String? machineId,
+  }) async {
     try {
-      await _api.startMachine(washSessionToken);
+      await _api.startMachine(washSessionToken, machineId: machineId);
       return const Right(null);
     } catch (e) {
       return Left(mapExceptionToFailure(e));

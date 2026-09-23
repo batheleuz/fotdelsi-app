@@ -23,6 +23,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     required String customerPhone,
     bool atCounter = false,
     int? dryingDurationMinutes,
+    int quantity = 1,
   }) async {
     try {
       final model = await _api.initiatePayment(
@@ -33,6 +34,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
         customerPhone: customerPhone,
         atCounter: atCounter,
         dryingDurationMinutes: dryingDurationMinutes,
+        quantity: quantity,
       );
       return Right(model.toEntity());
     } catch (e) {

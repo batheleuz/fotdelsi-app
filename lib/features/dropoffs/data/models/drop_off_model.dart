@@ -9,6 +9,11 @@ abstract final class DropOffModel {
 
   static DropOff fromJson(Map<String, dynamic> json) {
     final laundryJson = (json['laundry'] as Map<String, dynamic>?) ?? const {};
+    final cycles = ((json['cycles'] as List?) ?? const [])
+        .map((cycle) => _cycle(cycle as Map<String, dynamic>))
+        .toList();
+    final legacyCycleStarted =
+        json['washSessionId'] != null || json['startedAt'] != null ? 1 : 0;
     return DropOff(
       id: json['id'] as String,
       code: json['code'] as String,
@@ -37,6 +42,12 @@ abstract final class DropOffModel {
       clientCycleFinished: json['clientCycleFinished'] as bool?,
       clientCycleFinishedAt: _date(json['clientCycleFinishedAt']),
       awaitingPickup: json['awaitingPickup'] as bool? ?? false,
+      quantity: (json['quantity'] as num?)?.toInt() ?? 1,
+      cyclesStarted:
+          (json['cyclesStarted'] as num?)?.toInt() ??
+          (cycles.isNotEmpty ? cycles.length : legacyCycleStarted),
+      cyclesCompleted: (json['cyclesCompleted'] as num?)?.toInt() ?? 0,
+      cycles: cycles,
     );
   }
 
@@ -51,6 +62,23 @@ abstract final class DropOffModel {
       instructions: json['instructions'] as String? ?? '',
     );
   }
+
+  static DropOffMachineCycle _cycle(Map<String, dynamic> json) =>
+      DropOffMachineCycle(
+        id: json['id'] as String,
+        unitIndex: (json['unitIndex'] as num?)?.toInt() ?? 1,
+        machineId: json['machineId'] as String,
+        machineName: json['machineName'] as String?,
+        dryerMachineId: json['dryerMachineId'] as String?,
+        dryerMachineName: json['dryerMachineName'] as String?,
+        status: json['status'] as String? ?? 'PENDING',
+        startedAt: _date(json['startedAt']),
+        washCompletedAt: _date(json['washCompletedAt']),
+        dryStartedAt: _date(json['dryStartedAt']),
+        dryCompletedAt: _date(json['dryCompletedAt']),
+        awaitingPickup: json['awaitingPickup'] as bool? ?? false,
+        canStartDrying: json['canStartDrying'] as bool? ?? false,
+      );
 
   /// Les dates backend sont en UTC ISO 8601 ; on convertit en heure locale.
   static DateTime? _date(Object? value) =>

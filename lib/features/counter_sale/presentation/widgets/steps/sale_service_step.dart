@@ -7,6 +7,7 @@ import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
+import 'package:fotdelsi/core/widgets/quantity_stepper.dart';
 import '../../cubit/counter_sale_cubit.dart';
 import '../sale_choice_tile.dart';
 
@@ -90,6 +91,30 @@ class SaleServiceStep extends StatelessWidget {
                 },
               ),
           ],
+
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _Label('Nombre de cycles'),
+                  Text(
+                    'À lancer sur les machines libres',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              QuantityStepper(
+                value: state.quantity,
+                onChanged: cubit.selectQuantity,
+              ),
+            ],
+          ),
 
           if (state.total != null) ...[
             const SizedBox(height: AppSpacing.lg),

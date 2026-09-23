@@ -27,6 +27,7 @@ abstract interface class PaymentRepository {
     /// Le serveur exigera alors un jeton d'agent valide.
     bool atCounter,
     int? dryingDurationMinutes,
+    int quantity = 1,
   });
 
   /// Initie un paiement de dépôt (`purpose: DROP_OFF`). Le montant n'est pas

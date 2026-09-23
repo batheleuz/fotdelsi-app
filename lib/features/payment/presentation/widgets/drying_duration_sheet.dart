@@ -8,11 +8,12 @@ import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.d
 
 /// Modal bottom sheet pour choisir la durée de séchage.
 ///
-/// Affiche les 4 options :
+/// Affiche les 5 options :
 /// - 15 minutes (1 jeton / 100 pulses) : 1 500 CFA
 /// - 30 minutes (2 jetons / 200 pulses) : 3 000 CFA
 /// - 45 minutes (3 jetons / 300 pulses) : 4 500 CFA
 /// - 1 heure (4 jetons / 400 pulses) : 5 000 CFA
+/// - 1 h 30 (6 jetons / 600 pulses) : 5 000 CFA
 Future<DryingDurationTier?> showDryingDurationSheet(
   BuildContext context, {
   required DryingDurationTier currentTier,

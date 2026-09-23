@@ -52,7 +52,10 @@ abstract interface class WashSessionRepository {
   Future<Either<Failure, List<WashCycle>>> getMyCycles();
 
   /// `POST /wash-session/start` — démarre la machine via EQLink (token dans le body).
-  Future<Either<Failure, void>> startMachine(String washSessionToken);
+  Future<Either<Failure, void>> startMachine(
+    String washSessionToken, {
+    String? machineId,
+  });
 
   /// `POST /wash-sessions/start-drying` — second temps du cycle.
   ///

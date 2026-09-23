@@ -12,8 +12,8 @@ import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
 import '../../domain/entities/wash_cycle.dart';
 import '../cubit/wash_cycles_cubit.dart';
-import '../widgets/confirm_start_sheet.dart';
 import '../widgets/pick_dryer_sheet.dart';
+import '../widgets/pick_cycle_machine_sheet.dart';
 
 // ─────────────────────────── Durées ────────────────────────────────────────
 // Fonctions de fichier plutôt que méthodes statiques d'une carte : les trois
@@ -276,16 +276,16 @@ class _WashCyclesView extends StatelessWidget {
                                       // avalé par Flutter, donc un bouton qui ne
                                       // faisait simplement rien.
                                       onStart: state.startingToken == null
-                                          ? () async {
-                                              final cubit = context
-                                                  .read<WashCyclesCubit>();
-                                              if (await confirmMachineStart(
-                                                context,
-                                                machineName: cycle.machineName,
-                                              )) {
-                                                await cubit.start(cycle);
-                                              }
-                                            }
+                                          ? () => showPickCycleMachineSheet(
+                                              context,
+                                              machineType: cycle.machineType,
+                                              onStart: (machine) => context
+                                                  .read<WashCyclesCubit>()
+                                                  .startOnMachine(
+                                                    cycle,
+                                                    machine,
+                                                  ),
+                                            )
                                           : null,
                                     ),
                             ),
@@ -332,6 +332,7 @@ class _SectionLabel extends StatelessWidget {
 
 /// Libellé « machine · capacité », vide si rien n'est connu.
 String _machineLine(WashCycle cycle) => [
+  if (cycle.quantity > 1) 'Cycle ${cycle.unitIndex}/${cycle.quantity}',
   cycle.machineName,
   cycle.sizeKg != null ? '${cycle.sizeKg} kg' : null,
 ].whereType<String>().join(' · ');

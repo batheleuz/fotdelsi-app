@@ -6,6 +6,7 @@ import 'package:fotdelsi/core/utils/price_formatter.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
+import 'package:fotdelsi/core/widgets/quantity_stepper.dart';
 
 /// Récapitulatif de la commande en haut de l'écran de paiement.
 ///
@@ -19,6 +20,8 @@ class OrderRecapCard extends StatelessWidget {
     required this.machine,
     this.dryingTier,
     this.onSelectDryingTier,
+    this.quantity = 1,
+    this.onQuantityChanged,
   });
 
   /// `null` pour une machine scannée : il n'y a pas de prestation, seulement
@@ -27,6 +30,8 @@ class OrderRecapCard extends StatelessWidget {
   final Machine machine;
   final DryingDurationTier? dryingTier;
   final VoidCallback? onSelectDryingTier;
+  final int quantity;
+  final ValueChanged<int>? onQuantityChanged;
 
   /// Ce qu'une machine sait faire, et rien d'autre.
   ///
@@ -51,6 +56,7 @@ class OrderRecapCard extends StatelessWidget {
         price = hasDrying ? base + tier.price : base;
       }
     }
+    if (price != null) price *= quantity;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -137,6 +143,39 @@ class OrderRecapCard extends StatelessWidget {
               ),
             ),
           ],
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Nombre de cycles',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Chaque cycle pourra utiliser une machine libre.',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              QuantityStepper(
+                value: quantity,
+                onChanged: onQuantityChanged ?? (_) {},
+              ),
+            ],
+          ),
           // Prévient avant le paiement : le linge ne repartira pas tout de suite.
           if (f?.requiresAgent ?? false) ...[
             const SizedBox(height: 6),

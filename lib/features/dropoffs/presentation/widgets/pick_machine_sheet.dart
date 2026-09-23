@@ -19,9 +19,8 @@ import '../cubit/assign_machine_cubit.dart';
 /// Le tap sur une laveuse ouvre la confirmation avant l'envoi de la commande.
 /// Le choix d'une sécheuse démarre directement le séchage.
 ///
-/// Ne sert plus au lavage que pour les dépôts ANTÉRIEURS au choix de machine à
-/// la saisie. Les dépôts récents en portent une : leur bouton lance
-/// directement, sans passer par ici.
+/// Le prix reste lié à la capacité achetée, mais aucune machine physique n'est
+/// réservée : le lavage passe donc toujours par ce choix au dernier moment.
 ///
 /// Renvoie `true` si un cycle est parti.
 Future<bool> showPickMachineSheet(

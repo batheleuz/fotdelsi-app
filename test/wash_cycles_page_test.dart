@@ -5,9 +5,15 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fotdelsi/core/auth/client_session_store.dart';
+import 'package:fotdelsi/core/di/service_locator.dart';
 
 import 'package:fotdelsi/core/network/failures.dart';
+import 'package:fotdelsi/core/websocket/ws_connection_cubit.dart';
+import 'package:fotdelsi/core/websocket/ws_connection_status.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
+import 'package:fotdelsi/features/machines/domain/repositories/machine_repository.dart';
+import 'package:fotdelsi/features/machines/presentation/bloc/machines_bloc.dart';
+import 'package:fotdelsi/features/machines/presentation/bloc/machines_event.dart';
 import 'package:fotdelsi/features/wash_session/domain/entities/wash_cycle.dart';
 import 'package:fotdelsi/features/wash_session/domain/repositories/wash_session_repository.dart';
 import 'package:fotdelsi/features/wash_session/presentation/cubit/wash_cycles_cubit.dart';
@@ -18,6 +24,38 @@ import 'package:fotdelsi/features/wash_session/presentation/widgets/wash_running
 class _NoRepository implements WashSessionRepository {
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+const _availableWasher = Machine(
+  id: 'machine-libre',
+  code: 'W20',
+  name: 'Laveuse libre 20 kg',
+  type: MachineType.washer,
+  status: MachineStatus.available,
+  size: 20,
+  price: 9000,
+);
+
+class _MachineRepository implements MachineRepository {
+  @override
+  Future<Either<Failure, List<Machine>>> getMachines() async =>
+      const Right([_availableWasher]);
+
+  @override
+  Future<Either<Failure, Machine>> getMachine(String id) async =>
+      const Right(_availableWasher);
+
+  @override
+  Future<Either<Failure, Machine>> getMachineByDeviceName(
+    String deviceName,
+  ) async => const Right(_availableWasher);
+
+  @override
+  Stream<List<Machine>> watchMachines() => const Stream.empty();
+
+  @override
+  Stream<WsConnectionStatus> get connectionStatus =>
+      Stream.value(WsConnectionStatus.connected);
 }
 
 /// Cubit de test qui note les démarrages au lieu de les exécuter.
@@ -72,6 +110,12 @@ class _FakeCyclesCubit extends WashCyclesCubit {
     return true;
   }
 
+  @override
+  Future<String?> startOnMachine(WashCycle cycle, Machine machine) async {
+    started.add(cycle.token);
+    return null;
+  }
+
   /// Motif de refus a renvoyer, ou `null` pour laisser passer.
   String? refusDeSechage;
 
@@ -114,6 +158,20 @@ WashCycle cycleToStart() => WashCycle(
 );
 
 void main() {
+  late MachinesBloc machinesBloc;
+
+  setUpAll(() async {
+    machinesBloc = MachinesBloc(_MachineRepository(), WsConnectionCubit());
+    serviceLocator.registerSingleton<MachinesBloc>(machinesBloc);
+    machinesBloc.add(const MachinesSubscriptionRequested());
+    await machinesBloc.stream.firstWhere((state) => state.machines.isNotEmpty);
+  });
+
+  tearDownAll(() async {
+    await serviceLocator.unregister<MachinesBloc>();
+    await machinesBloc.close();
+  });
+
   _suiviDuDepot();
 
   testWidgets('le bouton Démarrer lance bien le cycle', (tester) async {
@@ -133,8 +191,9 @@ void main() {
     await tester.tap(find.text('Démarrer la machine'));
     await tester.pumpAndSettle();
 
-    // La feuille de confirmation porte le même libellé que la carte : `.last`
-    // vise celle qui vient de s'ouvrir, par-dessus.
+    await tester.tap(find.text('Laveuse libre 20 kg'));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Démarrer la machine').last);
     await tester.pump();
 
@@ -167,6 +226,9 @@ void main() {
     await tester.tap(find.text('Démarrer la machine'));
     await tester.pumpAndSettle();
     expect(cubit.started, isEmpty);
+
+    await tester.tap(find.text('Laveuse libre 20 kg'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Pas encore'));
     await tester.pumpAndSettle();
@@ -841,7 +903,10 @@ class _CountingRepo implements WashSessionRepository {
 /// tester le double au lieu du code.
 class _RefusingRepo implements WashSessionRepository {
   @override
-  Future<Either<Failure, void>> startMachine(String token) async =>
+  Future<Either<Failure, void>> startMachine(
+    String token, {
+    String? machineId,
+  }) async =>
       const Left(ServerFailure('Machine occupée'));
 
   @override
@@ -880,7 +945,10 @@ class _SlowRemainingRepo implements WashSessionRepository {
   }
 
   @override
-  Future<Either<Failure, void>> startMachine(String token) async =>
+  Future<Either<Failure, void>> startMachine(
+    String token, {
+    String? machineId,
+  }) async =>
       const Right(null);
 
   @override

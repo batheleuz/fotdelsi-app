@@ -91,6 +91,17 @@ class DropOffQueueCard extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
             ),
+            if (dropOff.quantity > 1) ...[
+              const SizedBox(height: 3),
+              Text(
+                '${dropOff.quantity} cycles · ${dropOff.cyclesStarted}/${dropOff.quantity} lancés',
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
             const SizedBox(height: 1),
             Text(
               _footer(),
@@ -123,6 +134,8 @@ class DropOffQueueCard extends StatelessWidget {
       DropOffStatus.awaitingHandoff => 'Linge à décompter au comptoir',
       DropOffStatus.inProgress when dropOff.isSelfService =>
         'Finition en cours',
+      DropOffStatus.inProgress when dropOff.canStartAnotherWash =>
+        'Un autre lavage reste à lancer',
       DropOffStatus.inProgress => 'Lavage en cours',
       _ =>
         dropOff.laundry.types.isEmpty
@@ -153,12 +166,15 @@ class DropOffQueueCard extends StatelessWidget {
     // refuserait, autant ne pas proposer le geste.
     DropOffStatus.received when dropOff.isSelfService => null,
     DropOffStatus.received => 'Lancer le lavage',
+    DropOffStatus.inProgress when dropOff.canStartAnotherWash =>
+      'Lancer le lavage ${dropOff.cyclesStarted + 1}/${dropOff.quantity}',
     DropOffStatus.ready => 'Remettre au client',
     _ => null,
   };
 
   IconData? _actionIcon() => switch (dropOff.status) {
-    DropOffStatus.received => Icons.play_arrow_rounded,
+    DropOffStatus.received || DropOffStatus.inProgress =>
+      Icons.play_arrow_rounded,
     DropOffStatus.ready => Icons.back_hand_outlined,
     _ => null,
   };

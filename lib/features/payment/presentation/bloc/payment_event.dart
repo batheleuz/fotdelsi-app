@@ -48,6 +48,7 @@ final class PaymentSubmitted extends PaymentEvent {
     required this.machineId,
     this.formulaCode,
     this.dryingDurationMinutes,
+    this.quantity = 1,
   });
 
   final String machineId;
@@ -59,7 +60,13 @@ final class PaymentSubmitted extends PaymentEvent {
 
   /// Durée de séchage choisie si la prestation ou la machine le requiert.
   final int? dryingDurationMinutes;
+  final int quantity;
 
   @override
-  List<Object?> get props => [machineId, formulaCode, dryingDurationMinutes];
+  List<Object?> get props => [
+    machineId,
+    formulaCode,
+    dryingDurationMinutes,
+    quantity,
+  ];
 }

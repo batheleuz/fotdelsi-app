@@ -91,6 +91,7 @@ class DropOffApiDataSource {
     required List<LaundryType> types,
     String? instructions,
     int? dryingDurationMinutes,
+    int quantity = 1,
   }) async {
     final resp = await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.dropOffDraft,
@@ -98,6 +99,7 @@ class DropOffApiDataSource {
         'contactPhone': normalizePhone(contactPhone),
         'customerName': customerName,
         'formulaCode': formulaCode,
+        'quantity': quantity,
         'sizeKg': sizeKg,
         'dryingDurationMinutes': ?dryingDurationMinutes,
         'laundry': {

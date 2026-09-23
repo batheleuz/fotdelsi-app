@@ -5,11 +5,13 @@
 /// - 30 min -> 2 pièces = 200 pulses EQLink -> 3 000 CFA
 /// - 45 min -> 3 pièces = 300 pulses EQLink -> 4 500 CFA (durée de base incluse par défaut dans les formules)
 /// - 1h (60 min) -> 4 pièces = 400 pulses EQLink -> 5 000 CFA
+/// - 1h30 (90 min) -> 6 pièces = 600 pulses EQLink -> 5 000 CFA
 enum DryingDurationTier {
   m15(minutes: 15, pulses: 100, basePrice: 1000, label: '15 minutes'),
   m30(minutes: 30, pulses: 200, basePrice: 2000, label: '30 minutes'),
   m45(minutes: 45, pulses: 300, basePrice: 3000, label: '45 minutes'),
-  m60(minutes: 60, pulses: 400, basePrice: 4000, label: '1 heure');
+  m60(minutes: 60, pulses: 400, basePrice: 4000, label: '1 heure'),
+  m90(minutes: 90, pulses: 600, basePrice: 5000, label: '1 h 30');
 
   const DryingDurationTier({
     required this.minutes,
@@ -59,4 +61,3 @@ enum DryingDurationTier {
   /// inclus dans les formules catalogue comprenant du séchage.
   int get priceAdjustment => price - configuredDefault.price;
 }
-

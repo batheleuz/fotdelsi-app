@@ -9,8 +9,8 @@ import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/features/client_auth/presentation/cubit/client_session_cubit.dart';
 import '../../domain/entities/wash_cycle.dart';
 import '../cubit/wash_cycles_cubit.dart';
-import 'confirm_start_sheet.dart';
 import 'pick_dryer_sheet.dart';
+import 'pick_cycle_machine_sheet.dart';
 
 enum HomeBanner { cycle, handoff, none }
 
@@ -111,17 +111,13 @@ class ActiveSessionCard extends StatelessWidget {
                   cycle,
                   cycles: context.read<MyCyclesCubit>(),
                 )
-              : () async {
-                  // Confirmation avant tout démarrage physique : un appui
-                  // involontaire consommerait le cycle payé sur un tambour vide.
-                  final cubit = context.read<MyCyclesCubit>();
-                  if (await confirmMachineStart(
-                    context,
-                    machineName: cycle.machineName,
-                  )) {
-                    await cubit.start(cycle);
-                  }
-                },
+              : () => showPickCycleMachineSheet(
+                  context,
+                  machineType: cycle.machineType,
+                  onStart: (machine) => context
+                      .read<MyCyclesCubit>()
+                      .startOnMachine(cycle, machine),
+                ),
           onOpen: () => context.push(AppRoutes.myCycles),
           others: state.onHome.length - 1,
         );
@@ -257,6 +253,8 @@ class _CycleBanner extends StatelessWidget {
 
   String _subtitle() {
     final machine = [
+      if (cycle.quantity > 1)
+        'Cycle ${cycle.unitIndex}/${cycle.quantity}',
       cycle.machineName,
       cycle.sizeKg != null ? '${cycle.sizeKg} kg' : null,
     ].whereType<String>().join(' · ');

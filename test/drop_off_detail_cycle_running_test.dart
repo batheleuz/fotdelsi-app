@@ -4,8 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fotdelsi/core/widgets/cycle_running_card.dart';
 import 'package:fotdelsi/features/dropoffs/data/models/drop_off_model.dart';
 import 'package:fotdelsi/features/dropoffs/domain/entities/laundry_type.dart';
+import 'package:fotdelsi/features/dropoffs/domain/repositories/drop_off_repository.dart';
+import 'package:fotdelsi/features/dropoffs/presentation/cubit/assign_machine_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/cubit/drop_off_detail_cubit.dart';
 import 'package:fotdelsi/features/dropoffs/presentation/pages/drop_off_detail_page.dart';
+import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
+import 'package:fotdelsi/features/machines/domain/repositories/machine_repository.dart';
 import 'package:fotdelsi/core/di/service_locator.dart';
 
 class FakeDropOffDetailCubit extends Cubit<DropOffDetailState>
@@ -53,6 +57,51 @@ class FakeDropOffDetailCubit extends Cubit<DropOffDetailState>
   }) async {}
 }
 
+class _NoMachineRepository implements MachineRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _NoDropOffRepository implements DropOffRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class FakeAssignMachineCubit extends AssignMachineCubit {
+  FakeAssignMachineCubit(this.detail)
+    : super(_NoMachineRepository(), _NoDropOffRepository());
+
+  final FakeDropOffDetailCubit detail;
+
+  static const machine = Machine(
+    id: 'machine-20',
+    code: 'W20',
+    name: 'Laveuse libre 20 kg',
+    type: MachineType.washer,
+    status: MachineStatus.available,
+    size: 20,
+    price: 9000,
+  );
+
+  @override
+  Future<void> loadMachines(MachineType type) async {
+    emit(
+      state.copyWith(
+        status: AssignLoad.success,
+        machines: type == MachineType.washer ? const [machine] : const [],
+      ),
+    );
+  }
+
+  @override
+  Future<bool> assign(String dropOffId) async {
+    final selectedId = state.selectedId;
+    if (selectedId == null) return false;
+    await detail.startWash(selectedId);
+    return true;
+  }
+}
+
 Map<String, dynamic> _dropOffJson({
   required String status,
   bool withDrying = false,
@@ -62,6 +111,8 @@ Map<String, dynamic> _dropOffJson({
   String? dryStartedAt,
   String? washCompletedAt,
   String? dryCompletedAt,
+  int quantity = 1,
+  int? cyclesStarted,
 }) => {
   'id': 'dropoff-1',
   'code': '4821',
@@ -80,12 +131,17 @@ Map<String, dynamic> _dropOffJson({
   'washCompletedAt': washCompletedAt,
   'dryCompletedAt': dryCompletedAt,
   'awaitingPickup': false,
+  'quantity': quantity,
+  'cyclesStarted': ?cyclesStarted,
 };
 
 void main() {
   tearDown(() {
     if (serviceLocator.isRegistered<DropOffDetailCubit>()) {
       serviceLocator.unregister<DropOffDetailCubit>();
+    }
+    if (serviceLocator.isRegistered<AssignMachineCubit>()) {
+      serviceLocator.unregister<AssignMachineCubit>();
     }
   });
 
@@ -154,8 +210,28 @@ void main() {
     expect(find.byType(CycleRunningCard), findsNothing);
   });
 
+  testWidgets('affiche la quantité et la progression dans le détail', (
+    tester,
+  ) async {
+    final dropOff = DropOffModel.fromJson(
+      _dropOffJson(status: 'IN_PROGRESS', quantity: 2, cyclesStarted: 1),
+    );
+    final fakeCubit = FakeDropOffDetailCubit(
+      DropOffDetailState(status: DetailStatus.success, dropOff: dropOff),
+    );
+    serviceLocator.registerFactory<DropOffDetailCubit>(() => fakeCubit);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: DropOffDetailPage(dropOffId: 'dropoff-1')),
+    );
+    await tester.pump();
+
+    expect(find.text('2 cycles · 1/2 lancés'), findsOneWidget);
+    expect(find.text('Lancer le lavage 2/2'), findsOneWidget);
+  });
+
   testWidgets(
-    'confirme la laveuse prévue avant de lancer et montre les consignes',
+    'choisit une laveuse libre avant de lancer et montre les consignes',
     (tester) async {
       final dropOff = DropOffModel.fromJson(
         _dropOffJson(
@@ -168,25 +244,32 @@ void main() {
         DropOffDetailState(status: DetailStatus.success, dropOff: dropOff),
       );
       serviceLocator.registerFactory<DropOffDetailCubit>(() => fakeCubit);
+      serviceLocator.registerFactory<AssignMachineCubit>(
+        () => FakeAssignMachineCubit(fakeCubit),
+      );
 
       await tester.pumpWidget(
         const MaterialApp(home: DropOffDetailPage(dropOffId: 'dropoff-1')),
       );
       await tester.tap(find.text('Lancer le lavage'));
       await tester.pumpAndSettle();
+      expect(find.text('Choisissez votre laveuse'), findsOneWidget);
+      expect(find.text('Laveuse libre 20 kg'), findsOneWidget);
+      await tester.tap(find.text('Laveuse libre 20 kg'));
+      await tester.pumpAndSettle();
       expect(find.text('Votre linge est-il dans la machine ?'), findsOneWidget);
       expect(find.textContaining('Une commande de démarrage sera envoyée'), findsOneWidget);
-      expect(find.text('Laveuse 1'), findsOneWidget);
+      expect(find.text('Laveuse libre 20 kg'), findsNWidgets(2));
       await tester.tap(find.text('Pas encore'));
       await tester.pumpAndSettle();
       expect(fakeCubit.startedMachineId, isNull);
 
-      await tester.tap(find.text('Lancer le lavage'));
+      await tester.tap(find.text('Laveuse libre 20 kg'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Démarrer la machine'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
-      expect(fakeCubit.startedMachineId, 'machine-1');
+      expect(fakeCubit.startedMachineId, 'machine-20');
       expect(find.text('Commande de démarrage envoyée'), findsWidgets);
       expect(find.text('J\'ai compris'), findsOneWidget);
       await tester.tap(find.text('J\'ai compris'));

@@ -9,6 +9,8 @@ Map<String, dynamic> _json({
   required String code,
   required String phone,
   String name = 'Mor Diop',
+  int quantity = 1,
+  int cyclesStarted = 0,
 }) => {
   'id': 'dropoff-$code',
   'code': code,
@@ -21,6 +23,8 @@ Map<String, dynamic> _json({
   'status': 'AWAITING_HANDOFF',
   'withDrying': true,
   'clientCycleFinished': true,
+  'quantity': quantity,
+  'cyclesStarted': cyclesStarted,
 };
 
 Widget _host(List<Widget> cards) => MaterialApp(
@@ -83,6 +87,25 @@ void main() {
 
       expect(find.text('Mor Diop'), findsOneWidget);
       expect(find.textContaining('  '), findsNothing);
+    });
+
+    testWidgets('affiche la progression d’un achat multiple', (tester) async {
+      await tester.pumpWidget(
+        _host([
+          DropOffQueueCard(
+            dropOff: DropOffModel.fromJson(
+              _json(
+                code: 'MULT',
+                phone: '771234567',
+                quantity: 2,
+                cyclesStarted: 1,
+              ),
+            ),
+          ),
+        ]),
+      );
+
+      expect(find.text('2 cycles · 1/2 lancés'), findsOneWidget);
     });
   });
 }

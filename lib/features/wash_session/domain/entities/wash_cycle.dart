@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 
 /// Où en est le cycle.
 ///
@@ -83,6 +84,9 @@ class WashCycle extends Equatable {
     required this.amount,
     required this.paidAt,
     required this.state,
+    this.machineType = MachineType.washer,
+    this.unitIndex = 1,
+    this.quantity = 1,
     this.startedAt,
     this.endedAt,
     this.remainingSeconds,
@@ -103,6 +107,9 @@ class WashCycle extends Equatable {
   /// Jeton de démarrage — la clé que l'agent avait perdue.
   final String token;
   final String machineId;
+  final MachineType machineType;
+  final int unitIndex;
+  final int quantity;
   /// Machine ACHETÉE — la laveuse pour une formule à deux temps.
   final String? machineName;
 
@@ -184,6 +191,10 @@ class WashCycle extends Equatable {
   @override
   List<Object?> get props => [
     token,
+    machineId,
+    machineType,
+    unitIndex,
+    quantity,
     // `state` et `remainingSeconds` DOIVENT figurer ici. Avec le seul jeton,
     // deux relevés successifs du même cycle étaient jugés identiques : Bloc
     // ignorait l'émission et l'écran gardait l'ancien temps restant. Il ne

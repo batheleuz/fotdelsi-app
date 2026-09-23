@@ -59,6 +59,7 @@ class _StubDropOffs implements DropOffRepository {
     required List<LaundryType> types,
     String? instructions,
     int? dryingDurationMinutes,
+    int quantity = 1,
   }) async => const Right('brouillon-1');
 
   @override

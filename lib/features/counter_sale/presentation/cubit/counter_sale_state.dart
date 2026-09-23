@@ -34,6 +34,7 @@ final class CounterSaleState extends Equatable {
     this.formulaCode,
     this.machine,
     this.dryingTier = DryingDurationTier.defaultTier,
+    this.quantity = 1,
     this.customerName = '',
     this.customerPhone = '',
     this.provider,
@@ -56,6 +57,7 @@ final class CounterSaleState extends Equatable {
   final String? formulaCode;
   final Machine? machine;
   final DryingDurationTier dryingTier;
+  final int quantity;
   final String customerName;
   final String customerPhone;
   final PaymentProvider? provider;
@@ -83,12 +85,12 @@ final class CounterSaleState extends Equatable {
     final formula = selectedFormula;
     final size = machine?.size;
     if (machine?.type == MachineType.dryer) {
-      return dryingTier.price;
+      return dryingTier.price * quantity;
     }
     if (formula == null || size == null) return null;
     final base = formula.priceFor(size);
     if (base == null) return null;
-    return hasDrying ? base + dryingTier.price : base;
+    return (hasDrying ? base + dryingTier.price : base) * quantity;
   }
 
   /// Lien de paiement à encoder en QR, une fois la vente initiée.
@@ -132,6 +134,7 @@ final class CounterSaleState extends Equatable {
     Machine? machine,
     bool clearMachine = false,
     DryingDurationTier? dryingTier,
+    int? quantity,
     String? customerName,
     String? customerPhone,
     PaymentProvider? provider,
@@ -148,6 +151,7 @@ final class CounterSaleState extends Equatable {
       formulaCode: formulaCode ?? this.formulaCode,
       machine: clearMachine ? null : (machine ?? this.machine),
       dryingTier: dryingTier ?? this.dryingTier,
+      quantity: quantity ?? this.quantity,
       customerName: customerName ?? this.customerName,
       customerPhone: customerPhone ?? this.customerPhone,
       provider: provider ?? this.provider,
@@ -166,6 +170,7 @@ final class CounterSaleState extends Equatable {
     formulaCode,
     machine,
     dryingTier,
+    quantity,
     customerName,
     customerPhone,
     provider,
