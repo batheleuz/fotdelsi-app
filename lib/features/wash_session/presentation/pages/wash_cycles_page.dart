@@ -245,9 +245,15 @@ class _WashCyclesView extends StatelessWidget {
                               // Le second temps d'un cycle avec séchage n'est
                               // pas un démarrage comme les autres : il faut
                               // désigner une sécheuse, pas relancer la laveuse.
-                              build: (cycle) =>
-                                  cycle.state == CycleState.dryingToStart
-                                  ? _DryingToStartCard(
+                              build: (cycle) => switch (cycle.state) {
+                                CycleState.awaitingPickup =>
+                                  _AwaitingPickupCard(
+                                    cycle: cycle,
+                                    onConfirm: () => context
+                                        .read<WashCyclesCubit>()
+                                        .confirmPickup(cycle),
+                                  ),
+                                CycleState.dryingToStart => _DryingToStartCard(
                                       cycle: cycle,
                                       starting:
                                           state.startingToken == cycle.token,
@@ -259,8 +265,8 @@ class _WashCyclesView extends StatelessWidget {
                                                   .read<WashCyclesCubit>(),
                                             )
                                           : null,
-                                    )
-                                  : _ToStartCard(
+                                    ),
+                                _ => _ToStartCard(
                                       cycle: cycle,
                                       starting:
                                           state.startingToken == cycle.token,
@@ -288,6 +294,7 @@ class _WashCyclesView extends StatelessWidget {
                                             )
                                           : null,
                                     ),
+                              },
                             ),
                             CycleSection.running => _cycleSection(
                               context,
@@ -336,6 +343,80 @@ String _machineLine(WashCycle cycle) => [
   cycle.machineName,
   cycle.sizeKg != null ? '${cycle.sizeKg} kg' : null,
 ].whereType<String>().join(' · ');
+
+/// Le dernier temps est fini : le linge doit être sorti de la machine.
+///
+/// Pour un linge sensible, cette carte remplace explicitement tout lancement
+/// de sécheuse par la consigne de séchage au soleil.
+class _AwaitingPickupCard extends StatelessWidget {
+  const _AwaitingPickupCard({required this.cycle, required this.onConfirm});
+
+  final WashCycle cycle;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    final sunDrying = cycle.requiresSunDrying;
+    final color = sunDrying ? const Color(0xFF9A4D00) : AppColors.success;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: color, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                sunDrying
+                    ? Icons.wb_sunny_outlined
+                    : Icons.check_circle_outline_rounded,
+                size: 19,
+                color: color,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  sunDrying ? 'Séchage au soleil obligatoire' : 'Cycle terminé',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            sunDrying
+                ? 'Sortez le linge de la laveuse et faites-le sécher au soleil. Ne le mettez jamais en sécheuse.'
+                : 'Vérifiez que le programme est terminé, puis récupérez le linge.',
+            style: const TextStyle(
+              fontSize: 12.5,
+              height: 1.4,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: onConfirm,
+              style: FilledButton.styleFrom(backgroundColor: color),
+              icon: const Icon(Icons.check_rounded),
+              label: const Text('Linge récupéré'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// Cycle payé dont la machine n'a pas encore tourné.
 /// Temps mort entre lavage et séchage : le linge est prêt à passer en sécheuse.

@@ -196,6 +196,16 @@ class _DetailView extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
         ],
 
+        if (dropOff.requiresSunDrying) ...[
+          _banner(
+            'Séchage au soleil obligatoire. Ce linge contient des vêtements wolof, costumes ou couettes : ne le mettez jamais en sécheuse.',
+            const Color(0xFFFFF4E5),
+            const Color(0xFF9A4D00),
+            Icons.wb_sunny_outlined,
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+
         DropOffTimeline(dropOff: dropOff),
 
         const SizedBox(height: AppSpacing.sm),
@@ -249,6 +259,8 @@ class _DetailView extends StatelessWidget {
           // valeur dont on retirait « +221 », ce qui ne groupait rien.
           _kvWidget('Téléphone', ClientPhoneRow(phone: d.contactPhone)),
           _kv('Linge', laundry),
+          if (d.requiresSunDrying)
+            _kv('Séchage', 'Au soleil uniquement'),
           _kv(
             'Cycles',
             d.quantity == 1

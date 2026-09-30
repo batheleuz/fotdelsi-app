@@ -102,6 +102,27 @@ class DropOffQueueCard extends StatelessWidget {
                 ),
               ),
             ],
+            if (dropOff.requiresSunDrying) ...[
+              const SizedBox(height: 5),
+              const Row(
+                children: [
+                  Icon(
+                    Icons.wb_sunny_outlined,
+                    size: 14,
+                    color: Color(0xFF9A4D00),
+                  ),
+                  SizedBox(width: 5),
+                  Text(
+                    'Séchage au soleil uniquement',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF9A4D00),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 1),
             Text(
               _footer(),

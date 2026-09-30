@@ -141,7 +141,9 @@ class _CycleRow extends StatelessWidget {
     // plus vérifier qu'une machine tourne — EQLink ne le rend pas — et le
     // client n'a peut-être pas encore appuyé sur l'écran de la machine.
     CycleState.running => 'Commande envoyée',
-    CycleState.awaitingPickup => 'Linge à récupérer',
+    CycleState.awaitingPickup => cycle.requiresSunDrying
+        ? 'À sortir — séchage au soleil'
+        : 'Linge à récupérer',
     CycleState.failed => 'N\'a pas démarré',
     CycleState.finished => 'Terminé',
   };

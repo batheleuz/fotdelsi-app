@@ -73,6 +73,7 @@ class DropOff extends Equatable {
     this.plannedMachineName,
     this.washSessionId,
     this.withDrying = false,
+    this.requiresSunDrying = false,
     this.dryingDurationMinutes,
     this.dryerMachineId,
     this.dryStartedAt,
@@ -112,6 +113,9 @@ class DropOff extends Equatable {
 
   /// Séchage inclus (choisi et payé au dépôt).
   final bool withDrying;
+
+  /// Vêtements wolof, costumes ou couettes : aucune sécheuse autorisée.
+  final bool requiresSunDrying;
 
   /// Durée de séchage choisie en minutes (15, 30, 45, 60, 90), null si pas de séchage.
   final int? dryingDurationMinutes;
@@ -203,6 +207,7 @@ class DropOff extends Equatable {
       _inProgress &&
       !isSelfService &&
       withDrying &&
+      !requiresSunDrying &&
       (cycles.any((cycle) => cycle.canStartDrying) ||
           (cycles.isEmpty && washCompletedAt != null && dryStartedAt == null));
 
@@ -212,20 +217,28 @@ class DropOff extends Equatable {
   ///  - libre-service : dès la prise en charge — le travail est manuel, il n'y
   ///    a aucun cycle machine à attendre (`washCompletedAt` reste nul, le
   ///    lavage ayant été tracé sur la session du client).
-  bool get canMarkReady =>
-      _inProgress &&
-      (isSelfService ||
-          (cyclesStarted >= quantity &&
-              (cycles.isNotEmpty
-                  ? cycles.every((cycle) =>
-                        withDrying
-                            ? (cycle.dryStartedAt != null && cycle.isCompleted)
-                            : (cycle.washCompletedAt != null ||
-                                  cycle.isCompleted))
-                  : (withDrying
-                        ? (dryCompletedAt != null ||
-                              (dryStartedAt != null && awaitingPickup))
-                        : (washCompletedAt != null)))));
+  bool get canMarkReady {
+    if (!_inProgress) return false;
+    if (isSelfService) return true;
+    if (cyclesStarted < quantity) return false;
+    if (requiresSunDrying) {
+      return cycles.isNotEmpty
+          ? cycles.every(
+              (cycle) => cycle.washCompletedAt != null || cycle.isCompleted,
+            )
+          : washCompletedAt != null;
+    }
+    return cycles.isNotEmpty
+        ? cycles.every(
+            (cycle) => withDrying
+                ? (cycle.dryStartedAt != null && cycle.isCompleted)
+                : (cycle.washCompletedAt != null || cycle.isCompleted),
+          )
+        : (withDrying
+              ? (dryCompletedAt != null ||
+                    (dryStartedAt != null && awaitingPickup))
+              : washCompletedAt != null);
+  }
 
   // Toutes les valeurs affichables entrent dans l'égalité : sinon une
   // modification d'un champ absent (nom du client, linge, instructions…) rend
@@ -245,6 +258,7 @@ class DropOff extends Equatable {
     plannedMachineName,
     washSessionId,
     withDrying,
+    requiresSunDrying,
     dryingDurationMinutes,
     dryerMachineId,
     dryStartedAt,

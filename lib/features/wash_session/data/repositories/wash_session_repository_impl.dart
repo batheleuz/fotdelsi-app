@@ -115,6 +115,7 @@ class WashSessionRepositoryImpl implements WashSessionRepository {
     canRetry: model.canRetry,
     isFinished: model.isFinished,
     withDrying: model.withDrying,
+    requiresSunDrying: model.requiresSunDrying,
     canStartDrying: model.canStartDrying,
     isDrying: model.isDrying,
     handoffCode: model.handoffCode,

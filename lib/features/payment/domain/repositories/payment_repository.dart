@@ -28,6 +28,7 @@ abstract interface class PaymentRepository {
     bool atCounter,
     int? dryingDurationMinutes,
     int quantity = 1,
+    bool requiresSunDrying = false,
   });
 
   /// Initie un paiement de dépôt (`purpose: DROP_OFF`). Le montant n'est pas

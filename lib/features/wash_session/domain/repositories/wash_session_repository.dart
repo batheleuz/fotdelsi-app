@@ -16,6 +16,7 @@ typedef SessionStatusResult = ({
   bool canRetry,
   bool isFinished,
   bool withDrying,
+  bool requiresSunDrying,
   bool canStartDrying,
   bool isDrying,
   String? handoffCode,

@@ -65,6 +65,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
       customerPhone: state.phone,
       dryingDurationMinutes: event.dryingDurationMinutes,
       quantity: event.quantity,
+      requiresSunDrying: event.requiresSunDrying,
     );
 
     await result.fold(

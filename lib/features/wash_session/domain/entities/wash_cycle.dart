@@ -92,6 +92,7 @@ class WashCycle extends Equatable {
     this.remainingSeconds,
     this.soldByAgentName,
     this.withDrying = false,
+    this.requiresSunDrying = false,
     this.isDrying = false,
     this.washCompletedAt,
     this.handoffCode,
@@ -145,6 +146,9 @@ class WashCycle extends Equatable {
   /// compteur qui continuerait de courir après coup.
   /// La prestation payée comporte un séchage : le cycle se joue en deux temps.
   final bool withDrying;
+
+  /// Vêtements wolof, costumes ou couettes : aucune sécheuse autorisée.
+  final bool requiresSunDrying;
 
   /// La sécheuse tourne : second temps en cours.
   ///
@@ -201,6 +205,7 @@ class WashCycle extends Equatable {
     // bougeait qu'en quittant puis rouvrant la page, ce qui recréait le cubit.
     state,
     isDrying,
+    requiresSunDrying,
     remainingSeconds,
     startedAt,
     endedAt,

@@ -24,6 +24,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     bool atCounter = false,
     int? dryingDurationMinutes,
     int quantity = 1,
+    bool requiresSunDrying = false,
   }) async {
     try {
       final model = await _api.initiatePayment(
@@ -35,6 +36,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
         atCounter: atCounter,
         dryingDurationMinutes: dryingDurationMinutes,
         quantity: quantity,
+        requiresSunDrying: requiresSunDrying,
       );
       return Right(model.toEntity());
     } catch (e) {

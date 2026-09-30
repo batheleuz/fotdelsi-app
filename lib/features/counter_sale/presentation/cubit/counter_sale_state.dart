@@ -35,6 +35,7 @@ final class CounterSaleState extends Equatable {
     this.machine,
     this.dryingTier = DryingDurationTier.defaultTier,
     this.quantity = 1,
+    this.requiresSunDrying = false,
     this.customerName = '',
     this.customerPhone = '',
     this.provider,
@@ -58,6 +59,7 @@ final class CounterSaleState extends Equatable {
   final Machine? machine;
   final DryingDurationTier dryingTier;
   final int quantity;
+  final bool requiresSunDrying;
   final String customerName;
   final String customerPhone;
   final PaymentProvider? provider;
@@ -135,6 +137,7 @@ final class CounterSaleState extends Equatable {
     bool clearMachine = false,
     DryingDurationTier? dryingTier,
     int? quantity,
+    bool? requiresSunDrying,
     String? customerName,
     String? customerPhone,
     PaymentProvider? provider,
@@ -152,6 +155,7 @@ final class CounterSaleState extends Equatable {
       machine: clearMachine ? null : (machine ?? this.machine),
       dryingTier: dryingTier ?? this.dryingTier,
       quantity: quantity ?? this.quantity,
+      requiresSunDrying: requiresSunDrying ?? this.requiresSunDrying,
       customerName: customerName ?? this.customerName,
       customerPhone: customerPhone ?? this.customerPhone,
       provider: provider ?? this.provider,
@@ -171,6 +175,7 @@ final class CounterSaleState extends Equatable {
     machine,
     dryingTier,
     quantity,
+    requiresSunDrying,
     customerName,
     customerPhone,
     provider,

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
+import 'package:fotdelsi/core/widgets/sun_drying_checkbox.dart';
 import '../../cubit/new_dropoff_cubit.dart';
 
 /// Étape 2 — description du linge.
@@ -60,6 +61,11 @@ class _NewDropOffLaundryStepState extends State<NewDropOffLaundryStep> {
             ),
             _RoundBtn(icon: Icons.add, onTap: cubit.incrementPieces),
           ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        SunDryingCheckbox(
+          value: state.requiresSunDrying,
+          onChanged: cubit.setRequiresSunDrying,
         ),
         const SizedBox(height: AppSpacing.lg),
         const _Title('Instructions (optionnel)'),
@@ -132,5 +138,4 @@ class _RoundBtn extends StatelessWidget {
     );
   }
 }
-
 

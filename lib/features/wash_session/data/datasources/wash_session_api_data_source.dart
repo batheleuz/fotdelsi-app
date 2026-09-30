@@ -84,6 +84,7 @@ class WashSessionApiDataSource {
       remainingSeconds: (json['remainingSeconds'] as num?)?.toInt(),
       soldByAgentName: json['soldByAgentName'] as String?,
       withDrying: json['withDrying'] as bool? ?? false,
+      requiresSunDrying: json['requiresSunDrying'] as bool? ?? false,
       isDrying: json['isDrying'] as bool? ?? false,
       washCompletedAt: DateTime.tryParse(
         json['washCompletedAt'] as String? ?? '',

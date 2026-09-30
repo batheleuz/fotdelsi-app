@@ -11,6 +11,7 @@ import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
+import 'package:fotdelsi/core/widgets/sun_drying_checkbox.dart';
 import '../../domain/entities/payment_provider.dart';
 import '../bloc/payment_bloc.dart';
 import '../bloc/payment_event.dart';
@@ -62,6 +63,7 @@ class _PaymentViewState extends State<_PaymentView> {
   DryingDurationTier _dryingTier = DryingDurationTier.defaultTier;
   bool _hasManuallySelectedTier = false;
   int _quantity = 1;
+  bool _requiresSunDrying = false;
 
   bool get _hasDrying =>
       widget.formula?.includesDrying ??
@@ -169,6 +171,16 @@ class _PaymentViewState extends State<_PaymentView> {
                             onQuantityChanged: (quantity) =>
                                 setState(() => _quantity = quantity),
                           ),
+                          if (_hasDrying &&
+                              machine.type == MachineType.washer) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            SunDryingCheckbox(
+                              value: _requiresSunDrying,
+                              onChanged: (value) => setState(
+                                () => _requiresSunDrying = value,
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: AppSpacing.lg),
 
                           const _SectionLabel('Votre nom complet'),
@@ -248,6 +260,7 @@ class _PaymentViewState extends State<_PaymentView> {
                         dryingDurationMinutes:
                             _hasDrying ? tierToUse.minutes : null,
                         quantity: _quantity,
+                        requiresSunDrying: _requiresSunDrying,
                       ),
                     );
                   },

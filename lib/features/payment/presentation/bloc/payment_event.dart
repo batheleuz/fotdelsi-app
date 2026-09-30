@@ -49,6 +49,7 @@ final class PaymentSubmitted extends PaymentEvent {
     this.formulaCode,
     this.dryingDurationMinutes,
     this.quantity = 1,
+    this.requiresSunDrying = false,
   });
 
   final String machineId;
@@ -61,6 +62,7 @@ final class PaymentSubmitted extends PaymentEvent {
   /// Durée de séchage choisie si la prestation ou la machine le requiert.
   final int? dryingDurationMinutes;
   final int quantity;
+  final bool requiresSunDrying;
 
   @override
   List<Object?> get props => [
@@ -68,5 +70,6 @@ final class PaymentSubmitted extends PaymentEvent {
     formulaCode,
     dryingDurationMinutes,
     quantity,
+    requiresSunDrying,
   ];
 }

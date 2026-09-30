@@ -60,6 +60,7 @@ class _StubDropOffs implements DropOffRepository {
     String? instructions,
     int? dryingDurationMinutes,
     int quantity = 1,
+    bool requiresSunDrying = false,
   }) async => const Right('brouillon-1');
 
   @override

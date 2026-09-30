@@ -92,6 +92,7 @@ class DropOffApiDataSource {
     String? instructions,
     int? dryingDurationMinutes,
     int quantity = 1,
+    bool requiresSunDrying = false,
   }) async {
     final resp = await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.dropOffDraft,
@@ -100,6 +101,7 @@ class DropOffApiDataSource {
         'customerName': customerName,
         'formulaCode': formulaCode,
         'quantity': quantity,
+        'requiresSunDrying': requiresSunDrying,
         'sizeKg': sizeKg,
         'dryingDurationMinutes': ?dryingDurationMinutes,
         'laundry': {

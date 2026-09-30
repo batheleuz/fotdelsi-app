@@ -98,6 +98,9 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
         formulaCode: formula.code,
         machine: keep ? state.machine : null,
         clearMachine: !keep,
+        requiresSunDrying: formula.includesDrying
+            ? state.requiresSunDrying
+            : false,
       ),
     );
   }
@@ -135,6 +138,9 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
   }
 
   void selectQuantity(int quantity) => emit(state.copyWith(quantity: quantity));
+
+  void setRequiresSunDrying(bool value) =>
+      emit(state.copyWith(requiresSunDrying: value));
 
   // ── Navigation ──────────────────────────────────────────────────────────────
 
@@ -184,6 +190,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
       dryingDurationMinutes:
           state.hasDrying ? state.dryingTier.minutes : null,
       quantity: state.quantity,
+      requiresSunDrying: state.requiresSunDrying,
     );
 
     result.fold(

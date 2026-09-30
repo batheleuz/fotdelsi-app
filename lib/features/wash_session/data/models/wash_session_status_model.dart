@@ -16,6 +16,7 @@ class WashSessionStatusModel {
     required this.canRetry,
     required this.isFinished,
     required this.withDrying,
+    required this.requiresSunDrying,
     required this.canStartDrying,
     required this.isDrying,
     this.handoffCode,
@@ -41,6 +42,9 @@ class WashSessionStatusModel {
   /// La prestation payée comporte un séchage : le cycle a deux temps.
   final bool withDrying;
 
+  /// Le linge doit sécher au soleil et ne peut pas entrer en sécheuse.
+  final bool requiresSunDrying;
+
   /// Lavage fini, sécheuse pas encore lancée → l'app propose « Démarrer le séchage ».
   final bool canStartDrying;
 
@@ -65,6 +69,7 @@ class WashSessionStatusModel {
       canRetry: json['canRetry'] as bool? ?? false,
       isFinished: sessionStatus == 'DONE',
       withDrying: json['withDrying'] as bool? ?? false,
+      requiresSunDrying: json['requiresSunDrying'] as bool? ?? false,
       canStartDrying: json['canStartDrying'] as bool? ?? false,
       isDrying: json['isDrying'] as bool? ?? false,
       handoffCode: json['handoffCode'] as String?,

@@ -105,6 +105,8 @@ class ActiveSessionCard extends StatelessWidget {
           // la LAVEUSE par son jeton, alors qu'il faut désigner une sécheuse.
           onStart: state.startingToken != null
               ? null
+              : cycle.state == CycleState.awaitingPickup
+              ? () => context.read<MyCyclesCubit>().confirmPickup(cycle)
               : cycle.state == CycleState.dryingToStart
               ? () => showPickDryerSheet(
                   context,
@@ -225,12 +227,18 @@ class _CycleBanner extends StatelessWidget {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.play_arrow_rounded),
+                      : Icon(
+                          cycle.state == CycleState.awaitingPickup
+                              ? Icons.check_rounded
+                              : Icons.play_arrow_rounded,
+                        ),
                   label: Text(
                     starting
                         ? 'Démarrage…'
                         : cycle.state == CycleState.dryingToStart
                         ? 'Lancer le séchage'
+                        : cycle.state == CycleState.awaitingPickup
+                        ? 'Linge récupéré'
                         : 'Démarrer la machine',
                   ),
                 ),
@@ -275,7 +283,9 @@ class _CycleBanner extends StatelessWidget {
       CycleState.dryingToStart =>
         'Il reste le séchage — sortez votre linge et lancez la sécheuse.',
       CycleState.awaitingPickup =>
-        'Récupérez votre linge$_machineSuffix.',
+        cycle.requiresSunDrying
+            ? 'Sortez le linge et séchez-le au soleil. Ne le mettez jamais en sécheuse.'
+            : 'Récupérez votre linge$_machineSuffix.',
       CycleState.finished => 'Récupérez votre linge$_machineSuffix.',
     };
   }

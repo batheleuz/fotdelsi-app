@@ -24,6 +24,7 @@ class PaymentApiDataSource {
     bool atCounter = false,
     int? dryingDurationMinutes,
     int quantity = 1,
+    bool requiresSunDrying = false,
   }) async {
     try {
       final response = await _dio.post<dynamic>(
@@ -39,6 +40,7 @@ class PaymentApiDataSource {
           'customerPhone': normalizePhone(customerPhone),
           'purpose': "SELF_SERVICE",
           'quantity': quantity,
+          'requiresSunDrying': requiresSunDrying,
           'dryingDurationMinutes': ?dryingDurationMinutes,
           // Déclare une vente au comptoir. Ne transmet aucune identité : le
           // serveur exige alors un jeton d'agent valide et refuse sinon.

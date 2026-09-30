@@ -157,6 +157,19 @@ WashCycle cycleToStart() => WashCycle(
   machineName: 'Laveuse 01',
 );
 
+WashCycle cycleSunDrying() => WashCycle(
+  token: 'jeton-soleil',
+  machineId: 'machine-soleil',
+  amount: 6000,
+  paidAt: DateTime.now(),
+  state: CycleState.awaitingPickup,
+  startedAt: DateTime.now().subtract(const Duration(minutes: 35)),
+  washCompletedAt: DateTime.now(),
+  withDrying: true,
+  requiresSunDrying: true,
+  machineName: 'Laveuse 04',
+);
+
 void main() {
   late MachinesBloc machinesBloc;
 
@@ -326,6 +339,25 @@ void main() {
   });
 
   group('cycle en deux temps', () {
+    testWidgets('un linge sensible ne propose jamais de sécheuse', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: WashCyclesPage(
+            createCubit: () => _FakeCyclesCubit([cycleSunDrying()]),
+            explanation: 'Test',
+            layout: CyclesLayout.history,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Séchage au soleil obligatoire'), findsOneWidget);
+      expect(find.text('Lancer le séchage'), findsNothing);
+      expect(find.text('Linge récupéré'), findsOneWidget);
+    });
+
     testWidgets('annonce le lavage fini et le séchage restant', (tester) async {
       // Le manque signalé : après le lavage, l'écran continuait d'égrener le
       // temps écoulé sans rien annoncer. Le client attendait devant une

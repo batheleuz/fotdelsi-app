@@ -8,6 +8,7 @@ import 'package:fotdelsi/core/utils/price_formatter.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:fotdelsi/core/widgets/quantity_stepper.dart';
+import 'package:fotdelsi/core/widgets/sun_drying_checkbox.dart';
 import '../../cubit/counter_sale_cubit.dart';
 import '../sale_choice_tile.dart';
 
@@ -115,6 +116,14 @@ class SaleServiceStep extends StatelessWidget {
               ),
             ],
           ),
+
+          if (state.hasDrying && state.machine?.type == MachineType.washer) ...[
+            const SizedBox(height: AppSpacing.md),
+            SunDryingCheckbox(
+              value: state.requiresSunDrying,
+              onChanged: cubit.setRequiresSunDrying,
+            ),
+          ],
 
           if (state.total != null) ...[
             const SizedBox(height: AppSpacing.lg),

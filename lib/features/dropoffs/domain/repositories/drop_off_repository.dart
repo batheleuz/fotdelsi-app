@@ -42,6 +42,7 @@ abstract interface class DropOffRepository {
     String? instructions,
     int? dryingDurationMinutes,
     int quantity = 1,
+    bool requiresSunDrying = false,
   });
 
   /// `GET /me/dropoffs` — historique des dépôts du client lié.

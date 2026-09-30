@@ -30,6 +30,7 @@ class _FakePayments implements PaymentRepository {
     bool atCounter = false,
     int? dryingDurationMinutes,
     int quantity = 1,
+    bool requiresSunDrying = false,
   }) async {
     initiateCalls++;
     return const Right(
@@ -79,6 +80,7 @@ class _FakeDropOffs implements DropOffRepository {
     String? instructions,
     int? dryingDurationMinutes,
     int quantity = 1,
+    bool requiresSunDrying = false,
   }) async {
     createDraftCalls++;
     return const Right('draft-1');

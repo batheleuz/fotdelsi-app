@@ -20,6 +20,7 @@ final class NewDropOffState extends Equatable {
     this.sizeKg,
     this.dryingTier = DryingDurationTier.defaultTier,
     this.quantity = 1,
+    this.requiresSunDrying = false,
     this.provider,
     this.draftId,
     this.delivery = PaymentDelivery.notify,
@@ -47,6 +48,7 @@ final class NewDropOffState extends Equatable {
   final int? sizeKg;
   final DryingDurationTier dryingTier;
   final int quantity;
+  final bool requiresSunDrying;
 
   final PaymentProvider? provider;
 
@@ -118,6 +120,7 @@ final class NewDropOffState extends Equatable {
     int? sizeKg,
     DryingDurationTier? dryingTier,
     int? quantity,
+    bool? requiresSunDrying,
     PaymentProvider? provider,
     String? draftId,
     PaymentDelivery? delivery,
@@ -141,6 +144,7 @@ final class NewDropOffState extends Equatable {
       sizeKg: clearSize ? null : (sizeKg ?? this.sizeKg),
       dryingTier: dryingTier ?? this.dryingTier,
       quantity: quantity ?? this.quantity,
+      requiresSunDrying: requiresSunDrying ?? this.requiresSunDrying,
       provider: provider ?? this.provider,
       draftId: draftId ?? this.draftId,
       delivery: delivery ?? this.delivery,
@@ -165,6 +169,7 @@ final class NewDropOffState extends Equatable {
     sizeKg,
     dryingTier,
     quantity,
+    requiresSunDrying,
     provider,
     draftId,
     delivery,

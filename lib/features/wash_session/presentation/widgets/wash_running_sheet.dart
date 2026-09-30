@@ -225,7 +225,15 @@ class _Steps extends StatelessWidget {
             ),
           ),
         ] else ...[
-          if (cycle.withDrying) ...[
+          if (cycle.requiresSunDrying) ...[
+            const SizedBox(height: AppSpacing.sm),
+            const _StepCard(
+              done: false,
+              icon: Icons.wb_sunny_outlined,
+              title: 'Séchage au soleil obligatoire',
+              body: 'Sortez le linge et faites-le sécher au soleil. Ne le mettez jamais en sécheuse.',
+            ),
+          ] else if (cycle.withDrying) ...[
             const SizedBox(height: AppSpacing.sm),
             const _StepCard(
               done: true,
@@ -311,4 +319,3 @@ class _StepCard extends StatelessWidget {
     );
   }
 }
-

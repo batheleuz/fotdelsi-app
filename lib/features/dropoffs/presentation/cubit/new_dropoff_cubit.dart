@@ -110,6 +110,9 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
 
   void selectQuantity(int quantity) => emit(state.copyWith(quantity: quantity));
 
+  void setRequiresSunDrying(bool value) =>
+      emit(state.copyWith(requiresSunDrying: value));
+
   void selectProvider(PaymentProvider provider) =>
       emit(state.copyWith(provider: provider));
 
@@ -156,6 +159,7 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
       dryingDurationMinutes:
           state.hasDrying ? state.dryingTier.minutes : null,
       quantity: state.quantity,
+      requiresSunDrying: state.requiresSunDrying,
     );
 
     await draft.fold(

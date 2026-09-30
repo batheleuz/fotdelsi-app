@@ -27,6 +27,7 @@ abstract final class DropOffModel {
       plannedMachineName: json['plannedMachineName'] as String?,
       washSessionId: json['washSessionId'] as String?,
       withDrying: json['withDrying'] as bool? ?? false,
+      requiresSunDrying: json['requiresSunDrying'] as bool? ?? false,
       dryingDurationMinutes: (json['dryingDurationMinutes'] as num?)?.toInt(),
       dryerMachineId: json['dryerMachineId'] as String?,
       dryStartedAt: _date(json['dryStartedAt']),
