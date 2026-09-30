@@ -88,6 +88,7 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
   /// tarifée pour cette formule — mieux vaut redemander que d'afficher un
   /// total incohérent.
   void selectFormula(ServiceFormula formula) {
+    if (state.requiresSunDrying && !formula.isReadyToWear) return;
     final keepSize =
         state.sizeKg != null && formula.priceFor(state.sizeKg!) != null;
     final updatedFormulas = state.formulas.any((f) => f.code == formula.code)
@@ -110,8 +111,42 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
 
   void selectQuantity(int quantity) => emit(state.copyWith(quantity: quantity));
 
-  void setRequiresSunDrying(bool value) =>
-      emit(state.copyWith(requiresSunDrying: value));
+  void setRequiresSunDrying(bool value) {
+    if (!value) {
+      emit(state.copyWith(requiresSunDrying: false));
+      return;
+    }
+
+    ServiceFormula? readyToWear;
+    for (final formula in state.formulas) {
+      if (formula.isReadyToWear) {
+        readyToWear = formula;
+        break;
+      }
+    }
+
+    if (readyToWear == null) {
+      emit(
+        state.copyWith(
+          requiresSunDrying: true,
+          clearFormula: true,
+          clearSize: true,
+        ),
+      );
+      return;
+    }
+
+    final keepSize =
+        state.sizeKg != null && readyToWear.priceFor(state.sizeKg!) != null;
+    emit(
+      state.copyWith(
+        requiresSunDrying: true,
+        formulaCode: readyToWear.code,
+        sizeKg: keepSize ? state.sizeKg : null,
+        clearSize: !keepSize,
+      ),
+    );
+  }
 
   void selectProvider(PaymentProvider provider) =>
       emit(state.copyWith(provider: provider));
@@ -137,10 +172,13 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
 
     final total = state.total;
     if (total == null || total <= 0) {
-      emit(state.copyWith(
-        submitStatus: SubmitStatus.failure,
-        error: 'Le montant calculé doit être strictement supérieur à 0 F CFA.',
-      ));
+      emit(
+        state.copyWith(
+          submitStatus: SubmitStatus.failure,
+          error:
+              'Le montant calculé doit être strictement supérieur à 0 F CFA.',
+        ),
+      );
       return;
     }
 
@@ -156,8 +194,7 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
       pieces: state.pieces,
       types: state.types.toList(),
       instructions: state.instructions,
-      dryingDurationMinutes:
-          state.hasDrying ? state.dryingTier.minutes : null,
+      dryingDurationMinutes: state.hasDrying ? state.dryingTier.minutes : null,
       quantity: state.quantity,
       requiresSunDrying: state.requiresSunDrying,
     );
@@ -197,22 +234,22 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
     _poll?.cancel();
     final paymentId = state.session?.paymentId;
     if (paymentId == null) return;
-    _poll = Timer.periodic(_pollInterval, (_) => _checkPaymentStatus(paymentId));
+    _poll = Timer.periodic(
+      _pollInterval,
+      (_) => _checkPaymentStatus(paymentId),
+    );
     _checkPaymentStatus(paymentId);
   }
 
   Future<void> _checkPaymentStatus(String paymentId) async {
     final result = await _paymentRepository.isPaymentConfirmed(paymentId);
     if (isClosed) return;
-    result.fold(
-      (_) => null,
-      (confirmed) {
-        if (confirmed && !state.isPaid) {
-          _poll?.cancel();
-          emit(state.copyWith(isPaid: true));
-        }
-      },
-    );
+    result.fold((_) => null, (confirmed) {
+      if (confirmed && !state.isPaid) {
+        _poll?.cancel();
+        emit(state.copyWith(isPaid: true));
+      }
+    });
   }
 
   /// Comment la demande atteindra le payeur. Choisi avant de la lancer.

@@ -75,22 +75,31 @@ void main() {
       expect(formula.lowestPrice, 12000);
     });
 
-    test('formule sans séchage conserve uniquement le tarif de la plus petite machine', () {
-      const washing = ServiceFormula(
-        code: 'LAVAGE',
-        label: 'Lavage',
-        items: [ServiceItem(kind: ServiceItemKind.washing, label: 'Lavage', requiresAgent: false)],
-        includesDrying: false,
-        requiresAgent: false,
-        selfServiceEnabled: true,
-        displayOrder: 1,
-        prices: [
-          FormulaPrice(sizeKg: 12, price: 4000),
-          FormulaPrice(sizeKg: 15, price: 5000),
-        ],
-      );
-      expect(washing.lowestPrice, 4000);
-    });
+    test(
+      'formule sans séchage conserve uniquement le tarif de la plus petite machine',
+      () {
+        const washing = ServiceFormula(
+          code: 'LAVAGE',
+          label: 'Lavage',
+          items: [
+            ServiceItem(
+              kind: ServiceItemKind.washing,
+              label: 'Lavage',
+              requiresAgent: false,
+            ),
+          ],
+          includesDrying: false,
+          requiresAgent: false,
+          selfServiceEnabled: true,
+          displayOrder: 1,
+          prices: [
+            FormulaPrice(sizeKg: 12, price: 4000),
+            FormulaPrice(sizeKg: 15, price: 5000),
+          ],
+        );
+        expect(washing.lowestPrice, 4000);
+      },
+    );
 
     test('retourne null pour une capacité non tarifée', () {
       // L'écran ne doit jamais afficher un prix inventé.
@@ -100,6 +109,29 @@ void main() {
     test('identifie les prestations réalisées par un agent', () {
       final agentItems = formula.items.where((i) => i.requiresAgent).toList();
       expect(agentItems.map((i) => i.kind), [ServiceItemKind.folding]);
+    });
+
+    test('identifie Prêt à porter par la présence du repassage', () {
+      expect(formula.isReadyToWear, isFalse);
+
+      const readyToWear = ServiceFormula(
+        code: 'LAVAGE_SECHAGE_PLIAGE_REPASSAGE',
+        label: 'Nom modifiable',
+        items: [
+          ServiceItem(
+            kind: ServiceItemKind.ironing,
+            label: 'Repassage',
+            requiresAgent: true,
+          ),
+        ],
+        includesDrying: true,
+        requiresAgent: true,
+        selfServiceEnabled: true,
+        displayOrder: 4,
+        prices: [FormulaPrice(sizeKg: 12, price: 11000)],
+      );
+
+      expect(readyToWear.isReadyToWear, isTrue);
     });
 
     test('ignore une prestation inconnue sans perdre le reste', () {

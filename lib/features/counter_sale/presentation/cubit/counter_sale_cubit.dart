@@ -86,6 +86,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
   // ── Saisies ─────────────────────────────────────────────────────────────────
 
   void selectFormula(ServiceFormula formula) {
+    if (state.requiresSunDrying && !formula.isReadyToWear) return;
     // La machine n'est conservée que si elle convient à la formule (type et
     // tarifée) : on la réinitialise plutôt que d'afficher un total faux.
     final keep = state.machine != null && _fits(formula, state.machine!);
@@ -98,9 +99,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
         formulaCode: formula.code,
         machine: keep ? state.machine : null,
         clearMachine: !keep,
-        requiresSunDrying: formula.includesDrying
-            ? state.requiresSunDrying
-            : false,
+        requiresSunDrying: state.requiresSunDrying,
       ),
     );
   }
@@ -139,8 +138,42 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
 
   void selectQuantity(int quantity) => emit(state.copyWith(quantity: quantity));
 
-  void setRequiresSunDrying(bool value) =>
-      emit(state.copyWith(requiresSunDrying: value));
+  void setRequiresSunDrying(bool value) {
+    if (!value) {
+      emit(state.copyWith(requiresSunDrying: false));
+      return;
+    }
+
+    ServiceFormula? readyToWear;
+    for (final formula in state.formulas) {
+      if (formula.isReadyToWear) {
+        readyToWear = formula;
+        break;
+      }
+    }
+
+    if (readyToWear == null) {
+      emit(
+        state.copyWith(
+          requiresSunDrying: true,
+          clearFormula: true,
+          clearMachine: true,
+        ),
+      );
+      return;
+    }
+
+    final keepMachine =
+        state.machine != null && _fits(readyToWear, state.machine!);
+    emit(
+      state.copyWith(
+        requiresSunDrying: true,
+        formulaCode: readyToWear.code,
+        machine: keepMachine ? state.machine : null,
+        clearMachine: !keepMachine,
+      ),
+    );
+  }
 
   // ── Navigation ──────────────────────────────────────────────────────────────
 
@@ -169,10 +202,13 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
 
     final total = state.total;
     if (total == null || total <= 0) {
-      emit(state.copyWith(
-        saleStatus: SaleStatus.failure,
-        error: 'Le montant calculé doit être strictement supérieur à 0 F CFA.',
-      ));
+      emit(
+        state.copyWith(
+          saleStatus: SaleStatus.failure,
+          error:
+              'Le montant calculé doit être strictement supérieur à 0 F CFA.',
+        ),
+      );
       return;
     }
 
@@ -187,8 +223,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
       // Impose au serveur d'exiger un jeton d'agent valide. Sans ça, un jeton
       // expiré passait sans bruit et la vente perdait son vendeur.
       atCounter: true,
-      dryingDurationMinutes:
-          state.hasDrying ? state.dryingTier.minutes : null,
+      dryingDurationMinutes: state.hasDrying ? state.dryingTier.minutes : null,
       quantity: state.quantity,
       requiresSunDrying: state.requiresSunDrying,
     );
@@ -262,7 +297,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
     return result.fold(
       (failure) {
         emit(
-        // Retour à « payé » : le paiement reste valide, l'agent peut réessayer.
+          // Retour à « payé » : le paiement reste valide, l'agent peut réessayer.
           state.copyWith(saleStatus: SaleStatus.paid, clearError: true),
         );
         return failure.message;

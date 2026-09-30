@@ -76,7 +76,12 @@ final class NewDropOffState extends Equatable {
     return null;
   }
 
-  bool get hasDrying => selectedFormula?.includesDrying ?? false;
+  bool get hasDrying =>
+      (selectedFormula?.includesDrying ?? false) && !requiresSunDrying;
+
+  List<ServiceFormula> get selectableFormulas => requiresSunDrying
+      ? formulas.where((formula) => formula.isReadyToWear).toList()
+      : formulas;
 
   /// Montant affiché, lu dans la grille. Purement indicatif : le serveur
   /// retarifie de son côté et c'est son prix qui fait foi.
@@ -104,6 +109,7 @@ final class NewDropOffState extends Equatable {
       formulaCode != null &&
       sizeKg != null &&
       provider != null &&
+      (!requiresSunDrying || selectedFormula?.isReadyToWear == true) &&
       (total ?? 0) > 0;
   bool get isSubmitting => submitStatus == SubmitStatus.loading;
 
@@ -129,6 +135,7 @@ final class NewDropOffState extends Equatable {
     String? error,
     bool? isPaid,
     bool clearError = false,
+    bool clearFormula = false,
     bool clearSize = false,
   }) {
     return NewDropOffState(
@@ -140,7 +147,7 @@ final class NewDropOffState extends Equatable {
       instructions: instructions ?? this.instructions,
       formulas: formulas ?? this.formulas,
       formulasStatus: formulasStatus ?? this.formulasStatus,
-      formulaCode: formulaCode ?? this.formulaCode,
+      formulaCode: clearFormula ? null : (formulaCode ?? this.formulaCode),
       sizeKg: clearSize ? null : (sizeKg ?? this.sizeKg),
       dryingTier: dryingTier ?? this.dryingTier,
       quantity: quantity ?? this.quantity,

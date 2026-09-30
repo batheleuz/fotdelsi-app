@@ -66,8 +66,9 @@ class _PaymentViewState extends State<_PaymentView> {
   bool _requiresSunDrying = false;
 
   bool get _hasDrying =>
-      widget.formula?.includesDrying ??
-      (widget.machine.type == MachineType.dryer);
+      !_requiresSunDrying &&
+      (widget.formula?.includesDrying ??
+          (widget.machine.type == MachineType.dryer));
 
   Future<void> _selectDryingTier() async {
     final chosen = await showDryingDurationSheet(
@@ -161,26 +162,28 @@ class _PaymentViewState extends State<_PaymentView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (machine.type == MachineType.washer) ...[
+                            SunDryingCheckbox(
+                              value: _requiresSunDrying,
+                              enabled: formula?.isReadyToWear == true,
+                              disabledMessage:
+                                  'Disponible uniquement avec la formule « Prêt à porter ». Revenez en arrière pour changer de formule.',
+                              onChanged: (value) =>
+                                  setState(() => _requiresSunDrying = value),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                          ],
                           OrderRecapCard(
                             formula: formula,
                             machine: machine,
                             dryingTier: _hasDrying ? _dryingTier : null,
-                            onSelectDryingTier:
-                                _hasDrying ? _selectDryingTier : null,
+                            onSelectDryingTier: _hasDrying
+                                ? _selectDryingTier
+                                : null,
                             quantity: _quantity,
                             onQuantityChanged: (quantity) =>
                                 setState(() => _quantity = quantity),
                           ),
-                          if (_hasDrying &&
-                              machine.type == MachineType.washer) ...[
-                            const SizedBox(height: AppSpacing.md),
-                            SunDryingCheckbox(
-                              value: _requiresSunDrying,
-                              onChanged: (value) => setState(
-                                () => _requiresSunDrying = value,
-                              ),
-                            ),
-                          ],
                           const SizedBox(height: AppSpacing.lg),
 
                           const _SectionLabel('Votre nom complet'),
@@ -257,8 +260,9 @@ class _PaymentViewState extends State<_PaymentView> {
                       PaymentSubmitted(
                         machineId: machine.id,
                         formulaCode: formula?.code,
-                        dryingDurationMinutes:
-                            _hasDrying ? tierToUse.minutes : null,
+                        dryingDurationMinutes: _hasDrying
+                            ? tierToUse.minutes
+                            : null,
                         quantity: _quantity,
                         requiresSunDrying: _requiresSunDrying,
                       ),

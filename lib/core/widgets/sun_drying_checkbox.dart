@@ -9,10 +9,14 @@ class SunDryingCheckbox extends StatelessWidget {
     super.key,
     required this.value,
     required this.onChanged,
+    this.enabled = true,
+    this.disabledMessage,
   });
 
   final bool value;
   final ValueChanged<bool> onChanged;
+  final bool enabled;
+  final String? disabledMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -20,20 +24,24 @@ class SunDryingCheckbox extends StatelessWidget {
 
     return Semantics(
       checked: value,
-      button: true,
+      button: enabled,
+      enabled: enabled,
       label: 'Vêtements à sécher au soleil uniquement',
       child: Material(
-        color: value ? const Color(0xFFFFF4E5) : AppColors.surface,
+        color: value ? const Color(0xFFFFF0DC) : const Color(0xFFFFFBF5),
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: InkWell(
-          onTap: () => onChanged(!value),
+          onTap: enabled ? () => onChanged(!value) : null,
           borderRadius: BorderRadius.circular(AppRadius.md),
           child: Container(
-            padding: const EdgeInsets.fromLTRB(10, 10, 14, 10),
+            padding: const EdgeInsets.fromLTRB(10, 12, 14, 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.md),
               border: Border.all(
-                color: value ? const Color(0xFFFFB45E) : AppColors.border,
+                color: value
+                    ? const Color(0xFFFF9A2E)
+                    : const Color(0xFFFFD7A8),
+                width: value ? 2 : 1.5,
               ),
             ),
             child: Row(
@@ -42,23 +50,25 @@ class SunDryingCheckbox extends StatelessWidget {
                 Checkbox(
                   value: value,
                   activeColor: warning,
-                  onChanged: (checked) => onChanged(checked ?? false),
+                  onChanged: enabled
+                      ? (checked) => onChanged(checked ?? false)
+                      : null,
                 ),
                 const SizedBox(width: 4),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Séchage au soleil uniquement',
+                      const Text(
+                        'LINGE SENSIBLE — séchage au soleil',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
                         ),
                       ),
-                      SizedBox(height: 3),
-                      Text(
+                      const SizedBox(height: 3),
+                      const Text(
                         'Vêtements wolof, costumes ou couettes. Ne jamais les mettre en sécheuse.',
                         style: TextStyle(
                           fontSize: 12,
@@ -66,6 +76,18 @@ class SunDryingCheckbox extends StatelessWidget {
                           color: warning,
                         ),
                       ),
+                      if (!enabled && disabledMessage != null) ...[
+                        const SizedBox(height: 5),
+                        Text(
+                          disabledMessage!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            height: 1.35,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.danger,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

@@ -80,7 +80,12 @@ final class CounterSaleState extends Equatable {
   }
 
   bool get hasDrying =>
-      selectedFormula?.includesDrying ?? (machine?.type == MachineType.dryer);
+      ((selectedFormula?.includesDrying ?? false) && !requiresSunDrying) ||
+      (selectedFormula == null && machine?.type == MachineType.dryer);
+
+  List<ServiceFormula> get selectableFormulas => requiresSunDrying
+      ? formulas.where((formula) => formula.isReadyToWear).toList()
+      : formulas;
 
   /// Montant affiché, lu dans la grille. Indicatif : le serveur retarife.
   int? get total {
@@ -110,11 +115,16 @@ final class CounterSaleState extends Equatable {
       provider != null &&
       customerName.trim().length >= 2 &&
       _phoneRegex.hasMatch(customerPhone) &&
+      (!requiresSunDrying || selectedFormula?.isReadyToWear == true) &&
       (total ?? 0) > 0;
 
   /// L'agent peut-il avancer depuis l'étape courante ?
   bool get canGoNext => switch (step) {
-    0 => formulaCode != null && machine != null && (total ?? 0) > 0,
+    0 =>
+      formulaCode != null &&
+          machine != null &&
+          (!requiresSunDrying || selectedFormula?.isReadyToWear == true) &&
+          (total ?? 0) > 0,
     1 =>
       provider != null &&
           customerName.trim().length >= 2 &&
@@ -145,13 +155,14 @@ final class CounterSaleState extends Equatable {
     PaymentSession? session,
     String? error,
     bool clearError = false,
+    bool clearFormula = false,
   }) {
     return CounterSaleState(
       step: step ?? this.step,
       loadStatus: loadStatus ?? this.loadStatus,
       formulas: formulas ?? this.formulas,
       machines: machines ?? this.machines,
-      formulaCode: formulaCode ?? this.formulaCode,
+      formulaCode: clearFormula ? null : (formulaCode ?? this.formulaCode),
       machine: clearMachine ? null : (machine ?? this.machine),
       dryingTier: dryingTier ?? this.dryingTier,
       quantity: quantity ?? this.quantity,

@@ -41,6 +41,11 @@ class _NewDropOffLaundryStepState extends State<NewDropOffLaundryStep> {
       padding: const EdgeInsets.all(AppSpacing.lg),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       children: [
+        SunDryingCheckbox(
+          value: state.requiresSunDrying,
+          onChanged: cubit.setRequiresSunDrying,
+        ),
+        const SizedBox(height: AppSpacing.lg),
         const _Title('Combien de pièces ?'),
         const SizedBox(height: AppSpacing.sm),
         Row(
@@ -61,11 +66,6 @@ class _NewDropOffLaundryStepState extends State<NewDropOffLaundryStep> {
             ),
             _RoundBtn(icon: Icons.add, onTap: cubit.incrementPieces),
           ],
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        SunDryingCheckbox(
-          value: state.requiresSunDrying,
-          onChanged: cubit.setRequiresSunDrying,
         ),
         const SizedBox(height: AppSpacing.lg),
         const _Title('Instructions (optionnel)'),
@@ -138,4 +138,3 @@ class _RoundBtn extends StatelessWidget {
     );
   }
 }
-

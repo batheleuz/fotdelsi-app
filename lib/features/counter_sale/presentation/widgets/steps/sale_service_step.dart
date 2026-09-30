@@ -30,9 +30,14 @@ class SaleServiceStep extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       children: [
+        SunDryingCheckbox(
+          value: state.requiresSunDrying,
+          onChanged: cubit.setRequiresSunDrying,
+        ),
+        const SizedBox(height: AppSpacing.md),
         const _Label('Prestation'),
         const SizedBox(height: AppSpacing.sm),
-        for (final f in state.formulas)
+        for (final f in state.selectableFormulas)
           SaleChoiceTile(
             title: f.label,
             subtitle: f.availability.selfService
@@ -117,20 +122,9 @@ class SaleServiceStep extends StatelessWidget {
             ],
           ),
 
-          if (state.hasDrying && state.machine?.type == MachineType.washer) ...[
-            const SizedBox(height: AppSpacing.md),
-            SunDryingCheckbox(
-              value: state.requiresSunDrying,
-              onChanged: cubit.setRequiresSunDrying,
-            ),
-          ],
-
           if (state.total != null) ...[
             const SizedBox(height: AppSpacing.lg),
-            _TotalBanner(
-              total: state.total!,
-              hasDrying: state.hasDrying,
-            ),
+            _TotalBanner(total: state.total!, hasDrying: state.hasDrying),
           ],
         ],
       ],

@@ -31,6 +31,34 @@ class NewDropOffServiceStep extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
+        if (state.requiresSunDrying) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF0DC),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: const Color(0xFFFFB45E)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.wb_sunny_outlined, color: Color(0xFF9A4D00)),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Linge sensible confirmé : seule la formule « Prêt à porter » est disponible.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.35,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF9A4D00),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         const _Title('Prestation'),
         const SizedBox(height: AppSpacing.sm),
         _formulas(state, cubit),
@@ -120,7 +148,7 @@ class NewDropOffServiceStep extends StatelessWidget {
       ),
       LoadStatus.failure => _CatalogError(onRetry: cubit.retryFormulas),
       LoadStatus.success => Column(
-        children: state.formulas
+        children: state.selectableFormulas
             .map(
               (f) => _FormulaCard(
                 formula: f,
@@ -434,10 +462,7 @@ class _CatalogError extends StatelessWidget {
 }
 
 class _DryingDurationPicker extends StatelessWidget {
-  const _DryingDurationPicker({
-    required this.selected,
-    required this.onSelect,
-  });
+  const _DryingDurationPicker({required this.selected, required this.onSelect});
 
   final DryingDurationTier selected;
   final ValueChanged<DryingDurationTier> onSelect;

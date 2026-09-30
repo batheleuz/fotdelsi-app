@@ -109,6 +109,8 @@ class ServiceFormula extends Equatable {
   bool includesItem(ServiceItemKind kind) =>
       items.any((item) => item.kind == kind);
 
+  bool get isReadyToWear => includesItem(ServiceItemKind.ironing);
+
   /// Détail des prestations, affiché sous le nom commercial.
   ///
   /// Les noms retenus disent le résultat (« Prêt à porter ») plutôt que le
@@ -135,7 +137,8 @@ class ServiceFormula extends Equatable {
   /// si la formule inclut le séchage.
   int? get lowestPrice {
     if (prices.isEmpty) return null;
-    final basePrice = priceFor(12) ??
+    final basePrice =
+        priceFor(12) ??
         prices.map((p) => p.price).reduce((a, b) => a < b ? a : b);
     if (includesDrying) {
       return basePrice + DryingDurationTier.configuredDefault.price;

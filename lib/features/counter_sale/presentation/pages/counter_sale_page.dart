@@ -8,6 +8,7 @@ import 'package:fotdelsi/core/theme/app_colors.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/features/wash_session/presentation/widgets/pick_cycle_machine_sheet.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
+import 'package:fotdelsi/core/widgets/sun_drying_confirmation_sheet.dart';
 import '../cubit/counter_sale_cubit.dart';
 import '../widgets/counter_sale_stepper.dart';
 import '../widgets/steps/sale_customer_step.dart';
@@ -205,7 +206,13 @@ class _ActionBar extends StatelessWidget {
               enabled: state.canGoNext && !state.isSubmitting,
               loading: state.isSubmitting,
               backgroundColor: AppColors.primaryLight,
-              onPressed: cubit.next,
+              onPressed: () async {
+                if (state.step == 0 && state.requiresSunDrying) {
+                  final confirmed = await confirmSunDryingSelection(context);
+                  if (!confirmed || !context.mounted) return;
+                }
+                cubit.next();
+              },
             ),
           if (state.canGoBack)
             TextButton(onPressed: cubit.back, child: const Text('Retour')),
