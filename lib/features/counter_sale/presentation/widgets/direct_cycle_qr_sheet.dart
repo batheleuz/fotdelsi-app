@@ -10,6 +10,7 @@ import 'package:fotdelsi/core/utils/price_formatter.dart';
 import 'package:fotdelsi/core/widgets/primary_button.dart';
 import 'package:fotdelsi/features/dropoffs/domain/entities/pending_drop_off_payment.dart';
 import 'package:fotdelsi/features/payment/domain/entities/payment_provider.dart';
+import 'package:fotdelsi/features/payment/domain/repositories/payment_repository.dart';
 import 'package:fotdelsi/features/payment/presentation/widgets/payment_qr_view.dart';
 import 'package:fotdelsi/features/wash_session/domain/entities/session_payment_status.dart';
 import 'package:fotdelsi/features/wash_session/domain/repositories/wash_session_repository.dart';
@@ -22,10 +23,7 @@ import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 /// immédiatement. Scrute l'état du paiement en arrière-plan et propose le bouton de démarrage
 /// physique dès que le paiement est confirmé.
 class DirectCycleQrSheet extends StatefulWidget {
-  const DirectCycleQrSheet({
-    super.key,
-    required this.payment,
-  });
+  const DirectCycleQrSheet({super.key, required this.payment});
 
   final PendingDropOffPayment payment;
 
@@ -47,11 +45,13 @@ class DirectCycleQrSheet extends StatefulWidget {
 
 class _DirectCycleQrSheetState extends State<DirectCycleQrSheet> {
   final _sessionRepo = serviceLocator<WashSessionRepository>();
+  final _paymentRepo = serviceLocator<PaymentRepository>();
   Timer? _pollTimer;
 
   bool _isPaid = false;
   bool _isStarting = false;
   bool _isStarted = false;
+  bool _isVerifying = false;
   String? _errorMessage;
 
   static const _pollInterval = Duration(seconds: 3);
@@ -81,25 +81,22 @@ class _DirectCycleQrSheetState extends State<DirectCycleQrSheet> {
     final result = await _sessionRepo.getSessionStatus(token);
     if (!mounted) return;
 
-    result.fold(
-      (_) => null,
-      (status) {
-        if (status.paymentStatus == SessionPaymentStatus.confirmed) {
-          _pollTimer?.cancel();
-          if (!_isPaid) {
-            setState(() {
-              _isPaid = true;
-              _errorMessage = null;
-            });
-          }
-        } else if (status.paymentStatus.isTerminalFailure) {
-          _pollTimer?.cancel();
+    result.fold((_) => null, (status) {
+      if (status.paymentStatus == SessionPaymentStatus.confirmed) {
+        _pollTimer?.cancel();
+        if (!_isPaid) {
           setState(() {
-            _errorMessage = 'Le paiement n\'a pas abouti.';
+            _isPaid = true;
+            _errorMessage = null;
           });
         }
-      },
-    );
+      } else if (status.paymentStatus.isTerminalFailure) {
+        _pollTimer?.cancel();
+        setState(() {
+          _errorMessage = 'Le paiement n\'a pas abouti.';
+        });
+      }
+    });
   }
 
   Future<void> _startMachine() async {
@@ -112,6 +109,31 @@ class _DirectCycleQrSheetState extends State<DirectCycleQrSheet> {
           ? MachineType.dryer
           : MachineType.washer,
       onStart: (machine) => _startSelectedMachine(token, machine),
+    );
+  }
+
+  Future<void> _verifyPayment() async {
+    final paymentId = widget.payment.paymentId;
+    if (paymentId == null || _isVerifying) return;
+    setState(() {
+      _isVerifying = true;
+      _errorMessage = null;
+    });
+
+    final result = await _paymentRepo.reconcilePayment(paymentId);
+    if (!mounted) return;
+    result.fold(
+      (failure) => setState(() {
+        _isVerifying = false;
+        _errorMessage = failure.message;
+      }),
+      (confirmed) => setState(() {
+        _isVerifying = false;
+        _isPaid = confirmed || _isPaid;
+        _errorMessage = confirmed
+            ? null
+            : 'PayDunya indique que le paiement est encore en attente.';
+      }),
     );
   }
 
@@ -258,7 +280,10 @@ class _DirectCycleQrSheetState extends State<DirectCycleQrSheet> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text('·', style: TextStyle(color: AppColors.textTertiary)),
+                      const Text(
+                        '·',
+                        style: TextStyle(color: AppColors.textTertiary),
+                      ),
                       const SizedBox(width: 8),
                     ],
                     if (payment.machineName != null)
@@ -316,7 +341,9 @@ class _DirectCycleQrSheetState extends State<DirectCycleQrSheet> {
               decoration: BoxDecoration(
                 color: AppColors.success.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppColors.success.withValues(alpha: 0.3),
+                ),
               ),
               child: Column(
                 children: [
@@ -393,6 +420,17 @@ class _DirectCycleQrSheetState extends State<DirectCycleQrSheet> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: _isVerifying ? null : _verifyPayment,
+              icon: _isVerifying
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh_rounded),
+              label: const Text('Le client a payé — Vérifier maintenant'),
             ),
           ],
 

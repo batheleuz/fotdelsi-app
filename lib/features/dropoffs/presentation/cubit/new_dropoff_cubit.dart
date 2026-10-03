@@ -27,7 +27,7 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
     this._dropOffRepository,
     this._paymentRepository,
     this._formulaRepository,
-  ) : super(const NewDropOffState()) {
+  ) : super(NewDropOffState(dryingTier: DryingDurationTier.configuredDefault)) {
     _loadFormulas();
   }
 
@@ -53,6 +53,7 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
         final newState = state.copyWith(
           formulas: catalog.formulas,
           formulasStatus: LoadStatus.success,
+          dryingTier: DryingDurationTier.configuredDefault,
         );
         emit(newState);
       },
@@ -129,6 +130,7 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
       emit(
         state.copyWith(
           requiresSunDrying: true,
+          dryingTier: DryingDurationTier.configuredDefault,
           clearFormula: true,
           clearSize: true,
         ),
@@ -141,6 +143,7 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
     emit(
       state.copyWith(
         requiresSunDrying: true,
+        dryingTier: DryingDurationTier.configuredDefault,
         formulaCode: readyToWear.code,
         sizeKg: keepSize ? state.sizeKg : null,
         clearSize: !keepSize,
@@ -250,6 +253,32 @@ class NewDropOffCubit extends Cubit<NewDropOffState> {
         emit(state.copyWith(isPaid: true));
       }
     });
+  }
+
+  Future<bool?> verifyPayment() async {
+    final paymentId = state.session?.paymentId;
+    if (paymentId == null || state.isVerifyingPayment) return null;
+
+    emit(state.copyWith(isVerifyingPayment: true, clearError: true));
+    final result = await _paymentRepository.reconcilePayment(paymentId);
+    if (isClosed) return null;
+    return result.fold(
+      (failure) {
+        emit(state.copyWith(isVerifyingPayment: false, error: failure.message));
+        return null;
+      },
+      (confirmed) {
+        emit(
+          state.copyWith(
+            isVerifyingPayment: false,
+            isPaid: confirmed || state.isPaid,
+            clearError: true,
+          ),
+        );
+        if (confirmed) _poll?.cancel();
+        return confirmed;
+      },
+    );
   }
 
   /// Comment la demande atteindra le payeur. Choisi avant de la lancer.

@@ -83,4 +83,13 @@ class PaymentRepositoryImpl implements PaymentRepository {
       return Left(mapExceptionToFailure(e));
     }
   }
+
+  @override
+  Future<Either<Failure, bool>> reconcilePayment(String paymentId) async {
+    try {
+      return Right(await _api.reconcilePayment(paymentId));
+    } catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
 }

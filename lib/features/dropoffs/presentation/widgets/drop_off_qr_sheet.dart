@@ -56,6 +56,8 @@ class _DropOffQrSheetState extends State<DropOffQrSheet> {
 
   Timer? _pollTimer;
   bool _isPaid = false;
+  bool _isVerifying = false;
+  String? _verificationError;
 
   @override
   void initState() {
@@ -89,6 +91,30 @@ class _DropOffQrSheetState extends State<DropOffQrSheet> {
         _pollTimer?.cancel();
         setState(() => _isPaid = true);
       },
+    );
+  }
+
+  Future<void> _verifyPayment() async {
+    final paymentId = widget.payment.paymentId;
+    if (paymentId == null || _isVerifying) return;
+    setState(() {
+      _isVerifying = true;
+      _verificationError = null;
+    });
+    final result = await _payments.reconcilePayment(paymentId);
+    if (!mounted) return;
+    result.fold(
+      (failure) => setState(() {
+        _isVerifying = false;
+        _verificationError = failure.message;
+      }),
+      (confirmed) => setState(() {
+        _isVerifying = false;
+        _isPaid = confirmed || _isPaid;
+        _verificationError = confirmed
+            ? null
+            : 'PayDunya indique que le paiement est encore en attente.';
+      }),
     );
   }
 
@@ -174,8 +200,7 @@ class _DropOffQrSheetState extends State<DropOffQrSheet> {
                   context.push(AppRoutes.agentQueue);
                 },
               ),
-            ]
-            else if (payload != null)
+            ] else if (payload != null)
               PaymentQrView(
                 payload: payload,
                 provider: _provider,
@@ -197,6 +222,23 @@ class _DropOffQrSheetState extends State<DropOffQrSheet> {
                   color: AppColors.textSecondary,
                 ),
               ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: _isVerifying ? null : _verifyPayment,
+                icon: _isVerifying
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh_rounded),
+                label: const Text('Le client a payé — Vérifier maintenant'),
+              ),
+              if (_verificationError != null)
+                Text(
+                  _verificationError!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.danger, fontSize: 12),
+                ),
             ],
           ],
         ),
@@ -304,11 +346,7 @@ class _Confirmed extends StatelessWidget {
       ),
       child: const Column(
         children: [
-          Icon(
-            Icons.check_circle_rounded,
-            size: 44,
-            color: AppColors.success,
-          ),
+          Icon(Icons.check_circle_rounded, size: 44, color: AppColors.success),
           SizedBox(height: 10),
           Text(
             'Paiement confirmé',
@@ -346,7 +384,11 @@ class _NoPayload extends StatelessWidget {
       ),
       child: const Column(
         children: [
-          Icon(Icons.qr_code_2_rounded, size: 34, color: AppColors.textTertiary),
+          Icon(
+            Icons.qr_code_2_rounded,
+            size: 34,
+            color: AppColors.textTertiary,
+          ),
           SizedBox(height: 8),
           Text(
             'Aucun code à afficher',

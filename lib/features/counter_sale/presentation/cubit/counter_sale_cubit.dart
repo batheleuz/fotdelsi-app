@@ -33,7 +33,9 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
     this._machines,
     this._payments,
     this._sessions,
-  ) : super(const CounterSaleState()) {
+  ) : super(
+        CounterSaleState(dryingTier: DryingDurationTier.configuredDefault),
+      ) {
     _load();
   }
 
@@ -77,6 +79,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
           (c) => c.formulas as List<ServiceFormula>,
         ),
         machines: machines.getOrElse(() => <Machine>[]),
+        dryingTier: DryingDurationTier.configuredDefault,
       ),
     );
   }
@@ -156,6 +159,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
       emit(
         state.copyWith(
           requiresSunDrying: true,
+          dryingTier: DryingDurationTier.configuredDefault,
           clearFormula: true,
           clearMachine: true,
         ),
@@ -168,6 +172,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
     emit(
       state.copyWith(
         requiresSunDrying: true,
+        dryingTier: DryingDurationTier.configuredDefault,
         formulaCode: readyToWear.code,
         machine: keepMachine ? state.machine : null,
         clearMachine: !keepMachine,
@@ -273,6 +278,35 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
             ),
           );
         }
+      },
+    );
+  }
+
+  /// Force une lecture PayDunya quand le client vient de confirmer son geste.
+  Future<bool?> verifyPayment() async {
+    final paymentId = state.session?.paymentId;
+    if (paymentId == null || state.isVerifyingPayment) return null;
+
+    emit(state.copyWith(isVerifyingPayment: true, clearError: true));
+    final result = await _payments.reconcilePayment(paymentId);
+    if (isClosed) return null;
+
+    return result.fold(
+      (failure) {
+        emit(state.copyWith(isVerifyingPayment: false, error: failure.message));
+        return null;
+      },
+      (confirmed) {
+        emit(
+          state.copyWith(
+            isVerifyingPayment: false,
+            step: confirmed ? 3 : state.step,
+            saleStatus: confirmed ? SaleStatus.paid : state.saleStatus,
+            clearError: true,
+          ),
+        );
+        if (confirmed) _poll?.cancel();
+        return confirmed;
       },
     );
   }

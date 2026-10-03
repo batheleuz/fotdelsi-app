@@ -60,15 +60,22 @@ class _PaymentView extends StatefulWidget {
 }
 
 class _PaymentViewState extends State<_PaymentView> {
-  DryingDurationTier _dryingTier = DryingDurationTier.defaultTier;
+  late DryingDurationTier _dryingTier;
   bool _hasManuallySelectedTier = false;
   int _quantity = 1;
   bool _requiresSunDrying = false;
 
   bool get _hasDrying =>
-      !_requiresSunDrying &&
-      (widget.formula?.includesDrying ??
-          (widget.machine.type == MachineType.dryer));
+      widget.formula?.includesDrying ??
+      (widget.machine.type == MachineType.dryer);
+
+  bool get _canSelectDryingTier => _hasDrying && !_requiresSunDrying;
+
+  @override
+  void initState() {
+    super.initState();
+    _dryingTier = DryingDurationTier.configuredDefault;
+  }
 
   Future<void> _selectDryingTier() async {
     final chosen = await showDryingDurationSheet(
@@ -168,8 +175,14 @@ class _PaymentViewState extends State<_PaymentView> {
                               enabled: formula?.isReadyToWear == true,
                               disabledMessage:
                                   'Disponible uniquement avec la formule « Prêt à porter ». Revenez en arrière pour changer de formule.',
-                              onChanged: (value) =>
-                                  setState(() => _requiresSunDrying = value),
+                              onChanged: (value) => setState(() {
+                                _requiresSunDrying = value;
+                                if (value) {
+                                  _dryingTier =
+                                      DryingDurationTier.configuredDefault;
+                                  _hasManuallySelectedTier = false;
+                                }
+                              }),
                             ),
                             const SizedBox(height: AppSpacing.md),
                           ],
@@ -177,7 +190,7 @@ class _PaymentViewState extends State<_PaymentView> {
                             formula: formula,
                             machine: machine,
                             dryingTier: _hasDrying ? _dryingTier : null,
-                            onSelectDryingTier: _hasDrying
+                            onSelectDryingTier: _canSelectDryingTier
                                 ? _selectDryingTier
                                 : null,
                             quantity: _quantity,
@@ -241,7 +254,7 @@ class _PaymentViewState extends State<_PaymentView> {
                     if (!context.mounted) return;
 
                     var tierToUse = _dryingTier;
-                    if (_hasDrying && !_hasManuallySelectedTier) {
+                    if (_canSelectDryingTier && !_hasManuallySelectedTier) {
                       final chosen = await showDryingDurationSheet(
                         context,
                         currentTier: _dryingTier,

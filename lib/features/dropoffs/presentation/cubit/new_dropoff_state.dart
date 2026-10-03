@@ -28,6 +28,7 @@ final class NewDropOffState extends Equatable {
     this.submitStatus = SubmitStatus.idle,
     this.error,
     this.isPaid = false,
+    this.isVerifyingPayment = false,
   });
 
   final int step;
@@ -76,8 +77,9 @@ final class NewDropOffState extends Equatable {
     return null;
   }
 
-  bool get hasDrying =>
-      (selectedFormula?.includesDrying ?? false) && !requiresSunDrying;
+  bool get hasDrying => selectedFormula?.includesDrying ?? false;
+
+  bool get canSelectDryingTier => hasDrying && !requiresSunDrying;
 
   List<ServiceFormula> get selectableFormulas => requiresSunDrying
       ? formulas.where((formula) => formula.isReadyToWear).toList()
@@ -99,6 +101,7 @@ final class NewDropOffState extends Equatable {
   final SubmitStatus submitStatus;
   final String? error;
   final bool isPaid;
+  final bool isVerifyingPayment;
 
   // ── Validations ─────────────────────────────────────────────────────────────
 
@@ -137,6 +140,7 @@ final class NewDropOffState extends Equatable {
     bool clearError = false,
     bool clearFormula = false,
     bool clearSize = false,
+    bool? isVerifyingPayment,
   }) {
     return NewDropOffState(
       step: step ?? this.step,
@@ -159,6 +163,7 @@ final class NewDropOffState extends Equatable {
       submitStatus: submitStatus ?? this.submitStatus,
       error: clearError ? null : (error ?? this.error),
       isPaid: isPaid ?? this.isPaid,
+      isVerifyingPayment: isVerifyingPayment ?? this.isVerifyingPayment,
     );
   }
 
@@ -184,5 +189,6 @@ final class NewDropOffState extends Equatable {
     submitStatus,
     error,
     isPaid,
+    isVerifyingPayment,
   ];
 }

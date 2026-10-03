@@ -144,6 +144,7 @@ class _NewDropOffAwaitingStepState extends State<NewDropOffAwaitingStep> {
                   : 'Renvoyer la notification · ${_cooldown}s',
             ),
           ),
+          const _VerifyPaymentButton(),
         ],
       ),
     );
@@ -245,9 +246,46 @@ class _QrToShow extends StatelessWidget {
             backgroundColor: AppColors.primaryLight,
             onPressed: () => context.pop(),
           ),
+          const SizedBox(height: AppSpacing.sm),
+          const _VerifyPaymentButton(),
         ],
       ),
     );
+  }
+}
+
+class _VerifyPaymentButton extends StatelessWidget {
+  const _VerifyPaymentButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<NewDropOffCubit>().state;
+    return TextButton.icon(
+      onPressed: state.isVerifyingPayment ? null : () => _verify(context),
+      icon: state.isVerifyingPayment
+          ? const SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.refresh_rounded),
+      label: const Text('Le client a payé — Vérifier maintenant'),
+    );
+  }
+
+  Future<void> _verify(BuildContext context) async {
+    final result = await context.read<NewDropOffCubit>().verifyPayment();
+    if (!context.mounted || result == true) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            result == false
+                ? 'PayDunya indique que le paiement est encore en attente.'
+                : 'Vérification impossible. Réessayez dans un instant.',
+          ),
+        ),
+      );
   }
 }
 

@@ -72,7 +72,7 @@ class NewDropOffServiceStep extends StatelessWidget {
             onSelect: cubit.selectSize,
           ),
         ],
-        if (state.hasDrying) ...[
+        if (state.canSelectDryingTier) ...[
           const SizedBox(height: AppSpacing.lg),
           const _Title('Durée de séchage'),
           const SizedBox(height: AppSpacing.sm),

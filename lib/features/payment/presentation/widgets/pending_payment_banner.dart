@@ -10,6 +10,7 @@ import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
 import '../../domain/entities/pending_payment.dart';
 import '../cubit/pending_payments_cubit.dart';
+import 'package:fotdelsi/features/wash_session/presentation/cubit/wash_cycles_cubit.dart';
 
 /// Bandeau « Paiement en attente », avec de quoi le reprendre.
 ///
@@ -100,6 +101,32 @@ class _BannerState extends State<_Banner> {
     cubit.dismiss(paiement.paymentId);
   }
 
+  Future<void> _verifier(BuildContext context) async {
+    final result = await context.read<ClientPendingPaymentsCubit>().verify(
+      paiement.paymentId,
+    );
+    if (!context.mounted) return;
+
+    if (result == true) {
+      await context.read<MyCyclesCubit>().load(silent: true);
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            result == true
+                ? 'Paiement confirmé.'
+                : result == false
+                ? 'PayDunya indique que le paiement est encore en attente.'
+                : 'Vérification impossible. Réessayez dans un instant.',
+          ),
+          backgroundColor: result == true ? AppColors.success : null,
+        ),
+      );
+  }
+
   static String _dureeRestante(Duration reste) {
     final minutes = reste.inMinutes;
     return minutes < 1 ? 'moins d\'une minute' : '$minutes min';
@@ -108,6 +135,9 @@ class _BannerState extends State<_Banner> {
   @override
   Widget build(BuildContext context) {
     final duree = _dureeRestante(paiement.remaining);
+    final verifying = context.select<ClientPendingPaymentsCubit, bool>(
+      (cubit) => cubit.state.verifyingPaymentId == paiement.paymentId,
+    );
 
     return Container(
       width: double.infinity,
@@ -186,6 +216,20 @@ class _BannerState extends State<_Banner> {
               ),
               icon: const Icon(Icons.open_in_new_rounded, size: 18),
               label: const Text('Confirmer le paiement'),
+            ),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: verifying ? null : () => _verifier(context),
+              icon: verifying
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('J’ai payé — Vérifier maintenant'),
             ),
           ),
         ],

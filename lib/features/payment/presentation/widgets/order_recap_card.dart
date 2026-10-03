@@ -45,11 +45,13 @@ class OrderRecapCard extends StatelessWidget {
     final size = machine.size;
     final f = formula;
     final hasDrying = f?.includesDrying ?? (machine.type == MachineType.dryer);
-    final tier = dryingTier ?? DryingDurationTier.defaultTier;
+    final tier = dryingTier ?? DryingDurationTier.configuredDefault;
 
     int? price;
     if (f == null) {
-      price = machine.type == MachineType.dryer ? tier.price : machine.price.round();
+      price = machine.type == MachineType.dryer
+          ? tier.price
+          : machine.price.round();
     } else {
       final base = size == null ? null : f.priceFor(size);
       if (base != null) {
@@ -93,7 +95,10 @@ class OrderRecapCard extends StatelessWidget {
               onTap: onSelectDryingTier,
               borderRadius: BorderRadius.circular(AppRadius.sm),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(AppRadius.sm),

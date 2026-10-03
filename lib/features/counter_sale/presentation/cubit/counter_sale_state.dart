@@ -42,6 +42,7 @@ final class CounterSaleState extends Equatable {
     this.saleStatus = SaleStatus.composing,
     this.session,
     this.error,
+    this.isVerifyingPayment = false,
   });
 
   /// Étape affichée : 0 prestation · 1 client · 2 paiement · 3 démarrage.
@@ -71,6 +72,7 @@ final class CounterSaleState extends Equatable {
   final PaymentSession? session;
 
   final String? error;
+  final bool isVerifyingPayment;
 
   ServiceFormula? get selectedFormula {
     for (final f in formulas) {
@@ -80,8 +82,10 @@ final class CounterSaleState extends Equatable {
   }
 
   bool get hasDrying =>
-      ((selectedFormula?.includesDrying ?? false) && !requiresSunDrying) ||
+      (selectedFormula?.includesDrying ?? false) ||
       (selectedFormula == null && machine?.type == MachineType.dryer);
+
+  bool get canSelectDryingTier => hasDrying && !requiresSunDrying;
 
   List<ServiceFormula> get selectableFormulas => requiresSunDrying
       ? formulas.where((formula) => formula.isReadyToWear).toList()
@@ -156,6 +160,7 @@ final class CounterSaleState extends Equatable {
     String? error,
     bool clearError = false,
     bool clearFormula = false,
+    bool? isVerifyingPayment,
   }) {
     return CounterSaleState(
       step: step ?? this.step,
@@ -173,6 +178,7 @@ final class CounterSaleState extends Equatable {
       saleStatus: saleStatus ?? this.saleStatus,
       session: session ?? this.session,
       error: clearError ? null : (error ?? this.error),
+      isVerifyingPayment: isVerifyingPayment ?? this.isVerifyingPayment,
     );
   }
 
@@ -193,6 +199,7 @@ final class CounterSaleState extends Equatable {
     saleStatus,
     session?.washSessionToken,
     error,
+    isVerifyingPayment,
   ];
 }
 

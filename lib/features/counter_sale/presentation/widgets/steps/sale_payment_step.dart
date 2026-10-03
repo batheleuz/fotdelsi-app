@@ -59,9 +59,46 @@ class SalePaymentStep extends StatelessWidget {
 
           const SizedBox(height: 32),
           if (state.isAwaitingPayment) const _Waiting(),
+          if (state.isAwaitingPayment) ...[
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: state.isVerifyingPayment
+                  ? null
+                  : () => _verify(context),
+              icon: state.isVerifyingPayment
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh_rounded),
+              label: const Text('Le client a payé — Vérifier maintenant'),
+            ),
+          ],
+          if (state.error != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              state.error!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.danger, fontSize: 12),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  Future<void> _verify(BuildContext context) async {
+    final result = await context.read<CounterSaleCubit>().verifyPayment();
+    if (!context.mounted || result != false) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text(
+            'PayDunya indique que le paiement est encore en attente.',
+          ),
+        ),
+      );
   }
 }
 

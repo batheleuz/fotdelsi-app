@@ -74,7 +74,7 @@ class SaleServiceStep extends StatelessWidget {
                 onTap: () => cubit.selectMachine(m),
               ),
 
-          if (state.hasDrying) ...[
+          if (state.canSelectDryingTier) ...[
             const SizedBox(height: AppSpacing.md),
             const _Label('Durée de séchage'),
             const SizedBox(height: AppSpacing.sm),

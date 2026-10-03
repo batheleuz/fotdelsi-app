@@ -75,6 +75,18 @@ class PaymentApiDataSource {
     }
   }
 
+  Future<bool> reconcilePayment(String paymentId) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        ApiEndpoints.reconcilePayment(paymentId),
+      );
+      final data = response.data?['data'] as Map<String, dynamic>?;
+      return (data?['confirmed'] as bool?) ?? false;
+    } on DioException catch (e) {
+      throw AppException.fromDio(e);
+    }
+  }
+
   /// `GET /me/payments/pending` — paiements que le client peut encore honorer.
   Future<List<PendingPayment>> pendingPayments() async {
     final resp = await _dio.get<Map<String, dynamic>>(

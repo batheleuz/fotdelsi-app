@@ -1,7 +1,7 @@
 /// Statut du paiement lié à la session de lavage (miroir du backend).
 ///
 /// `pendingPayment` : paiement initié, en attente de confirmation du provider.
-/// `confirmed`      : webhook du provider reçu par le backend — paiement OK.
+/// `confirmed`      : webhook du provider reçu par le backend — à temps ou tardif.
 /// `failed`         : paiement échoué ou annulé par le provider.
 /// `expired`        : paiement expiré avant confirmation.
 /// `anomaly`        : incohérence détectée (montant, transition illégale…).
@@ -13,9 +13,10 @@ enum SessionPaymentStatus {
   anomaly;
 
   /// Mappe la valeur `paymentStatus` du backend
-  /// (`PENDING | CONFIRMED | FAILED | EXPIRED | ANOMALY`).
+  /// (`PENDING | CONFIRMED | LATE_CONFIRMED | FAILED | EXPIRED | ANOMALY`).
   static SessionPaymentStatus fromApi(String value) => switch (value) {
     'CONFIRMED' => confirmed,
+    'LATE_CONFIRMED' => confirmed,
     'FAILED' => failed,
     'EXPIRED' => expired,
     'ANOMALY' => anomaly,

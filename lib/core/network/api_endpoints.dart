@@ -32,7 +32,10 @@ abstract final class ApiEndpoints {
 
   // Paiement
   static const String paymentsInitiate = '/payments/initiate';
-  static String paymentStatus(String paymentId) => '/payments/$paymentId/status';
+  static String paymentStatus(String paymentId) =>
+      '/payments/$paymentId/status';
+  static String reconcilePayment(String paymentId) =>
+      '/payments/$paymentId/reconcile';
 
   // Wash Session
   static String sessionStatus(String token) => '/wash-sessions/$token/status';

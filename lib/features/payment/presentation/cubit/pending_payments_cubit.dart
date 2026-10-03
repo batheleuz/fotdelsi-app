@@ -69,4 +69,28 @@ class ClientPendingPaymentsCubit extends Cubit<ClientPendingPaymentsState> {
         .toList();
     emit(state.copyWith(payments: restants));
   }
+
+  /// `true` = PayDunya confirme, `false` = encore en attente, `null` = erreur.
+  Future<bool?> verify(String paymentId) async {
+    if (state.verifyingPaymentId != null) return false;
+    emit(state.copyWith(verifyingPaymentId: paymentId));
+    final result = await _repository.reconcilePayment(paymentId);
+    if (isClosed) return null;
+
+    return result.fold(
+      (_) {
+        emit(state.copyWith(clearVerifying: true));
+        return null;
+      },
+      (confirmed) {
+        final remaining = confirmed
+            ? (state.payments ?? const <PendingPayment>[])
+                  .where((payment) => payment.paymentId != paymentId)
+                  .toList()
+            : state.payments;
+        emit(state.copyWith(payments: remaining, clearVerifying: true));
+        return confirmed;
+      },
+    );
+  }
 }

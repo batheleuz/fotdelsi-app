@@ -6,6 +6,7 @@ import 'package:fotdelsi/core/di/service_locator.dart';
 import 'package:fotdelsi/core/network/failures.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/business_hours.dart';
+import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
 import 'package:fotdelsi/features/catalog/domain/repositories/service_formula_repository.dart';
 import 'package:fotdelsi/features/counter_sale/presentation/cubit/counter_sale_cubit.dart';
@@ -122,7 +123,7 @@ void main() {
     requiresAgent: true,
     selfServiceEnabled: true,
     displayOrder: 4,
-    prices: [FormulaPrice(sizeKg: 12, price: 11000)],
+    prices: [FormulaPrice(sizeKg: 12, price: 10000)],
   );
 
   const washer12 = Machine(
@@ -145,6 +146,8 @@ void main() {
   );
 
   setUp(() {
+    DryingDurationTier.resetDefaults();
+    DryingDurationTier.configure(defaultMinutes: 60);
     if (serviceLocator.isRegistered<CounterSaleCubit>()) {
       serviceLocator.unregister<CounterSaleCubit>();
     }
@@ -161,6 +164,8 @@ void main() {
       ),
     );
   });
+
+  tearDown(DryingDurationTier.resetDefaults);
 
   testWidgets(
     'CounterSalePage displays drying duration tiers when formula includes drying',
@@ -211,15 +216,20 @@ void main() {
       await tester.tap(find.text('LINGE SENSIBLE — séchage au soleil'));
       await tester.pumpAndSettle();
 
+      final serviceContext = tester.element(find.byType(SaleServiceStep));
       expect(find.text('Prêt à porter'), findsOneWidget);
       expect(find.text('Lavage & Séchage'), findsNothing);
       expect(find.text('Durée de séchage'), findsNothing);
+      expect(
+        serviceContext.read<CounterSaleCubit>().state.dryingTier,
+        DryingDurationTier.m60,
+      );
 
       await tester.scrollUntilVisible(find.text('12 kg'), 200);
       await tester.tap(find.text('12 kg'));
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(find.text(formatFcfa(11000)), 200);
-      expect(find.text(formatFcfa(11000)), findsOneWidget);
+      await tester.scrollUntilVisible(find.text(formatFcfa(14000)), 200);
+      expect(find.text(formatFcfa(14000)), findsOneWidget);
 
       await tester.tap(find.text('Continuer'));
       await tester.pumpAndSettle();

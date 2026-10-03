@@ -57,4 +57,7 @@ abstract interface class PaymentRepository {
   ///
   /// Utilisé pour la surveillance en temps réel par QR code (dépôt ou direct).
   Future<Either<Failure, bool>> isPaymentConfirmed(String paymentId);
+
+  /// Demande au backend de vérifier immédiatement la facture chez PayDunya.
+  Future<Either<Failure, bool>> reconcilePayment(String paymentId);
 }
