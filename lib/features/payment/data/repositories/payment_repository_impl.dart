@@ -16,7 +16,8 @@ class PaymentRepositoryImpl implements PaymentRepository {
 
   @override
   Future<Either<Failure, PaymentSession>> initiatePayment({
-    required String machineId,
+    String? machineId,
+    int? sizeKg,
     String? formulaCode,
     required PaymentProvider provider,
     required String customerFullName,
@@ -29,6 +30,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     try {
       final model = await _api.initiatePayment(
         machineId: machineId,
+        sizeKg: sizeKg,
         formulaCode: formulaCode,
         provider: provider,
         customerFullName: customerFullName,

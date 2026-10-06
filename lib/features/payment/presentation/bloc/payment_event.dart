@@ -45,14 +45,16 @@ final class PaymentPhoneChanged extends PaymentEvent {
 /// seule la page la détient via le paramètre de navigation.
 final class PaymentSubmitted extends PaymentEvent {
   const PaymentSubmitted({
-    required this.machineId,
+    this.machineId,
+    this.sizeKg,
     this.formulaCode,
     this.dryingDurationMinutes,
     this.quantity = 1,
     this.requiresSunDrying = false,
   });
 
-  final String machineId;
+  final String? machineId;
+  final int? sizeKg;
 
   /// Prestation choisie — le serveur en déduit le prix via la grille.
   /// `null` = vente à la machine : le scan n'offre aucune prestation à
@@ -67,6 +69,7 @@ final class PaymentSubmitted extends PaymentEvent {
   @override
   List<Object?> get props => [
     machineId,
+    sizeKg,
     formulaCode,
     dryingDurationMinutes,
     quantity,

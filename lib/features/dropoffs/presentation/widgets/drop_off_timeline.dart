@@ -38,7 +38,8 @@ class DropOffTimeline extends StatelessWidget {
           // `clientCycleFinishedAt` vient du backend : c'est le timestamp réel
           // de fin de cycle (`washCompletedAt / dryCompletedAt / endedAt` de la
           // session du client). Il est null tant que le linge n'est pas prêt.
-          ('Lavé par le client', dropOff.clientCycleFinishedAt),
+          if (dropOff.requiresMachine)
+            ('Lavé par le client', dropOff.clientCycleFinishedAt),
           ('Apporté au comptoir', dropOff.startedAt),
           ('Prêt', dropOff.readyAt),
           ('Remis au client', dropOff.collectedAt),
@@ -55,14 +56,19 @@ class DropOffTimeline extends StatelessWidget {
   /// `awaitingHandoff` manquait à ce filtrage et retombait sur le repli, qui
   /// désignait la DERNIÈRE étape : un linge pas encore apporté s'affichait au
   /// stade « Remis au client ».
-  int get _activeIndex => switch (dropOff.status) {
-    DropOffStatus.awaitingHandoff => 1,
-    DropOffStatus.received => 0,
-    DropOffStatus.inProgress => 1,
-    DropOffStatus.ready => 2,
-    DropOffStatus.collected => 3,
-    _ => 3,
-  };
+  int get _activeIndex {
+    final index = switch (dropOff.status) {
+      DropOffStatus.awaitingHandoff => 1,
+      DropOffStatus.received => 0,
+      DropOffStatus.inProgress => 1,
+      DropOffStatus.ready => 2,
+      DropOffStatus.collected => 3,
+      _ => 3,
+    };
+    return dropOff.isSelfService && !dropOff.requiresMachine
+        ? (index - 1).clamp(0, _stages.length - 1)
+        : index;
+  }
 
   @override
   Widget build(BuildContext context) {

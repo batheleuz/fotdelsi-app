@@ -22,6 +22,7 @@ import 'package:fotdelsi/features/client_auth/presentation/pages/client_account_
 import 'package:fotdelsi/features/client_auth/presentation/pages/link_phone_page.dart';
 import 'package:fotdelsi/features/client_auth/presentation/pages/otp_verify_page.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/service_formula.dart';
+import 'package:fotdelsi/features/catalog/presentation/pages/pick_service_size_page.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:fotdelsi/features/machines/presentation/pages/home_page.dart';
 import 'package:fotdelsi/features/onboarding/presentation/pages/onboarding_page.dart';
@@ -46,6 +47,8 @@ import 'package:fotdelsi/features/wash_session/presentation/pages/wash_cycles_pa
 /// prestation n'a été choisie — il n'y en avait pas à choisir — et le prix
 /// vient de la machine elle-même.
 typedef PaymentArgs = ({ServiceFormula? formula, Machine machine});
+
+typedef ManualPaymentArgs = ({ServiceFormula formula, int sizeKg});
 
 /// Choix de la machine pour une formule déjà sélectionnée.
 typedef PickMachineArgs = ({ServiceFormula formula});
@@ -118,6 +121,9 @@ abstract final class AppRouter {
         path: AppRoutes.scan,
         builder: (context, state) {
           final formula = state.extra as ServiceFormula?;
+          if (formula != null && !formula.needsMachine) {
+            return PickServiceSizePage(formula: formula);
+          }
           return ScanPage(formula: formula);
         },
       ),
@@ -129,14 +135,26 @@ abstract final class AppRouter {
             final ServiceFormula f => f,
             _ => null,
           };
+          if (formula != null && !formula.needsMachine) {
+            return PickServiceSizePage(formula: formula);
+          }
           return ScanPage(formula: formula);
         },
       ),
       GoRoute(
         path: AppRoutes.payment,
         builder: (context, state) {
-          final args = state.extra! as PaymentArgs;
-          return PaymentPage(formula: args.formula, machine: args.machine);
+          return switch (state.extra) {
+            final ManualPaymentArgs args => PaymentPage(
+              formula: args.formula,
+              sizeKg: args.sizeKg,
+            ),
+            final PaymentArgs args => PaymentPage(
+              formula: args.formula,
+              machine: args.machine,
+            ),
+            _ => throw ArgumentError('Commande de paiement manquante'),
+          };
         },
       ),
       GoRoute(

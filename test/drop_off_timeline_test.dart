@@ -8,12 +8,14 @@ import 'package:fotdelsi/features/dropoffs/presentation/widgets/drop_off_timelin
 
 DropOff _dropOff({
   required String origin,
+  bool requiresMachine = true,
   required DropOffStatus status,
   DateTime? clientCycleFinishedAt,
   DateTime? startedAt,
   DateTime? readyAt,
 }) => DropOff(
   origin: origin,
+  requiresMachine: requiresMachine,
   id: 'id-1',
   code: 'A42',
   customerName: 'Awa Diop',
@@ -28,11 +30,28 @@ DropOff _dropOff({
 
 Future<void> _poser(WidgetTester tester, DropOff dropOff) async {
   await tester.pumpWidget(
-    MaterialApp(home: Scaffold(body: DropOffTimeline(dropOff: dropOff))),
+    MaterialApp(
+      home: Scaffold(body: DropOffTimeline(dropOff: dropOff)),
+    ),
   );
 }
 
 void main() {
+  testWidgets(
+    'une prestation manuelle se remet à l’agent sans étape de lavage',
+    (tester) async {
+      final drop = _dropOff(
+        origin: 'SELF_SERVICE',
+        requiresMachine: false,
+        status: DropOffStatus.awaitingHandoff,
+      );
+      expect(drop.canReceiveFromClient, isTrue);
+      await _poser(tester, drop);
+      expect(find.text('Lavé par le client'), findsNothing);
+      expect(find.text('Lavage lancé'), findsNothing);
+      expect(find.text('Apporté au comptoir'), findsOneWidget);
+    },
+  );
   group('dépôt né d\'un libre-service', () {
     testWidgets('ne réclame pas un lavage que le client a déjà fait', (
       tester,
@@ -44,10 +63,7 @@ void main() {
       // lavage mais la prise en charge au comptoir.
       await _poser(
         tester,
-        _dropOff(
-          origin: 'SELF_SERVICE',
-          status: DropOffStatus.awaitingHandoff,
-        ),
+        _dropOff(origin: 'SELF_SERVICE', status: DropOffStatus.awaitingHandoff),
       );
 
       expect(find.text('Lavage lancé'), findsNothing);
@@ -61,10 +77,7 @@ void main() {
       // rien n'était arrivé au comptoir.
       await _poser(
         tester,
-        _dropOff(
-          origin: 'SELF_SERVICE',
-          status: DropOffStatus.awaitingHandoff,
-        ),
+        _dropOff(origin: 'SELF_SERVICE', status: DropOffStatus.awaitingHandoff),
       );
 
       expect(find.text('Reçu'), findsNothing);

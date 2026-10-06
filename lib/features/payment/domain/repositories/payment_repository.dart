@@ -17,7 +17,8 @@ abstract interface class PaymentRepository {
   /// Initie un paiement libre-service. Aucun montant : le serveur le calcule
   /// depuis la grille à partir de (formule, capacité de la machine).
   Future<Either<Failure, PaymentSession>> initiatePayment({
-    required String machineId,
+    String? machineId,
+    int? sizeKg,
     String? formulaCode,
     required PaymentProvider provider,
     required String customerFullName,

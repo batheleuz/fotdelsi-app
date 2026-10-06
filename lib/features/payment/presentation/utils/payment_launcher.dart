@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:fotdelsi/features/wash_session/domain/entities/pending_wash_session.dart';
+import '../../domain/entities/payment_session.dart';
 import '../../domain/entities/payment_provider.dart';
 import '../widgets/payment_qr_view.dart';
 
@@ -15,7 +15,7 @@ abstract final class PaymentLauncher {
 
   static Future<void> launch(
     BuildContext context,
-    PendingWashSession session,
+    PaymentSession session,
   ) async {
     switch (session.provider) {
       case PaymentProvider.wave:
@@ -47,7 +47,7 @@ abstract final class PaymentLauncher {
 
   static Future<void> _launchOrangeMoney(
     BuildContext context,
-    PendingWashSession session,
+    PaymentSession session,
   ) async {
     // 1. Maxit (prioritaire)
     if (session.maxitUrl != null) {
@@ -93,7 +93,7 @@ abstract final class PaymentLauncher {
   static void _showQrDialog(
     BuildContext context,
     String payload,
-    PendingWashSession session,
+    PaymentSession session,
   ) {
     showDialog<void>(
       context: context,

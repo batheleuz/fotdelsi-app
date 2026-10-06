@@ -16,7 +16,8 @@ class PaymentApiDataSource {
   final Dio _dio;
 
   Future<PaymentSessionModel> initiatePayment({
-    required String machineId,
+    String? machineId,
+    int? sizeKg,
     String? formulaCode,
     required PaymentProvider provider,
     required String customerFullName,
@@ -30,7 +31,8 @@ class PaymentApiDataSource {
       final response = await _dio.post<dynamic>(
         ApiEndpoints.paymentsInitiate,
         data: {
-          'machineId': machineId,
+          'machineId': ?machineId,
+          'sizeKg': ?sizeKg,
           // Absent, et non `null` : c'est la PRÉSENCE de ce champ qui dit au
           // serveur laquelle des deux tarifications appliquer. Un `null`
           // explicite serait rejeté par le validateur.

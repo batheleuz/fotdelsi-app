@@ -59,6 +59,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
 
     final result = await _paymentRepository.initiatePayment(
       machineId: event.machineId,
+      sizeKg: event.sizeKg,
       formulaCode: event.formulaCode,
       provider: state.provider!,
       customerFullName: state.customerFullName.trim(),
@@ -85,9 +86,11 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
           ),
         );
         // Persiste la session et met à jour le cubit global.
-        await _sessionCubit.onPaymentInitiated(
-          PendingWashSession.fromPaymentSession(session),
-        );
+        if (session.machineId != null && session.washSessionToken != null) {
+          await _sessionCubit.onPaymentInitiated(
+            PendingWashSession.fromPaymentSession(session),
+          );
+        }
         emit(state.copyWith(status: PaymentStatus.success, session: session));
       },
     );

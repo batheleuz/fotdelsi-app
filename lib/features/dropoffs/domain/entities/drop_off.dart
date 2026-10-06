@@ -86,6 +86,7 @@ class DropOff extends Equatable {
     this.collectedAt,
     this.terminalReason,
     this.clientCycleFinished,
+    this.requiresMachine = true,
     this.clientCycleFinishedAt,
     this.awaitingPickup = false,
     this.quantity = 1,
@@ -141,6 +142,7 @@ class DropOff extends Equatable {
   final DateTime? collectedAt;
   final String? terminalReason;
   final bool? clientCycleFinished;
+  final bool requiresMachine;
 
   /// Date exacte à laquelle le cycle du client (lavage + éventuel séchage) a
   /// été détecté comme terminé — renseigné par le backend depuis la session de
@@ -175,7 +177,7 @@ class DropOff extends Equatable {
 
   /// Autorisé quand le cycle du client est terminé (`clientCycleFinished == true`).
   bool get canReceiveFromClient =>
-      isAwaitingHandoff && (clientCycleFinished == true);
+      isAwaitingHandoff && (!requiresMachine || clientCycleFinished == true);
 
   /// Un cycle (lavage ou séchage) tourne encore : aucune action agent possible,
   /// on attend la fin détectée automatiquement (polling) ou présumée.
@@ -184,11 +186,9 @@ class DropOff extends Equatable {
       (cycles.any((cycle) => cycle.isRunning) || _legacyCycleRunning);
 
   bool get _legacyCycleRunning {
-    if (
-      isSelfService ||
-      cycles.isNotEmpty ||
-      (washSessionId == null && startedAt == null)
-    ) {
+    if (isSelfService ||
+        cycles.isNotEmpty ||
+        (washSessionId == null && startedAt == null)) {
       return false;
     }
     if (!withDrying) return washCompletedAt == null && !awaitingPickup;
@@ -272,6 +272,7 @@ class DropOff extends Equatable {
     collectedAt,
     terminalReason,
     clientCycleFinished,
+    requiresMachine,
     clientCycleFinishedAt,
     awaitingPickup,
     quantity,

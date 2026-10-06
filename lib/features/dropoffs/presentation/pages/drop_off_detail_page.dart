@@ -259,8 +259,7 @@ class _DetailView extends StatelessWidget {
           // valeur dont on retirait « +221 », ce qui ne groupait rien.
           _kvWidget('Téléphone', ClientPhoneRow(phone: d.contactPhone)),
           _kv('Linge', laundry),
-          if (d.requiresSunDrying)
-            _kv('Séchage', 'Au soleil uniquement'),
+          if (d.requiresSunDrying) _kv('Séchage', 'Au soleil uniquement'),
           _kv(
             'Cycles',
             d.quantity == 1
@@ -362,16 +361,15 @@ class _DetailView extends StatelessWidget {
 
     return switch (dropOff.status) {
       // Libre-service, cycle terminé : le client peut apporter son linge.
-      DropOffStatus.awaitingHandoff when dropOff.clientCycleFinished == true =>
-        _bar(
-          PrimaryButton(
-            label: 'Prendre en charge',
-            icon: Icons.inventory_2_outlined,
-            loading: isActing,
-            backgroundColor: AppColors.primaryLight,
-            onPressed: () => cubit.receiveHandoff(),
-          ),
+      DropOffStatus.awaitingHandoff when dropOff.canReceiveFromClient => _bar(
+        PrimaryButton(
+          label: 'Prendre en charge',
+          icon: Icons.inventory_2_outlined,
+          loading: isActing,
+          backgroundColor: AppColors.primaryLight,
+          onPressed: () => cubit.receiveHandoff(),
         ),
+      ),
 
       // Libre-service, cycle EN COURS : le linge est encore dans la machine.
       // On informe l'agent — aucun bouton ne serait actionnable de toute façon

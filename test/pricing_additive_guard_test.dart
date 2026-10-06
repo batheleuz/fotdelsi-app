@@ -22,7 +22,8 @@ class _FakePayments implements PaymentRepository {
 
   @override
   Future<Either<Failure, PaymentSession>> initiatePayment({
-    required String machineId,
+    String? machineId,
+    int? sizeKg,
     String? formulaCode,
     required PaymentProvider provider,
     required String customerFullName,
@@ -94,8 +95,7 @@ class _FakeFormulas implements ServiceFormulaRepository {
   @override
   Future<Either<Failure, ServiceCatalog>> getFormulas({
     bool selfServiceOnly = false,
-  }) async =>
-      const Right(ServiceCatalog(formulas: []));
+  }) async => const Right(ServiceCatalog(formulas: []));
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
@@ -103,8 +103,7 @@ class _FakeFormulas implements ServiceFormulaRepository {
 
 class _FakeMachines implements MachineRepository {
   @override
-  Future<Either<Failure, List<Machine>>> getMachines() async =>
-      const Right([]);
+  Future<Either<Failure, List<Machine>>> getMachines() async => const Right([]);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
@@ -141,36 +140,39 @@ void main() {
   );
 
   group('Tarification additive & garde prix <= 0', () {
-    test('CounterSale: le séchage s\'additionne au prix de base sans montant négatif', () {
-      var state = CounterSaleState(
-        formulas: const [formulaLavageSechage],
-        formulaCode: 'pret_a_porter',
-        machine: washer12,
-        dryingTier: DryingDurationTier.m15, // 1 000 F
-      );
+    test(
+      'CounterSale: le séchage s\'additionne au prix de base sans montant négatif',
+      () {
+        var state = CounterSaleState(
+          formulas: const [formulaLavageSechage],
+          formulaCode: 'pret_a_porter',
+          machine: washer12,
+          dryingTier: DryingDurationTier.m15, // 1 000 F
+        );
 
-      // Base: 200 + 1 000 = 1 200 F (auparavant avec ajustement négatif: 200 - 3000 = -2800 F !)
-      expect(state.total, 1200);
+        // Base: 200 + 1 000 = 1 200 F (auparavant avec ajustement négatif: 200 - 3000 = -2800 F !)
+        expect(state.total, 1200);
 
-      // 30 min (2 000 F) -> 200 + 2 000 = 2 200 F
-      state = state.copyWith(dryingTier: DryingDurationTier.m30);
-      expect(state.total, 2200);
+        // 30 min (2 000 F) -> 200 + 2 000 = 2 200 F
+        state = state.copyWith(dryingTier: DryingDurationTier.m30);
+        expect(state.total, 2200);
 
-      // 45 min (3 000 F) -> 200 + 3 000 = 3 200 F
-      state = state.copyWith(dryingTier: DryingDurationTier.m45);
-      expect(state.total, 3200);
+        // 45 min (3 000 F) -> 200 + 3 000 = 3 200 F
+        state = state.copyWith(dryingTier: DryingDurationTier.m45);
+        expect(state.total, 3200);
 
-      // 60 min (4 000 F) -> 200 + 4 000 = 4 200 F
-      state = state.copyWith(dryingTier: DryingDurationTier.m60);
-      expect(state.total, 4200);
+        // 60 min (4 000 F) -> 200 + 4 000 = 4 200 F
+        state = state.copyWith(dryingTier: DryingDurationTier.m60);
+        expect(state.total, 4200);
 
-      // 90 min (5 000 F) -> 200 + 5 000 = 5 200 F
-      state = state.copyWith(dryingTier: DryingDurationTier.m90);
-      expect(state.total, 5200);
+        // 90 min (5 000 F) -> 200 + 5 000 = 5 200 F
+        state = state.copyWith(dryingTier: DryingDurationTier.m90);
+        expect(state.total, 5200);
 
-      state = state.copyWith(quantity: 2);
-      expect(state.total, 10400);
-    });
+        state = state.copyWith(quantity: 2);
+        expect(state.total, 10400);
+      },
+    );
 
     test('CounterSale: ne contacte JAMAIS l\'API si total <= 0', () async {
       const formulaGratuite = ServiceFormula(
@@ -210,23 +212,26 @@ void main() {
       await cubit.close();
     });
 
-    test('NewDropOff: le séchage s\'additionne au prix de base sans montant négatif', () {
-      var state = NewDropOffState(
-        formulas: const [formulaLavageSechage],
-        formulaCode: 'pret_a_porter',
-        sizeKg: 12,
-        dryingTier: DryingDurationTier.m15, // 1 000 F
-      );
+    test(
+      'NewDropOff: le séchage s\'additionne au prix de base sans montant négatif',
+      () {
+        var state = NewDropOffState(
+          formulas: const [formulaLavageSechage],
+          formulaCode: 'pret_a_porter',
+          sizeKg: 12,
+          dryingTier: DryingDurationTier.m15, // 1 000 F
+        );
 
-      // 200 + 1 000 = 1 200 F
-      expect(state.total, 1200);
+        // 200 + 1 000 = 1 200 F
+        expect(state.total, 1200);
 
-      state = state.copyWith(dryingTier: DryingDurationTier.m45);
-      expect(state.total, 3200);
+        state = state.copyWith(dryingTier: DryingDurationTier.m45);
+        expect(state.total, 3200);
 
-      state = state.copyWith(quantity: 2);
-      expect(state.total, 6400);
-    });
+        state = state.copyWith(quantity: 2);
+        expect(state.total, 6400);
+      },
+    );
 
     test('NewDropOff: ne contacte JAMAIS l\'API si total <= 0', () async {
       const formulaGratuite = ServiceFormula(
@@ -242,11 +247,7 @@ void main() {
 
       final dropOffs = _FakeDropOffs();
       final payments = _FakePayments();
-      final cubit = NewDropOffCubit(
-        dropOffs,
-        payments,
-        _FakeFormulas(),
-      );
+      final cubit = NewDropOffCubit(dropOffs, payments, _FakeFormulas());
 
       cubit.setPhone('771234567');
       cubit.setName('Client Test');

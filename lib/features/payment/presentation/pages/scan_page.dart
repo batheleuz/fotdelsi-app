@@ -22,6 +22,7 @@ class ScanPage extends StatelessWidget {
 
   /// Vérifie si la machine scannée est compatible avec la formule choisie.
   static bool fits(ServiceFormula formula, Machine machine) {
+    if (!formula.needsMachine) return false;
     final wanted = formula.needsWasher ? MachineType.washer : MachineType.dryer;
     return machine.type == wanted &&
         machine.size != null &&
@@ -30,6 +31,9 @@ class ScanPage extends StatelessWidget {
 
   /// Retourne le message d'erreur d'incompatibilité, ou null si la machine convient.
   static String? fitError(ServiceFormula formula, Machine machine) {
+    if (!formula.needsMachine) {
+      return 'Cette prestation est réalisée par un agent, sans machine à scanner.';
+    }
     final wanted = formula.needsWasher ? MachineType.washer : MachineType.dryer;
     if (machine.type != wanted) {
       return formula.needsWasher
@@ -37,7 +41,9 @@ class ScanPage extends StatelessWidget {
           : 'Cette formule nécessite une sécheuse. La machine scannée est une laveuse.';
     }
     if (machine.size == null || formula.priceFor(machine.size!) == null) {
-      final sizeLabel = machine.size != null ? '${machine.size} kg' : 'inconnue';
+      final sizeLabel = machine.size != null
+          ? '${machine.size} kg'
+          : 'inconnue';
       return 'Cette formule n\'est pas disponible pour une machine de $sizeLabel.';
     }
     return null;
@@ -177,7 +183,10 @@ class _ScanViewState extends State<_ScanView> {
                               ? 'Scannez la machine devant vous pour démarrer ${formula.label}'
                               : 'Placez le code dans le cadre pour démarrer votre lavage',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white70, fontSize: 13),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),

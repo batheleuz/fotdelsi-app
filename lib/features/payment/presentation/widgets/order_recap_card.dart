@@ -17,7 +17,8 @@ class OrderRecapCard extends StatelessWidget {
   const OrderRecapCard({
     super.key,
     required this.formula,
-    required this.machine,
+    this.machine,
+    this.sizeKg,
     this.dryingTier,
     this.onSelectDryingTier,
     this.quantity = 1,
@@ -27,7 +28,8 @@ class OrderRecapCard extends StatelessWidget {
   /// `null` pour une machine scannée : il n'y a pas de prestation, seulement
   /// un appareil. Le récapitulatif décrit alors la machine.
   final ServiceFormula? formula;
-  final Machine machine;
+  final Machine? machine;
+  final int? sizeKg;
   final DryingDurationTier? dryingTier;
   final VoidCallback? onSelectDryingTier;
   final int quantity;
@@ -42,16 +44,16 @@ class OrderRecapCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = machine.size;
+    final size = sizeKg ?? machine?.size;
     final f = formula;
-    final hasDrying = f?.includesDrying ?? (machine.type == MachineType.dryer);
+    final hasDrying = f?.includesDrying ?? (machine?.type == MachineType.dryer);
     final tier = dryingTier ?? DryingDurationTier.configuredDefault;
 
     int? price;
     if (f == null) {
-      price = machine.type == MachineType.dryer
+      price = machine?.type == MachineType.dryer
           ? tier.price
-          : machine.price.round();
+          : machine!.price.round();
     } else {
       final base = size == null ? null : f.priceFor(size);
       if (base != null) {
@@ -74,16 +76,16 @@ class OrderRecapCard extends StatelessWidget {
           // dessous dit la seule prestation possible — celle que la machine
           // sait faire.
           _Row(
-            label: f?.label ?? machine.name,
+            label: f?.label ?? machine!.name,
             value: f == null
                 ? (size == null ? '' : '$size kg')
-                : (size == null ? machine.name : '$size kg'),
+                : (size == null ? (machine?.name ?? '') : '$size kg'),
           ),
           const SizedBox(height: 3),
           // Le nom est court par choix : le client doit pouvoir vérifier ce
           // qu'il paie avant de valider.
           Text(
-            f?.composition ?? _prestationDe(machine),
+            f?.composition ?? _prestationDe(machine!),
             style: const TextStyle(
               fontSize: 11,
               color: AppColors.textSecondary,
@@ -152,12 +154,14 @@ class OrderRecapCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Nombre de cycles',
+                      f?.needsMachine == false
+                          ? 'Nombre de lots'
+                          : 'Nombre de cycles',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -165,7 +169,9 @@ class OrderRecapCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Chaque cycle pourra utiliser une machine libre.',
+                      f?.needsMachine == false
+                          ? 'Chaque lot correspond à la taille choisie.'
+                          : 'Chaque cycle pourra utiliser une machine libre.',
                       style: TextStyle(
                         fontSize: 10.5,
                         color: AppColors.textSecondary,
@@ -184,8 +190,10 @@ class OrderRecapCard extends StatelessWidget {
           // Prévient avant le paiement : le linge ne repartira pas tout de suite.
           if (f?.requiresAgent ?? false) ...[
             const SizedBox(height: 6),
-            const Text(
-              'Linge à remettre au comptoir en fin de cycle.',
+            Text(
+              f?.needsMachine == false
+                  ? 'Remettez votre linge à l’agent pour cette prestation.'
+                  : 'Linge à remettre au comptoir en fin de cycle.',
               style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
           ],

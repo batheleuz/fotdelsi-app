@@ -138,7 +138,7 @@ class _Explanation extends StatelessWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Ces clients ont lavé leur linge eux-mêmes et payé une finition. '
+              'Ces clients ont payé une prestation à réaliser par un agent. '
               'Ouvrez la fiche pour la prendre en charge quand ils l\'apportent.',
               style: TextStyle(
                 fontSize: 12,

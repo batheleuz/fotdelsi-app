@@ -16,7 +16,6 @@ import '../../domain/entities/payment_provider.dart';
 import '../bloc/payment_bloc.dart';
 import '../bloc/payment_event.dart';
 import '../bloc/payment_state.dart';
-import 'package:fotdelsi/features/wash_session/presentation/cubit/wash_session_cubit.dart';
 import '../utils/payment_launcher.dart';
 import '../utils/payment_provider_presentation.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
@@ -31,29 +30,36 @@ import 'package:fotdelsi/features/client_auth/presentation/cubit/client_session_
 import 'package:fotdelsi/features/wash_session/presentation/widgets/unconsumed_purchase_sheet.dart';
 
 class PaymentPage extends StatelessWidget {
-  const PaymentPage({super.key, required this.formula, required this.machine});
+  const PaymentPage({
+    super.key,
+    required this.formula,
+    this.machine,
+    this.sizeKg,
+  }) : assert(machine != null || (formula != null && sizeKg != null));
 
   /// Prestation choisie — détermine le prix côté serveur.
   ///
   /// `null` pour une machine scannée : on achète l'appareil, pas une
   /// prestation. Le prix est alors celui que porte la machine.
   final ServiceFormula? formula;
-  final Machine machine;
+  final Machine? machine;
+  final int? sizeKg;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => serviceLocator<PaymentBloc>(),
-      child: _PaymentView(formula: formula, machine: machine),
+      child: _PaymentView(formula: formula, machine: machine, sizeKg: sizeKg),
     );
   }
 }
 
 class _PaymentView extends StatefulWidget {
-  const _PaymentView({required this.formula, required this.machine});
+  const _PaymentView({required this.formula, this.machine, this.sizeKg});
 
   final ServiceFormula? formula;
-  final Machine machine;
+  final Machine? machine;
+  final int? sizeKg;
 
   @override
   State<_PaymentView> createState() => _PaymentViewState();
@@ -67,7 +73,7 @@ class _PaymentViewState extends State<_PaymentView> {
 
   bool get _hasDrying =>
       widget.formula?.includesDrying ??
-      (widget.machine.type == MachineType.dryer);
+      (widget.machine?.type == MachineType.dryer);
 
   bool get _canSelectDryingTier => _hasDrying && !_requiresSunDrying;
 
@@ -94,15 +100,15 @@ class _PaymentViewState extends State<_PaymentView> {
   @override
   Widget build(BuildContext context) {
     final bloc = context.read<PaymentBloc>();
-    final machineSize = widget.machine.size;
+    final machineSize = widget.sizeKg ?? widget.machine?.size;
     final formula = widget.formula;
     final machine = widget.machine;
 
     int? total;
     if (formula == null) {
-      total = machine.type == MachineType.dryer
+      total = machine?.type == MachineType.dryer
           ? _dryingTier.price
-          : machine.price.round();
+          : machine!.price.round();
     } else if (machineSize != null) {
       final base = formula.priceFor(machineSize);
       if (base != null) {
@@ -120,10 +126,7 @@ class _PaymentViewState extends State<_PaymentView> {
             if (state.status == PaymentStatus.success &&
                 state.session != null) {
               // Lance l'app de paiement (Wave / Orange Money / QR).
-              final session = context
-                  .read<WashSessionCubit>()
-                  .state
-                  .pendingSession;
+              final session = state.session;
               if (session != null && context.mounted) {
                 await PaymentLauncher.launch(context, session);
               }
@@ -169,7 +172,7 @@ class _PaymentViewState extends State<_PaymentView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (machine.type == MachineType.washer) ...[
+                          if (machine?.type == MachineType.washer) ...[
                             SunDryingCheckbox(
                               value: _requiresSunDrying,
                               enabled: formula?.isReadyToWear == true,
@@ -189,6 +192,7 @@ class _PaymentViewState extends State<_PaymentView> {
                           OrderRecapCard(
                             formula: formula,
                             machine: machine,
+                            sizeKg: widget.sizeKg,
                             dryingTier: _hasDrying ? _dryingTier : null,
                             onSelectDryingTier: _canSelectDryingTier
                                 ? _selectDryingTier
@@ -271,7 +275,8 @@ class _PaymentViewState extends State<_PaymentView> {
 
                     bloc.add(
                       PaymentSubmitted(
-                        machineId: machine.id,
+                        machineId: machine?.id,
+                        sizeKg: widget.sizeKg,
                         formulaCode: formula?.code,
                         dryingDurationMinutes: _hasDrying
                             ? tierToUse.minutes

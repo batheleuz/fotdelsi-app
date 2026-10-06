@@ -122,6 +122,9 @@ class ServiceFormula extends Equatable {
   /// machines proposer pour cette prestation.
   bool get needsWasher => includesItem(ServiceItemKind.washing);
 
+  /// Une prestation manuelle ne cible aucune machine, quel que soit son code.
+  bool get needsMachine => needsWasher || includesItem(ServiceItemKind.drying);
+
   /// Prix pour cette capacité, ou `null` si la formule n'y est pas proposée.
   int? priceFor(int sizeKg) {
     for (final p in prices) {

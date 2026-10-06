@@ -41,6 +41,7 @@ abstract final class DropOffModel {
       collectedAt: _date(json['collectedAt']),
       terminalReason: json['terminalReason'] as String?,
       clientCycleFinished: json['clientCycleFinished'] as bool?,
+      requiresMachine: json['requiresMachine'] as bool? ?? true,
       clientCycleFinishedAt: _date(json['clientCycleFinishedAt']),
       awaitingPickup: json['awaitingPickup'] as bool? ?? false,
       quantity: (json['quantity'] as num?)?.toInt() ?? 1,
