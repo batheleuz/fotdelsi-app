@@ -25,64 +25,68 @@ class SalePaymentStep extends StatelessWidget {
       width: double.infinity,
       color: AppColors.surfaceTint,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            'Scannez pour payer',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Avec l\'appareil photo de votre téléphone',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 28),
+      child: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Scannez pour payer',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Avec l\'appareil photo de votre téléphone',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 28),
 
-          if (payload != null)
-            PaymentQrView(
-              payload: payload,
-              provider: state.provider!,
-              amount: state.total,
-              size: 240,
-            )
-          else
-            // Sans lien exploitable, on le dit : un QR vide ferait perdre du
-            // temps à l'agent devant son client.
-            const _NoPayload(),
+              if (payload != null)
+                PaymentQrView(
+                  payload: payload,
+                  provider: state.provider!,
+                  amount: state.total,
+                  size: 240,
+                )
+              else
+                // Sans lien exploitable, on le dit : un QR vide ferait perdre du
+                // temps à l'agent devant son client.
+                const _NoPayload(),
 
-          const SizedBox(height: 32),
-          if (state.isAwaitingPayment) const _Waiting(),
-          if (state.isAwaitingPayment) ...[
-            const SizedBox(height: 12),
-            TextButton.icon(
-              onPressed: state.isVerifyingPayment
-                  ? null
-                  : () => _verify(context),
-              icon: state.isVerifyingPayment
-                  ? const SizedBox.square(
-                      dimension: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.refresh_rounded),
-              label: const Text('Le client a payé — Vérifier maintenant'),
-            ),
-          ],
-          if (state.error != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              state.error!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.danger, fontSize: 12),
-            ),
-          ],
-        ],
+              const SizedBox(height: 32),
+              if (state.isAwaitingPayment) const _Waiting(),
+              if (state.isAwaitingPayment) ...[
+                const SizedBox(height: 12),
+                TextButton.icon(
+                  onPressed: state.isVerifyingPayment
+                      ? null
+                      : () => _verify(context),
+                  icon: state.isVerifyingPayment
+                      ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.refresh_rounded),
+                  label: const Text('Le client a payé — Vérifier maintenant'),
+                ),
+              ],
+              if (state.error != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  state.error!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.danger, fontSize: 12),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

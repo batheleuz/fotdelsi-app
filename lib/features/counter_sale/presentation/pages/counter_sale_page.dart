@@ -65,7 +65,9 @@ class _CounterSaleView extends StatelessWidget {
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
-            title: const Text('Lancer un cycle'),
+            title: Text(
+              state.needsMachine ? 'Lancer un cycle' : 'Vendre une prestation',
+            ),
             backgroundColor: AppColors.background,
             foregroundColor: AppColors.textPrimary,
             elevation: 0,
@@ -96,7 +98,10 @@ class _CounterSaleView extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               const SizedBox(height: AppSpacing.sm),
-                              CounterSaleStepper(step: state.step),
+                              CounterSaleStepper(
+                                step: state.step,
+                                needsMachine: state.needsMachine,
+                              ),
                               Expanded(child: _stepBody(state.step)),
                               _ActionBar(state: state),
                             ],
@@ -168,7 +173,13 @@ class _ActionBar extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.md, top: AppSpacing.sm),
       child: Column(
         children: [
-          if (isStartStep)
+          if (isStartStep && !state.needsMachine)
+            PrimaryButton(
+              label: 'Terminer',
+              icon: Icons.check_rounded,
+              onPressed: () => context.go(AppRoutes.agentHome),
+            )
+          else if (isStartStep)
             PrimaryButton(
               // « Machine lancée » n'est visible que le temps d'un frame :
               // l'écran part aussitôt vers les Cycles Directs. Le bouton reste
@@ -216,7 +227,7 @@ class _ActionBar extends StatelessWidget {
             ),
           if (state.canGoBack)
             TextButton(onPressed: cubit.back, child: const Text('Retour')),
-          if (isStartStep && !started)
+          if (isStartStep && state.needsMachine && !started)
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Démarrer plus tard'),

@@ -125,6 +125,10 @@ class ServiceFormula extends Equatable {
   /// Une prestation manuelle ne cible aucune machine, quel que soit son code.
   bool get needsMachine => needsWasher || includesItem(ServiceItemKind.drying);
 
+  /// Tailles de lots vendables sans dépendre du parc de machines.
+  List<int> get lotSizes =>
+      [12, 15, 20].where((size) => priceFor(size) != null).toList();
+
   /// Prix pour cette capacité, ou `null` si la formule n'y est pas proposée.
   int? priceFor(int sizeKg) {
     for (final p in prices) {

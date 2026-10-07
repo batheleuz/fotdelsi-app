@@ -125,7 +125,8 @@ class FirebasePushMessaging implements PushMessaging {
     return switch (settings.authorizationStatus) {
       AuthorizationStatus.authorized ||
       AuthorizationStatus.provisional => PushPermissionStatus.granted,
-      AuthorizationStatus.denied => PushPermissionStatus.denied,
+      AuthorizationStatus.denied ||
+      AuthorizationStatus.deniedPermanently => PushPermissionStatus.denied,
       AuthorizationStatus.notDetermined => PushPermissionStatus.notDetermined,
     };
   }

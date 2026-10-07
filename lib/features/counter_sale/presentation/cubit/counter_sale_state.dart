@@ -13,7 +13,7 @@ enum SaleStatus {
   /// QR affiché, on attend que le client paie depuis son téléphone.
   awaitingPayment,
 
-  /// Paiement confirmé : la machine peut être lancée.
+  /// Paiement confirmé : démarrage ou prise en charge au comptoir.
   paid,
 
   /// Démarrage physique en cours.
@@ -33,6 +33,7 @@ final class CounterSaleState extends Equatable {
     this.machines = const [],
     this.formulaCode,
     this.machine,
+    this.sizeKg,
     this.dryingTier = DryingDurationTier.defaultTier,
     this.quantity = 1,
     this.requiresSunDrying = false,
@@ -45,7 +46,7 @@ final class CounterSaleState extends Equatable {
     this.isVerifyingPayment = false,
   });
 
-  /// Étape affichée : 0 prestation · 1 client · 2 paiement · 3 démarrage.
+  /// Étape affichée : 0 prestation · 1 client · 2 paiement · 3 prise en charge.
   ///
   /// Portée par l'état plutôt que par la navigation : le parcours est un seul
   /// écran qui change de contenu, et un retour arrière ne doit pas perdre la
@@ -58,6 +59,7 @@ final class CounterSaleState extends Equatable {
 
   final String? formulaCode;
   final Machine? machine;
+  final int? sizeKg;
   final DryingDurationTier dryingTier;
   final int quantity;
   final bool requiresSunDrying;
@@ -68,7 +70,7 @@ final class CounterSaleState extends Equatable {
   final SaleStatus saleStatus;
 
   /// Renvoyée par l'initiation : porte le lien à encoder en QR et le jeton de
-  /// session qui permettra à l'agent de lancer la machine.
+  /// session pour les formules comportant un cycle machine.
   final PaymentSession? session;
 
   final String? error;
@@ -85,17 +87,28 @@ final class CounterSaleState extends Equatable {
       (selectedFormula?.includesDrying ?? false) ||
       (selectedFormula == null && machine?.type == MachineType.dryer);
 
+  bool get needsMachine => selectedFormula?.needsMachine ?? true;
+  int? get selectedSize => needsMachine ? machine?.size : sizeKg;
+  bool get hasServiceSelection =>
+      selectedFormula != null &&
+      (needsMachine ? machine != null : sizeKg != null) &&
+      (!requiresSunDrying || selectedFormula?.needsWasher == true) &&
+      (!requiresSunDrying || selectedFormula?.isReadyToWear == true) &&
+      (total ?? 0) > 0;
+
   bool get canSelectDryingTier => hasDrying && !requiresSunDrying;
 
   List<ServiceFormula> get selectableFormulas => requiresSunDrying
-      ? formulas.where((formula) => formula.isReadyToWear).toList()
+      ? formulas
+            .where((formula) => formula.isReadyToWear && formula.needsWasher)
+            .toList()
       : formulas;
 
   /// Montant affiché, lu dans la grille. Indicatif : le serveur retarife.
   int? get total {
     final formula = selectedFormula;
-    final size = machine?.size;
-    if (machine?.type == MachineType.dryer) {
+    final size = selectedSize;
+    if (needsMachine && machine?.type == MachineType.dryer) {
       return dryingTier.price * quantity;
     }
     if (formula == null || size == null) return null;
@@ -114,8 +127,7 @@ final class CounterSaleState extends Equatable {
   bool get isAwaitingPayment => saleStatus == SaleStatus.awaitingPayment;
 
   bool get canSubmit =>
-      formulaCode != null &&
-      machine != null &&
+      hasServiceSelection &&
       provider != null &&
       customerName.trim().length >= 2 &&
       _phoneRegex.hasMatch(customerPhone) &&
@@ -124,11 +136,7 @@ final class CounterSaleState extends Equatable {
 
   /// L'agent peut-il avancer depuis l'étape courante ?
   bool get canGoNext => switch (step) {
-    0 =>
-      formulaCode != null &&
-          machine != null &&
-          (!requiresSunDrying || selectedFormula?.isReadyToWear == true) &&
-          (total ?? 0) > 0,
+    0 => hasServiceSelection,
     1 =>
       provider != null &&
           customerName.trim().length >= 2 &&
@@ -149,6 +157,8 @@ final class CounterSaleState extends Equatable {
     String? formulaCode,
     Machine? machine,
     bool clearMachine = false,
+    int? sizeKg,
+    bool clearSize = false,
     DryingDurationTier? dryingTier,
     int? quantity,
     bool? requiresSunDrying,
@@ -169,6 +179,7 @@ final class CounterSaleState extends Equatable {
       machines: machines ?? this.machines,
       formulaCode: clearFormula ? null : (formulaCode ?? this.formulaCode),
       machine: clearMachine ? null : (machine ?? this.machine),
+      sizeKg: clearSize ? null : (sizeKg ?? this.sizeKg),
       dryingTier: dryingTier ?? this.dryingTier,
       quantity: quantity ?? this.quantity,
       requiresSunDrying: requiresSunDrying ?? this.requiresSunDrying,
@@ -190,6 +201,7 @@ final class CounterSaleState extends Equatable {
     machines,
     formulaCode,
     machine,
+    sizeKg,
     dryingTier,
     quantity,
     requiresSunDrying,
@@ -197,6 +209,7 @@ final class CounterSaleState extends Equatable {
     customerPhone,
     provider,
     saleStatus,
+    session?.paymentId,
     session?.washSessionToken,
     error,
     isVerifyingPayment,

@@ -118,7 +118,18 @@ void main() {
   const formulaLavageSechage = ServiceFormula(
     code: 'pret_a_porter',
     label: 'Prêt-à-porter',
-    items: [],
+    items: [
+      ServiceItem(
+        kind: ServiceItemKind.washing,
+        label: 'Lavage',
+        requiresAgent: false,
+      ),
+      ServiceItem(
+        kind: ServiceItemKind.drying,
+        label: 'Séchage',
+        requiresAgent: false,
+      ),
+    ],
     includesDrying: true,
     requiresAgent: false,
     selfServiceEnabled: true,
@@ -178,7 +189,13 @@ void main() {
       const formulaGratuite = ServiceFormula(
         code: 'gratuit',
         label: 'Gratuit',
-        items: [],
+        items: [
+          ServiceItem(
+            kind: ServiceItemKind.washing,
+            label: 'Lavage',
+            requiresAgent: false,
+          ),
+        ],
         includesDrying: false,
         requiresAgent: false,
         selfServiceEnabled: true,
@@ -237,7 +254,13 @@ void main() {
       const formulaGratuite = ServiceFormula(
         code: 'gratuit',
         label: 'Gratuit',
-        items: [],
+        items: [
+          ServiceItem(
+            kind: ServiceItemKind.washing,
+            label: 'Lavage',
+            requiresAgent: false,
+          ),
+        ],
         includesDrying: false,
         requiresAgent: false,
         selfServiceEnabled: true,

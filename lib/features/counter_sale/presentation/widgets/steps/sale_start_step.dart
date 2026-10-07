@@ -46,9 +46,13 @@ class SaleStartStep extends StatelessWidget {
               border: Border.all(color: AppColors.border),
             ),
             child: Text(
-              'Faites charger le linge dans la machine '
-              'de votre choix, puis démarrez-la. Les autres cycles achetés '
-              'resteront disponibles dans Cycles Directs.',
+              state.needsMachine
+                  ? 'Faites charger le linge dans la machine '
+                        'de votre choix, puis démarrez-la. Les autres cycles achetés '
+                        'resteront disponibles dans Cycles Directs.'
+                  : 'Le paiement est confirmé. Prenez en charge le linge '
+                        'au comptoir pour ${state.selectedFormula!.label.toLowerCase()}. '
+                        'La prestation est disponible dans la file des dépôts.',
               style: const TextStyle(
                 fontSize: 13,
                 height: 1.5,

@@ -89,10 +89,15 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
   // ── Saisies ─────────────────────────────────────────────────────────────────
 
   void selectFormula(ServiceFormula formula) {
-    if (state.requiresSunDrying && !formula.isReadyToWear) return;
+    if (state.requiresSunDrying &&
+        (!formula.isReadyToWear || !formula.needsWasher)) {
+      return;
+    }
     // La machine n'est conservée que si elle convient à la formule (type et
     // tarifée) : on la réinitialise plutôt que d'afficher un total faux.
     final keep = state.machine != null && _fits(formula, state.machine!);
+    final keepSize =
+        !formula.needsMachine && formula.lotSizes.contains(state.sizeKg);
     final updatedFormulas = state.formulas.any((f) => f.code == formula.code)
         ? state.formulas
         : [...state.formulas, formula];
@@ -102,12 +107,27 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
         formulaCode: formula.code,
         machine: keep ? state.machine : null,
         clearMachine: !keep,
+        clearSize: !keepSize,
         requiresSunDrying: state.requiresSunDrying,
       ),
     );
   }
 
-  void selectMachine(Machine machine) => emit(state.copyWith(machine: machine));
+  void selectMachine(Machine machine) {
+    final formula = state.selectedFormula;
+    if (formula == null || !_fits(formula, machine)) return;
+    emit(state.copyWith(machine: machine, clearSize: true));
+  }
+
+  void selectSize(int sizeKg) {
+    final formula = state.selectedFormula;
+    if (formula == null ||
+        formula.needsMachine ||
+        !formula.lotSizes.contains(sizeKg)) {
+      return;
+    }
+    emit(state.copyWith(sizeKg: sizeKg, clearMachine: true));
+  }
 
   void setCustomerName(String value) =>
       emit(state.copyWith(customerName: value.trim()));
@@ -119,6 +139,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
       emit(state.copyWith(provider: provider));
 
   bool _fits(ServiceFormula formula, Machine machine) {
+    if (!formula.needsMachine) return false;
     final wanted = formula.needsWasher ? MachineType.washer : MachineType.dryer;
     return machine.type == wanted &&
         machine.size != null &&
@@ -149,7 +170,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
 
     ServiceFormula? readyToWear;
     for (final formula in state.formulas) {
-      if (formula.isReadyToWear) {
+      if (formula.isReadyToWear && formula.needsWasher) {
         readyToWear = formula;
         break;
       }
@@ -162,6 +183,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
           dryingTier: DryingDurationTier.configuredDefault,
           clearFormula: true,
           clearMachine: true,
+          clearSize: true,
         ),
       );
       return;
@@ -176,6 +198,7 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
         formulaCode: readyToWear.code,
         machine: keepMachine ? state.machine : null,
         clearMachine: !keepMachine,
+        clearSize: true,
       ),
     );
   }
@@ -220,7 +243,8 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
     emit(state.copyWith(saleStatus: SaleStatus.submitting, clearError: true));
 
     final result = await _payments.initiatePayment(
-      machineId: state.machine!.id,
+      machineId: state.needsMachine ? state.machine!.id : null,
+      sizeKg: state.needsMachine ? null : state.sizeKg,
       formulaCode: state.formulaCode!,
       provider: state.provider!,
       customerFullName: state.customerName,
@@ -232,6 +256,8 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
       quantity: state.quantity,
       requiresSunDrying: state.requiresSunDrying,
     );
+
+    if (isClosed) return;
 
     result.fold(
       (failure) => emit(
@@ -245,22 +271,37 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
             session: session,
           ),
         );
-        // Vente au comptoir : c'est un libre-service, le jeton existe toujours.
-        _startPolling(session.washSessionToken!);
+        _startPolling(session);
       },
     );
   }
 
   // ── Suivi du paiement ───────────────────────────────────────────────────────
 
-  void _startPolling(String token) {
+  void _startPolling(PaymentSession session) {
     _poll?.cancel();
-    _poll = Timer.periodic(_pollInterval, (_) => _refreshStatus(token));
-    _refreshStatus(token);
+    final token = session.washSessionToken;
+    Future<void> refresh() => token == null
+        ? _refreshManualPayment(session.paymentId)
+        : _refreshStatus(token);
+    _poll = Timer.periodic(_pollInterval, (_) => refresh());
+    refresh();
+  }
+
+  Future<void> _refreshManualPayment(String paymentId) async {
+    final result = await _payments.isPaymentConfirmed(paymentId);
+    if (isClosed) return;
+    result.fold((_) => null, (confirmed) {
+      if (confirmed) {
+        _poll?.cancel();
+        emit(state.copyWith(step: 3, saleStatus: SaleStatus.paid));
+      }
+    });
   }
 
   Future<void> _refreshStatus(String token) async {
     final result = await _sessions.getSessionStatus(token);
+    if (isClosed) return;
 
     result.fold(
       // Erreur réseau : on garde l'écran en l'état, le tick suivant retentera.
@@ -317,7 +358,10 @@ class CounterSaleCubit extends Cubit<CounterSaleState> {
   /// le linge chargé. Le jeton de session est resté de son côté.
   Future<String?> startMachine(Machine machine) async {
     final session = state.session;
-    if (session == null || state.saleStatus != SaleStatus.paid) {
+    if (session == null ||
+        !state.needsMachine ||
+        session.washSessionToken == null ||
+        state.saleStatus != SaleStatus.paid) {
       return 'Ce cycle ne peut pas être démarré.';
     }
 

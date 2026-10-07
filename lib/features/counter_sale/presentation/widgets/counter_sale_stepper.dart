@@ -12,11 +12,17 @@ import 'package:fotdelsi/core/theme/app_colors.dart';
 /// client de l'autre côté du comptoir, il ne doit rien porter d'autre que le
 /// code à scanner.
 class CounterSaleStepper extends StatelessWidget {
-  const CounterSaleStepper({super.key, required this.step, this.total = 4});
+  const CounterSaleStepper({
+    super.key,
+    required this.step,
+    this.total = 4,
+    this.needsMachine = true,
+  });
 
   /// Index de l'étape courante, à partir de 0.
   final int step;
   final int total;
+  final bool needsMachine;
 
   static const _labels = ['Prestation', 'Client', 'Paiement', 'Démarrage'];
 
@@ -51,7 +57,9 @@ class CounterSaleStepper extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text(
-          _labels[step.clamp(0, _labels.length - 1)],
+          step == 3 && !needsMachine
+              ? 'Prise en charge'
+              : _labels[step.clamp(0, _labels.length - 1)],
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,

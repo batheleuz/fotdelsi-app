@@ -6,6 +6,7 @@ import 'package:fotdelsi/core/theme/app_radius.dart';
 import 'package:fotdelsi/core/theme/app_spacing.dart';
 import 'package:fotdelsi/core/utils/price_formatter.dart';
 import 'package:fotdelsi/features/catalog/domain/entities/drying_duration_tier.dart';
+import 'package:fotdelsi/features/catalog/presentation/widgets/service_size_picker.dart';
 import 'package:fotdelsi/features/machines/domain/entities/machine.dart';
 import 'package:fotdelsi/core/widgets/quantity_stepper.dart';
 import 'package:fotdelsi/core/widgets/sun_drying_checkbox.dart';
@@ -30,11 +31,13 @@ class SaleServiceStep extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       children: [
-        SunDryingCheckbox(
-          value: state.requiresSunDrying,
-          onChanged: cubit.setRequiresSunDrying,
-        ),
-        const SizedBox(height: AppSpacing.md),
+        if (state.needsMachine) ...[
+          SunDryingCheckbox(
+            value: state.requiresSunDrying,
+            onChanged: cubit.setRequiresSunDrying,
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         const _Label('Prestation'),
         const SizedBox(height: AppSpacing.sm),
         for (final f in state.selectableFormulas)
@@ -52,9 +55,20 @@ class SaleServiceStep extends StatelessWidget {
 
         if (formula != null) ...[
           const SizedBox(height: AppSpacing.md),
-          const _Label('Machine'),
+          _Label(state.needsMachine ? 'Machine' : 'Taille du lot'),
           const SizedBox(height: AppSpacing.sm),
-          if (machines.isEmpty)
+          if (!state.needsMachine) ...[
+            ServiceSizePicker(
+              formula: formula,
+              selected: state.sizeKg,
+              onSelect: cubit.selectSize,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            const Text(
+              'Prestation réalisée par l’agent au comptoir.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+          ] else if (machines.isEmpty)
             const Text(
               'Aucune machine ne propose cette prestation.',
               style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
@@ -102,19 +116,28 @@ class SaleServiceStep extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _Label('Nombre de cycles'),
-                  Text(
-                    'À lancer sur les machines libres',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Label(
+                      state.needsMachine
+                          ? 'Nombre de cycles'
+                          : 'Nombre de lots',
                     ),
-                  ),
-                ],
+                    Text(
+                      state.needsMachine
+                          ? 'À lancer sur les machines libres'
+                          : 'À prendre en charge au comptoir',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: AppSpacing.sm),
               QuantityStepper(
                 value: state.quantity,
                 onChanged: cubit.selectQuantity,

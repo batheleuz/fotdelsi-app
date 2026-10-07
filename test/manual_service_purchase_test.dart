@@ -122,6 +122,9 @@ void main() {
         expect(find.byIcon(Icons.qr_code_scanner), findsNothing);
         await tester.tap(find.text('15 kg'));
         await tester.pumpAndSettle();
+        expect(selected, isNull);
+        await tester.tap(find.text('Continuer'));
+        await tester.pumpAndSettle();
         expect(selected?.sizeKg, 15);
         expect(selected?.formula.code, formula.code);
       },
